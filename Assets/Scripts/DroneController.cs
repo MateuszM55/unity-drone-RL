@@ -103,13 +103,13 @@ public class DroneController : MonoBehaviour
         float rollInput = 0f;
 
         if (keyboard.wKey.isPressed)
-            pitchInput = -1f; // Tilt forward (nose down)
+            pitchInput = 1f; // Tilt forward (nose down)
         if (keyboard.sKey.isPressed)
-            pitchInput = 1f;  // Tilt backward (nose up)
+            pitchInput = -1f;  // Tilt backward (nose up)
         if (keyboard.aKey.isPressed)
-            rollInput = -1f;  // Tilt left
+            rollInput = 1f;  // Tilt left
         if (keyboard.dKey.isPressed)
-            rollInput = 1f;   // Tilt right
+            rollInput = -1f;   // Tilt right
 
         // Apply sensitivity
         pitchInput *= pitchRollSensitivity;
