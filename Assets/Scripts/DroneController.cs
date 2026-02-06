@@ -1,48 +1,86 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public class DroneController : MonoBehaviour
+public class DronePhysicsController : MonoBehaviour
 {
+    [Header("Motor Setup")]
+    [Tooltip("Order: FrontLeft, FrontRight, RearLeft, RearRight")]
+    [SerializeField] private Transform[] rotorTransforms;
+
     [Header("Physics Settings")]
     [SerializeField] private float mass = 1f;
-    [SerializeField] private float drag = 2f;
-    [SerializeField] private float angularDrag = 3f;
+    [SerializeField] private float linearDrag = 1f;
+    [SerializeField] private float angularDrag = 2.5f;
+
+    [Header("PID Control (Stability)")]
+    // Proportional (P): How hard to pull back to target angle
+    // Derivative (D): How much to dampen the oscillation
+    [SerializeField] private float kp_pitch_roll = 1f;
+    [SerializeField] private float kd_pitch_roll = 0.5f;
+    [SerializeField] private float kp_yaw = 1f;
+    [SerializeField] private float kd_yaw = 1.5f;
 
     [Header("Flight Parameters")]
-    [SerializeField] private float liftForce = 15f;
-    [SerializeField] private float maxTilt = 45f;
-    [SerializeField] private float tiltSpeed = 2f;
+    [SerializeField] private float maxThrustPerMotor = 20f; // Power of each motor
+    [SerializeField] private float maxTiltAngle = 45f;
     [SerializeField] private float yawSpeed = 100f;
-    [SerializeField] private float stabilizationSpeed = 3f;
 
     [Header("Input Sensitivity")]
-    [SerializeField] private float throttleSensitivity = 5f;
-    [SerializeField] private float pitchRollSensitivity = 1f;
+    [SerializeField] private float throttleSpeed = 2f;
 
+    // Internal Variables
     private Rigidbody rb;
     private float currentThrottle = 0f;
     private float targetYaw = 0f;
+
+    // PID Errors
+    private float lastPitchError, lastRollError, lastYawError;
+
+    [Header("Motor Setup")]
+    [Tooltip("Drag Transforms here in this specific order:\n" +
+             "Element 0 -> Front Left\n" +
+             "Element 1 -> Front Right\n" +
+             "Element 2 -> Rear Left\n" +
+             "Element 3 -> Rear Right")]
+
+    //  MAPPING VISUALIZATION:
+    //  
+    //      (0) FL   ^   FR (1)
+    //            \  |  /
+    //             \ | /
+    //              \|/
+    //          -----------
+    //              /|\
+    //             / | \
+    //            /  |  \
+    //      (2) RL       RR (3)
+    //
+    private float[] motorInputs = new float[4];
 
     private Keyboard keyboard;
 
     void Start()
     {
-        // Setup or get Rigidbody
         rb = GetComponent<Rigidbody>();
-        if (rb == null)
-        {
-            rb = gameObject.AddComponent<Rigidbody>();
-        }
+        if (rb == null) rb = gameObject.AddComponent<Rigidbody>();
 
-        // Configure Rigidbody for realistic drone physics
+        // Physics Setup
         rb.mass = mass;
-        rb.linearDamping = drag;
+        rb.linearDamping = linearDrag;
         rb.angularDamping = angularDrag;
         rb.useGravity = true;
-        rb.constraints = RigidbodyConstraints.None;
 
-        // Get keyboard reference
+        // Auto-calculate hover throttle (approximate)
+        // Force needed = Mass * Gravity. Divided by 4 motors.
+        float forceNeeded = (mass * Mathf.Abs(Physics.gravity.y));
+        float forcePerMotor = forceNeeded / 4f;
+        // Set initial throttle to hover level (normalized 0-1)
+        currentThrottle = forcePerMotor / maxThrustPerMotor;
+
         keyboard = Keyboard.current;
+
+        // Initialize Target Yaw to current facing
+        targetYaw = transform.eulerAngles.y;
     }
 
     void Update()
@@ -52,90 +90,155 @@ public class DroneController : MonoBehaviour
 
     void FixedUpdate()
     {
-        ApplyLift();
-        ApplyRotation();
+        if (rotorTransforms == null || rotorTransforms.Length != 4)
+            return;
+
+        // 1. Calculate Target Angles
+        Vector3 targetOrientation = CalculateTargetOrientation();
+
+        // 2. PID Control (Calculate necessary torque corrections)
+        Vector3 torqueCorrection = CalculatePID(targetOrientation);
+
+        // 3. The Mixer (Convert Torque + Throttle -> Individual Motor Forces)
+        ApplyMotorMixer(torqueCorrection);
     }
 
     private void HandleInput()
     {
-        if (keyboard == null)
-            return;
+        if (keyboard == null) return;
 
-        // Throttle Control (Space to increase, Left Shift to decrease)
-        if (keyboard.spaceKey.isPressed)
-        {
-            currentThrottle += throttleSensitivity * Time.deltaTime;
-        }
-        else if (keyboard.leftShiftKey.isPressed)
-        {
-            currentThrottle -= throttleSensitivity * Time.deltaTime;
-        }
+        // Throttle Input
+        if (keyboard.spaceKey.isPressed) currentThrottle += throttleSpeed * Time.deltaTime;
+        if (keyboard.leftShiftKey.isPressed) currentThrottle -= throttleSpeed * Time.deltaTime;
+        currentThrottle = Mathf.Clamp(currentThrottle, 0f, 1f); // 0% to 100% power
 
-        // Clamp throttle between 0 and 2 (where 1.0 approximately hovers)
-        currentThrottle = Mathf.Clamp(currentThrottle, 0f, 2f);
-
-        // Yaw Control (Q/E for rotation around Y-axis)
-        if (keyboard.qKey.isPressed)
-        {
-            targetYaw -= yawSpeed * Time.deltaTime;
-        }
-        if (keyboard.eKey.isPressed)
-        {
-            targetYaw += yawSpeed * Time.deltaTime;
-        }
+        // Yaw Input (Modify the target yaw)
+        if (keyboard.qKey.isPressed) targetYaw -= yawSpeed * Time.deltaTime;
+        if (keyboard.eKey.isPressed) targetYaw += yawSpeed * Time.deltaTime;
     }
 
-    private void ApplyLift()
+    private Vector3 CalculateTargetOrientation()
     {
-        // Apply upward force relative to drone's orientation
-        // This force counters gravity and provides lift
-        Vector3 lift = transform.up * (liftForce * currentThrottle);
-        rb.AddForce(lift, ForceMode.Force);
-    }
-
-    private void ApplyRotation()
-    {
-        if (keyboard == null)
-            return;
-
-        // Get Pitch and Roll input (WASD)
         float pitchInput = 0f;
         float rollInput = 0f;
 
-        if (keyboard.wKey.isPressed)
-            pitchInput = 1f; // Tilt forward (nose down)
-        if (keyboard.sKey.isPressed)
-            pitchInput = -1f;  // Tilt backward (nose up)
-        if (keyboard.aKey.isPressed)
-            rollInput = 1f;  // Tilt left
-        if (keyboard.dKey.isPressed)
-            rollInput = -1f;   // Tilt right
+        if (keyboard.wKey.isPressed) pitchInput = 1f;  // Nose Down
+        if (keyboard.sKey.isPressed) pitchInput = -1f; // Nose Up
+        if (keyboard.aKey.isPressed) rollInput = 1f;   // Roll Left
+        if (keyboard.dKey.isPressed) rollInput = -1f;  // Roll Right
 
-        // Apply sensitivity
-        pitchInput *= pitchRollSensitivity;
-        rollInput *= pitchRollSensitivity;
+        float targetPitch = pitchInput * maxTiltAngle;
+        float targetRoll = rollInput * maxTiltAngle;
 
-        // Calculate target rotation based on input
-        float targetPitch = pitchInput * maxTilt;
-        float targetRoll = rollInput * maxTilt;
-
-        // Create target rotation (Yaw, Pitch, Roll in Euler angles)
-        Quaternion targetRotation = Quaternion.Euler(targetPitch, targetYaw, targetRoll);
-
-        // Smoothly interpolate to target rotation
-        // This provides stability and prevents instant flipping
-        float stabilization = (pitchInput == 0f && rollInput == 0f) ? stabilizationSpeed : tiltSpeed;
-        rb.MoveRotation(Quaternion.Slerp(rb.rotation, targetRotation, stabilization * Time.fixedDeltaTime));
+        return new Vector3(targetPitch, targetYaw, targetRoll);
     }
 
-    // Optional: Display current throttle in editor for debugging
+    private Vector3 CalculatePID(Vector3 targetEuler)
+    {
+        // Get current rotation in Euler angles (handling Unity's 360 wrap-around)
+        Vector3 currentEuler = transform.eulerAngles;
+
+        // Helper to normalize angles to -180 to 180 range for correct math
+        float NormalizeAngle(float angle) => angle > 180 ? angle - 360 : angle;
+
+        float currentPitch = NormalizeAngle(currentEuler.x);
+        float currentRoll = NormalizeAngle(currentEuler.z);
+        float currentYaw = NormalizeAngle(currentEuler.y); // Note: Yaw is global
+
+        // --- PITCH PID ---
+        float pitchError = targetEuler.x - currentPitch;
+        float pitchCorrection = (pitchError * kp_pitch_roll) - ((pitchError - lastPitchError) / Time.fixedDeltaTime * kd_pitch_roll);
+        lastPitchError = pitchError;
+
+        // --- ROLL PID ---
+        float rollError = targetEuler.z - currentRoll;
+        float rollCorrection = (rollError * kp_pitch_roll) - ((rollError - lastRollError) / Time.fixedDeltaTime * kd_pitch_roll);
+        lastRollError = rollError;
+
+        // --- YAW PID ---
+        // For Yaw, we just want to stabilize angular velocity mostly, but here we track a target heading
+        float yawError = targetEuler.y - currentYaw;
+        // Handle wrapping (if error is > 180, go the other way)
+        if (yawError > 180) yawError -= 360;
+        if (yawError < -180) yawError += 360;
+
+        float yawCorrection = (yawError * kp_yaw) - ((yawError - lastYawError) / Time.fixedDeltaTime * kd_yaw);
+        lastYawError = yawError;
+
+        return new Vector3(pitchCorrection, yawCorrection, rollCorrection);
+    }
+
+    private void ApplyMotorMixer(Vector3 correction)
+    {
+        // PID Outputs
+        float pitchCmd = correction.x;
+        float yawCmd = correction.y;
+        float rollCmd = correction.z;
+
+        // Base Throttle
+        float t = currentThrottle;
+
+        // Quad X Configuration Mixing Logic
+        // Motor 0: Front Left  (CW)  -> +Pitch +Roll +Yaw
+        // Motor 1: Front Right (CCW) -> +Pitch -Roll -Yaw
+        // Motor 2: Rear Left   (CCW) -> -Pitch +Roll -Yaw
+        // Motor 3: Rear Right  (CW)  -> -Pitch -Roll +Yaw
+
+        // Note on Yaw: CW motors create CCW torque. To turn Right (CW), we spin CCW motors (1 & 2) faster.
+        // The signs below depend on your specific motor direction setup, this is standard "Quad X":
+
+        motorInputs[0] = t + pitchCmd + rollCmd + yawCmd; // FL
+        motorInputs[1] = t + pitchCmd - rollCmd - yawCmd; // FR 
+        motorInputs[2] = t - pitchCmd + rollCmd - yawCmd; // RL 
+        motorInputs[3] = t - pitchCmd - rollCmd + yawCmd; // RR 
+
+        // Apply Forces
+        for (int i = 0; i < 4; i++)
+        {
+            // Clamp motor values (cannot spin backwards, cannot exceed max power)
+            float motorForce = Mathf.Clamp(motorInputs[i], 0f, 1f) * maxThrustPerMotor;
+
+            // Apply force at the specific rotor position upwards relative to the drone
+            Vector3 forceVector = transform.up * motorForce;
+            rb.AddForceAtPosition(forceVector, rotorTransforms[i].position);
+
+            // Debug Visualization
+            Debug.DrawRay(rotorTransforms[i].position, forceVector * 0.1f, Color.red);
+        }
+    }
+
     private void OnGUI()
     {
         if (Application.isEditor)
         {
-            GUI.Label(new Rect(10, 10, 200, 20), $"Throttle: {currentThrottle:F2}");
-            GUI.Label(new Rect(10, 30, 200, 20), $"Velocity: {rb.linearVelocity.magnitude:F2}");
-            GUI.Label(new Rect(10, 50, 200, 20), $"Altitude: {transform.position.y:F2}");
+            GUI.Box(new Rect(10, 10, 200, 120), "Drone Stats");
+            GUI.Label(new Rect(20, 30, 180, 20), $"Throttle: {currentThrottle * 100:F0}%");
+            GUI.Label(new Rect(20, 50, 180, 20), $"FL: {motorInputs[0]:F2} | FR: {motorInputs[1]:F2}");
+            GUI.Label(new Rect(20, 70, 180, 20), $"RL: {motorInputs[2]:F2} | RR: {motorInputs[3]:F2}");
+            GUI.Label(new Rect(20, 90, 180, 20), $"Alt: {transform.position.y:F1}m");
         }
+    }
+
+    void OnDrawGizmos()
+    {
+        if (rotorTransforms == null || rotorTransforms.Length < 4) return;
+
+        // Draw the Center of Mass
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawSphere(transform.position, 0.1f);
+
+        // Draw the Rotors
+        Gizmos.color = Color.red;
+        // FL
+        if (rotorTransforms[0]) Gizmos.DrawWireSphere(rotorTransforms[0].position, 0.05f);
+        // FR
+        if (rotorTransforms[1]) Gizmos.DrawWireSphere(rotorTransforms[1].position, 0.05f);
+
+        // Draw lines connecting diagonals to check centering
+        Gizmos.color = Color.blue;
+        if (rotorTransforms[0] && rotorTransforms[3])
+            Gizmos.DrawLine(rotorTransforms[0].position, rotorTransforms[3].position);
+        if (rotorTransforms[1] && rotorTransforms[2])
+            Gizmos.DrawLine(rotorTransforms[1].position, rotorTransforms[2].position);
     }
 }
