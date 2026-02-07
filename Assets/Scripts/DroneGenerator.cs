@@ -1,6 +1,6 @@
 using UnityEngine;
 
-[RequireComponent(typeof(DronePhysicsController))]
+[RequireComponent(typeof(DronePDController))]
 public class DroneGenerator : MonoBehaviour
 {
     [Header("Dimensions")]
@@ -50,7 +50,7 @@ public class DroneGenerator : MonoBehaviour
         newRotors[3] = CreateRotor("Rotor_RR", new Vector3(xDist, yPos, -zDist), rearRotorColor);
 
         // Link to Controller
-        var controller = GetComponent<DronePhysicsController>();
+        var controller = GetComponent<DronePDController>();
         if (controller != null)
         {
 #if UNITY_EDITOR
