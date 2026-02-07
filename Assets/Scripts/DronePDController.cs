@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public class DronePhysicsController : MonoBehaviour
+public class DronePDController : MonoBehaviour
 {
     [Header("Motor Setup")]
     [Tooltip("Drag Transforms here in this specific order:\n" +
