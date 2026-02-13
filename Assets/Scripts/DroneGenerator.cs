@@ -1,6 +1,5 @@
 using UnityEngine;
 
-[RequireComponent(typeof(DronePDController))]
 public class DroneGenerator : MonoBehaviour
 {
     [Header("Dimensions")]
@@ -49,27 +48,34 @@ public class DroneGenerator : MonoBehaviour
         newRotors[2] = CreateRotor("Rotor_RL", new Vector3(-xDist, yPos, -zDist), rearRotorColor);
         newRotors[3] = CreateRotor("Rotor_RR", new Vector3(xDist, yPos, -zDist), rearRotorColor);
 
-        // Link to Controller
-        var controller = GetComponent<DronePDController>();
-        if (controller != null)
-        {
+        // Link rotor transforms to controllers via serialized properties
 #if UNITY_EDITOR
-            UnityEditor.SerializedObject so = new UnityEditor.SerializedObject(controller);
-            UnityEditor.SerializedProperty rotorsProp = so.FindProperty("rotorTransforms");
-
-            if (rotorsProp != null && rotorsProp.isArray)
-            {
-                rotorsProp.arraySize = 4;
-                for (int i = 0; i < 4; i++)
-                {
-                    rotorsProp.GetArrayElementAtIndex(i).objectReferenceValue = newRotors[i];
-                }
-                so.ApplyModifiedProperties();
-                Debug.Log("Drone generated and linked.");
-            }
+        LinkRotors<DronePDController>(newRotors, "rotorTransforms");
+        LinkRotors<DroneSimpleML_Agent>(newRotors, "rotorTransforms");
 #endif
+    }
+
+#if UNITY_EDITOR
+    private void LinkRotors<T>(Transform[] rotors, string propertyName) where T : Component
+    {
+        var component = GetComponent<T>();
+        if (component == null) return;
+
+        var so = new UnityEditor.SerializedObject(component);
+        var prop = so.FindProperty(propertyName);
+
+        if (prop != null && prop.isArray)
+        {
+            prop.arraySize = rotors.Length;
+            for (int i = 0; i < rotors.Length; i++)
+            {
+                prop.GetArrayElementAtIndex(i).objectReferenceValue = rotors[i];
+            }
+            so.ApplyModifiedProperties();
+            Debug.Log($"Drone rotors linked to {typeof(T).Name}.");
         }
     }
+#endif
 
     private Transform CreateRotor(string name, Vector3 localPos, Color color)
     {
