@@ -1207,6 +1207,35 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &903314860 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 2091706848622804635, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
+  m_PrefabInstance: {fileID: 55727881256736877}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &903314866
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 903314860}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c5b18d80df8f9a64e87a439fc36cc18c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DroneForcesTorquesController
+  mass: 1
+  linearDrag: 2
+  angularDrag: 8
+  maxThrust: 20
+  maxPitchTorque: 5
+  maxRollTorque: 5
+  maxYawTorque: 3
+  throttleSensitivity: 0.5
+  throttleInput: 0
+  pitchInput: 0
+  rollInput: 0
+  yawInput: 0
 --- !u!1 &936371563
 GameObject:
   m_ObjectHideFlags: 0
@@ -1951,6 +1980,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 446978291688849587, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
+      propertyPath: kd_pitch_roll
+      value: 1.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 446978291688849587, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
+      propertyPath: kp_pitch_roll
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 2091706848622804635, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
       propertyPath: m_Name
       value: Drone
@@ -2018,7 +2055,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 2091706848622804635, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 903314866}
   m_SourcePrefab: {fileID: 100100000, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
