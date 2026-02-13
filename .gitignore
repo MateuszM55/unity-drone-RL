@@ -77,4 +77,5 @@ crashlytics-build.properties
 # ML-Agents Timers and Results
 /[Aa]ssets/ML-Agents/Timers/
 /[Aa]ssets/Plugins/ML-Agents/Timers/
-/results/
+**/Timers/*.json
+**/results/
