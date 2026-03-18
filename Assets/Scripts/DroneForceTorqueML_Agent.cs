@@ -40,14 +40,14 @@ public class DroneForceTorqueML_Agent : Agent
 {
     [Header("Physics Settings")]
     [SerializeField] private float mass = 1f;
-    [SerializeField] private float linearDrag = 2f;
-    [SerializeField] private float angularDrag = 8f;
+    [SerializeField] private float linearDrag = 0.05f;
+    [SerializeField] private float angularDrag = 0.05f;
 
     [Header("Force & Torque Limits")]
-    [SerializeField] private float maxThrust = 20f;
-    [SerializeField] private float maxPitchTorque = 5f;
-    [SerializeField] private float maxRollTorque = 5f;
-    [SerializeField] private float maxYawTorque = 3f;
+    [SerializeField] private float maxThrust = 40f;
+    [SerializeField] private float maxPitchTorque = 1.0f;
+    [SerializeField] private float maxRollTorque = 1.0f;
+    [SerializeField] private float maxYawTorque = 0.15f;
 
     [Header("Training")]
     [SerializeField] private Transform target;

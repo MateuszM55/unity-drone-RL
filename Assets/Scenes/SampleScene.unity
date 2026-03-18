@@ -2545,17 +2545,17 @@ MonoBehaviour:
   agentParameters:
     maxStep: 0
   hasUpgradedFromAgentParameters: 1
-  MaxStep: 221
+  MaxStep: 99999
   mass: 1
-  linearDrag: 2
-  angularDrag: 8
-  maxThrust: 20
-  maxPitchTorque: 5
-  maxRollTorque: 5
-  maxYawTorque: 3
-  target: {fileID: 1926224236}
-  spawnRadius: 5
-  maxEpisodeDistance: 20
+  linearDrag: 0.05
+  angularDrag: 0.05
+  maxThrust: 40
+  maxPitchTorque: 1
+  maxRollTorque: 1
+  maxYawTorque: 0.15
+  target: {fileID: 482935762}
+  spawnRadius: 0
+  maxEpisodeDistance: 200
   reachedTargetDistance: 1
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
