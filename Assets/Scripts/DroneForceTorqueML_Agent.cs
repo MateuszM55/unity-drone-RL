@@ -15,13 +15,22 @@ using UnityEngine.InputSystem;
 ///   Action 2 → Roll torque    (rotation around local Z-axis)
 ///   Action 3 → Throttle       (vertical lift force, remapped to [0, 1])
 ///
-/// OBSERVATION SPACE (18 floats):
-///   - Relative position to target    (3)
-///   - Drone velocity                 (3)
-///   - Drone angular velocity         (3)
-///   - Drone orientation (forward)    (3)
-///   - Drone orientation (up)         (3)
-///   - Drone orientation (right)      (3)
+/// OBSERVATION SPACE:
+///   Vector observations (18 floats):
+///     - Relative position to target    (3)
+///     - Drone velocity                 (3)
+///     - Drone angular velocity         (3)
+///     - Drone orientation (forward)    (3)
+///     - Drone orientation (up)         (3)
+///     - Drone orientation (right)      (3)
+///   Ray Perception Sensor (via RayPerceptionSensorComponent3D):
+///     - 3D ray casts measuring distance to nearby objects
+///
+/// REWARD FUNCTION:
+///   - Target reached:       +1.0  (terminal)
+///   - Distance reduction:   +0.002 per step (when drone moves closer to target)
+///   - Collision penalty:    -1.0  (terminal, obstacle or ground)
+///   - Time penalty:         -0.001 per step (encourage fast flight)
 ///
 /// PHYSICS MODEL:
 ///   - Thrust is applied along the drone's local Up axis (tilted drone = tilted thrust).
@@ -36,6 +45,7 @@ using UnityEngine.InputSystem;
 ///   lets the agent reason in a more intuitive force/torque space.
 /// </summary>
 [RequireComponent(typeof(Rigidbody))]
+[RequireComponent(typeof(RayPerceptionSensorComponent3D))]
 public class DroneForceTorqueML_Agent : Agent
 {
     [Header("Physics Settings")]
@@ -51,7 +61,6 @@ public class DroneForceTorqueML_Agent : Agent
 
     [Header("Training")]
     [SerializeField] private Transform target;
-    [SerializeField] private float spawnRadius = 5f;
     [SerializeField] private float maxEpisodeDistance = 20f;
     [SerializeField] private float reachedTargetDistance = 1f;
 
@@ -59,6 +68,7 @@ public class DroneForceTorqueML_Agent : Agent
     private Vector3 startPosition;
     private Quaternion startRotation;
     private Keyboard keyboard;
+    private float previousDistanceToTarget;
 
     public override void Initialize()
     {
@@ -84,6 +94,10 @@ public class DroneForceTorqueML_Agent : Agent
         // Reset drone to start position
         transform.localPosition = startPosition;
         transform.localRotation = startRotation;
+
+        // Initialize distance tracking for reward shaping
+        Vector3 targetPos = target != null ? target.localPosition : startPosition + Vector3.up * 3f;
+        previousDistanceToTarget = Vector3.Distance(startPosition, targetPos);
     }
 
     public override void CollectObservations(VectorSensor sensor)
@@ -130,16 +144,13 @@ public class DroneForceTorqueML_Agent : Agent
         Vector3 targetPos = target != null ? target.localPosition : startPosition + Vector3.up * 3f;
         float distanceToTarget = Vector3.Distance(transform.localPosition, targetPos);
 
-        // Small continuous reward for being close to the target
-        float proximityReward = 1f - Mathf.Clamp01(distanceToTarget / spawnRadius);
-        AddReward(0.01f * proximityReward);
+        // Reward for reducing distance to target (+0.002 per step)
+        if (distanceToTarget < previousDistanceToTarget)
+            AddReward(0.002f);
+        previousDistanceToTarget = distanceToTarget;
 
-        // Penalise excessive tilt (encourage upright flight)
-        float tiltPenalty = 1f - Vector3.Dot(transform.up, Vector3.up);
-        AddReward(-0.005f * tiltPenalty);
-
-        // Penalise excessive angular velocity (encourage smooth flight)
-        AddReward(-0.001f * rb.angularVelocity.magnitude);
+        // Time penalty (-0.001 per step to encourage fast flight)
+        AddReward(-0.001f);
 
         // Reached the target
         if (distanceToTarget < reachedTargetDistance)
@@ -148,12 +159,23 @@ public class DroneForceTorqueML_Agent : Agent
             EndEpisode();
         }
 
-        // Fell or flew too far away
-        if (transform.localPosition.y < -0.5f || distanceToTarget > maxEpisodeDistance)
+        // Flew too far away
+        if (distanceToTarget > maxEpisodeDistance)
         {
             SetReward(-1.0f);
             EndEpisode();
         }
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        // Ignore collision with the target (handled via distance check)
+        if (target != null && collision.transform == target)
+            return;
+
+        // Collision with obstacle or ground: -1.0 penalty
+        SetReward(-1.0f);
+        EndEpisode();
     }
 
     public override void Heuristic(in ActionBuffers actionsOut)
