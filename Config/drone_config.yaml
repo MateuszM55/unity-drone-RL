@@ -1,0 +1,50 @@
+behaviors:
+  FlyToTarget:
+    trainer_type: ppo
+    hyperparameters:
+      batch_size: 2048
+      buffer_size: 20480
+      learning_rate: 3.0e-4
+      beta: 5.0e-3
+      epsilon: 0.2
+      lambd: 0.95
+      num_epoch: 3
+      learning_rate_schedule: linear
+    network_settings:
+      normalize: true
+      hidden_units: 256
+      num_layers: 3
+    reward_signals:
+      extrinsic:
+        gamma: 0.99
+        strength: 1.0
+    max_steps: 10000000
+    time_horizon: 64
+    summary_freq: 10000
+
+environment_parameters:
+  target_spawn_distance:
+    curriculum:
+      - name: Lesson0_Stability
+        completion_criteria:
+          measure: reward
+          threshold: 0.8
+          min_lesson_length: 100
+        value: 3.0
+      - name: Lesson1_Navigation
+        completion_criteria:
+          measure: reward
+          threshold: 0.9
+          min_lesson_length: 100
+        value: 12.0
+      - name: Lesson2_FullRange
+        value: 20.0
+
+  precision_radius:
+    curriculum:
+      - name: Lesson0_Stability
+        value: 3.0
+      - name: Lesson1_Navigation
+        value: 1.5
+      - name: Lesson2_FullRange
+        value: 0.75

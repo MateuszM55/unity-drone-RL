@@ -95,9 +95,22 @@ public class DroneForceTorqueML_Agent : Agent
         transform.localPosition = startPosition;
         transform.localRotation = startRotation;
 
-        // Initialize distance tracking for reward shaping
+        // --- Curriculum Learning ---
+        var envParams = Academy.Instance.EnvironmentParameters;
+        float targetSpawnDistance = envParams.GetWithDefault("target_spawn_distance", maxEpisodeDistance);
+        reachedTargetDistance = envParams.GetWithDefault("precision_radius", reachedTargetDistance);
+
+        // Randomize target placement
+        if (target != null)
+        {
+            Vector3 randomOffset = Random.insideUnitSphere * targetSpawnDistance;
+            randomOffset.y = Mathf.Clamp(randomOffset.y, 2f, 10f);
+            target.localPosition = startPosition + randomOffset;
+        }
+
+        // Update distance tracking for reward shaping
         Vector3 targetPos = target != null ? target.localPosition : startPosition + Vector3.up * 3f;
-        previousDistanceToTarget = Vector3.Distance(startPosition, targetPos);
+        previousDistanceToTarget = Vector3.Distance(transform.localPosition, targetPos);
     }
 
     public override void CollectObservations(VectorSensor sensor)
