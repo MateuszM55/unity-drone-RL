@@ -28,8 +28,9 @@ using UnityEngine.InputSystem;
 ///
 /// REWARD FUNCTION:
 ///   - Target reached:       +1.0  (terminal)
-///   - Distance reduction:   +0.002 per step (when drone moves closer to target)
+///   - Velocity-alignment:   dot(velocity, directionToTarget) per step ("compass" shaping)
 ///   - Collision penalty:    -1.0  (terminal, obstacle or ground)
+///   - Tilt penalty:         -1.0  (terminal, drone up > maxTiltAngle from world up)
 ///   - Time penalty:         -0.001 per step (encourage fast flight)
 ///
 /// PHYSICS MODEL:
@@ -64,11 +65,15 @@ public class DroneForceTorqueML_Agent : Agent
     [SerializeField] private float maxEpisodeDistance = 20f;
     [SerializeField] private float reachedTargetDistance = 1f;
 
+    [Header("Safety / Termination")]
+    [Tooltip("Maximum tilt angle (degrees) from world up before the episode is terminated.")]
+    [SerializeField] private float maxTiltAngle = 60f;
+
     private Rigidbody rb;
     private Vector3 startPosition;
     private Quaternion startRotation;
     private Keyboard keyboard;
-    private float previousDistanceToTarget;
+    private float maxTiltDot;
 
     public override void Initialize()
     {
@@ -83,6 +88,7 @@ public class DroneForceTorqueML_Agent : Agent
         startPosition = transform.localPosition;
         startRotation = transform.localRotation;
         keyboard = Keyboard.current;
+        maxTiltDot = Mathf.Cos(maxTiltAngle * Mathf.Deg2Rad);
     }
 
     public override void OnEpisodeBegin()
@@ -107,10 +113,6 @@ public class DroneForceTorqueML_Agent : Agent
             randomOffset.y = Mathf.Clamp(randomOffset.y, 2f, 10f);
             target.localPosition = startPosition + randomOffset;
         }
-
-        // Update distance tracking for reward shaping
-        Vector3 targetPos = target != null ? target.localPosition : startPosition + Vector3.up * 3f;
-        previousDistanceToTarget = Vector3.Distance(transform.localPosition, targetPos);
     }
 
     public override void CollectObservations(VectorSensor sensor)
@@ -153,14 +155,25 @@ public class DroneForceTorqueML_Agent : Agent
         Vector3 localTorque = new Vector3(pitchTorque, yawTorque, rollTorque);
         rb.AddRelativeTorque(localTorque);
 
+        float tiltDot = Vector3.Dot(transform.up, Vector3.up);
+        if (tiltDot < maxTiltDot)
+        {
+            SetReward(-1.0f);
+            EndEpisode();
+            return;
+        }
+
         // --- Reward shaping ---
         Vector3 targetPos = target != null ? target.localPosition : startPosition + Vector3.up * 3f;
-        float distanceToTarget = Vector3.Distance(transform.localPosition, targetPos);
+        Vector3 toTarget = targetPos - transform.localPosition;
+        float distanceToTarget = toTarget.magnitude;
 
-        // Reward for reducing distance to target (+0.002 per step)
-        if (distanceToTarget < previousDistanceToTarget)
-            AddReward(0.002f);
-        previousDistanceToTarget = distanceToTarget;
+        if (distanceToTarget > 0.001f)
+        {
+            Vector3 directionToTarget = toTarget / distanceToTarget;
+            float alignmentReward = Vector3.Dot(rb.linearVelocity, directionToTarget);
+            AddReward(alignmentReward * 0.01f);
+        }
 
         // Time penalty (-0.001 per step to encourage fast flight)
         AddReward(-0.001f);
