@@ -23,8 +23,8 @@ using UnityEngine.InputSystem;
 ///     - Drone orientation (forward)    (3)
 ///     - Drone orientation (up)         (3)
 ///     - Drone orientation (right)      (3)
-///   Ray Perception Sensor (via RayPerceptionSensorComponent3D):
-///     - 3D ray casts measuring distance to nearby objects
+///   Fibonacci Sphere Sensor (via FibonacciSphereSensorComponent):
+///     - Omnidirectional 3D ray casts (Fibonacci Lattice) measuring distance to nearby objects
 ///
 /// REWARD FUNCTION:
 ///   - Target reached:       +1.0  (terminal)
@@ -45,7 +45,7 @@ using UnityEngine.InputSystem;
 ///   lets the agent reason in a more intuitive force/torque space.
 /// </summary>
 [RequireComponent(typeof(Rigidbody))]
-[RequireComponent(typeof(RayPerceptionSensorComponent3D))]
+[RequireComponent(typeof(FibonacciSphereSensorComponent))]
 public class DroneForceTorqueML_Agent : Agent
 {
     [Header("Physics Settings")]
