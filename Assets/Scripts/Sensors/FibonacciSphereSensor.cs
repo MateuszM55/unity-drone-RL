@@ -162,7 +162,7 @@ public sealed class FibonacciSphereSensor : ISensor, IDisposable
         for (int i = 0; i < m_RayCount; i++)
         {
             Vector3 worldDir = rotation * m_RayDirections[i];
-            m_RayCommands[i] = new RaycastCommand(origin, worldDir, m_RayLength, m_LayerMask);
+            m_RayCommands[i] = new RaycastCommand(origin, worldDir, new QueryParameters(m_LayerMask), m_RayLength);
         }
 
         // Schedule and complete the batch
