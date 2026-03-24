@@ -108,4 +108,33 @@ public static class DroneRewardHelper
     {
         return target != null ? target.localPosition : fallbackOrigin + Vector3.up * fallbackHeight;
     }
+
+    /// <summary>
+    /// Decomposes a world-space relative vector into a body-local unit direction
+    /// and a tanh-squashed scalar distance.
+    ///
+    /// Direction (3 floats): pure steering signal, always in [-1, 1].
+    /// Squashed distance (1 float): 0 = on target, ~1 = far away,
+    ///   controlled by <paramref name="distanceNorm"/>.
+    ///
+    /// <c>D_obs = tanh(‖V_local‖ / distanceNorm)</c>
+    /// </summary>
+    /// <param name="droneTransform">The drone's Transform (used for InverseTransformDirection).</param>
+    /// <param name="worldRelativeVector">World-space vector from drone to target.</param>
+    /// <param name="localDirection">Output: unit direction in body frame (zero if on target).</param>
+    /// <param name="squashedDistance">Output: tanh-compressed distance in [0, 1).</param>
+    /// <param name="distanceNorm">Normalisation constant — distance at which output ≈ 0.76.</param>
+    public static void DecomposeTargetVector(
+        Transform droneTransform,
+        Vector3 worldRelativeVector,
+        out Vector3 localDirection,
+        out float squashedDistance,
+        float distanceNorm = 10f)
+    {
+        Vector3 localVector = droneTransform.InverseTransformDirection(worldRelativeVector);
+        float distance = localVector.magnitude;
+
+        localDirection = distance > 0.001f ? localVector / distance : Vector3.zero;
+        squashedDistance = (float)System.Math.Tanh(distance / distanceNorm);
+    }
 }

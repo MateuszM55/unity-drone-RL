@@ -16,13 +16,14 @@ using UnityEngine.InputSystem;
 ///   Action 3 → Throttle       (vertical lift force, remapped to [0, 1])
 ///
 /// OBSERVATION SPACE:
-///   Vector observations (18 floats — body-local frame where applicable):
-///     - Relative direction to target (local)  (3)
+///   Vector observations (16 floats — body-local frame where applicable):
+///     - Local unit direction to target        (3)  direction only, always [-1,1]
+///     - Squashed distance to target           (1)  tanh(d/10), always [0,1)
 ///     - Drone velocity (local)                (3)
 ///     - Drone angular velocity (local)        (3)
-///     - Drone orientation (forward)           (3)
-///     - Drone orientation (up)                (3)
-///     - Drone orientation (right)             (3)
+///     - Drone orientation (forward)           (3)  world-frame attitude
+///     - Drone orientation (up)                (3)  world-frame attitude
+///     (right = cross(forward, up) — omitted, linearly dependent)
 ///   Fibonacci Sphere Sensor (via FibonacciSphereSensorComponent):
 ///     - Omnidirectional 3D ray casts (Fibonacci Lattice) measuring distance to nearby objects
 ///
@@ -119,8 +120,12 @@ public class DroneForceTorqueML_Agent : Agent
     {
         Vector3 targetPos = target != null ? target.localPosition : startPosition + Vector3.up * 3f;
 
-        // Relative direction to target in body frame (3)
-        sensor.AddObservation(transform.InverseTransformDirection(targetPos - transform.localPosition));
+        // Decompose target vector → local unit direction (3) + squashed distance (1)
+        DroneRewardHelper.DecomposeTargetVector(
+            transform, targetPos - transform.localPosition,
+            out Vector3 localDir, out float squashedDist);
+        sensor.AddObservation(localDir);
+        sensor.AddObservation(squashedDist);
 
         // Velocity in body frame (3) — matches real IMU output
         sensor.AddObservation(transform.InverseTransformDirection(rb.linearVelocity));
@@ -128,10 +133,10 @@ public class DroneForceTorqueML_Agent : Agent
         // Angular velocity in body frame (3) — matches real gyroscope output
         sensor.AddObservation(transform.InverseTransformDirection(rb.angularVelocity));
 
-        // Orientation axes (9) — world-frame attitude for gravity awareness
+        // Orientation axes (6) — world-frame attitude for gravity awareness
+        // (right omitted: right = cross(forward, up), linearly dependent)
         sensor.AddObservation(transform.forward);
         sensor.AddObservation(transform.up);
-        sensor.AddObservation(transform.right);
     }
 
     public override void OnActionReceived(ActionBuffers actions)
