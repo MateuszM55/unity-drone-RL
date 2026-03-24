@@ -112,34 +112,25 @@ public class DroneSimpleML_Agent : Agent
             rb.AddForceAtPosition(forceVector, rotorTransforms[i].position);
         }
 
-        // --- Reward shaping ---
-        Vector3 targetPos = target != null ? target.localPosition : startPosition + Vector3.up * 3f;
+        // --- Reward shaping (via shared helper) ---
+        Vector3 targetPos = DroneRewardHelper.ResolveTargetPosition(target, startPosition);
         float distanceToTarget = Vector3.Distance(transform.localPosition, targetPos);
 
-        // Small continuous reward for being close to the target
-        float proximityReward = 1f - Mathf.Clamp01(distanceToTarget / spawnRadius);
-        AddReward(0.01f * proximityReward);
+        AddReward(DroneRewardHelper.ProximityReward(distanceToTarget, spawnRadius));
+        AddReward(DroneRewardHelper.TiltPenalty(transform.up));
+        AddReward(DroneRewardHelper.AngularVelocityPenalty(rb.angularVelocity.magnitude));
 
-        // Penalise excessive tilt (encourage upright flight)
-        float tiltPenalty = 1f - Vector3.Dot(transform.up, Vector3.up);
-        AddReward(-0.005f * tiltPenalty);
+        // Terminal: reached the target
+        var reached = DroneRewardHelper.CheckTargetReached(distanceToTarget, reachedTargetDistance);
+        if (reached.IsTerminal) { SetReward(reached.Reward); EndEpisode(); return; }
 
-        // Penalise excessive angular velocity (encourage smooth flight)
-        AddReward(-0.001f * rb.angularVelocity.magnitude);
+        // Terminal: fell below ground
+        var fallen = DroneRewardHelper.CheckFallen(transform.localPosition.y);
+        if (fallen.IsTerminal) { SetReward(fallen.Reward); EndEpisode(); return; }
 
-        // Reached the target
-        if (distanceToTarget < reachedTargetDistance)
-        {
-            SetReward(1.0f);
-            EndEpisode();
-        }
-
-        // Fell or flew too far away
-        if (transform.localPosition.y < -0.5f || distanceToTarget > maxEpisodeDistance)
-        {
-            SetReward(-1.0f);
-            EndEpisode();
-        }
+        // Terminal: flew too far away
+        var tooFar = DroneRewardHelper.CheckTooFar(distanceToTarget, maxEpisodeDistance);
+        if (tooFar.IsTerminal) { SetReward(tooFar.Reward); EndEpisode(); return; }
     }
 
     public override void Heuristic(in ActionBuffers actionsOut)
