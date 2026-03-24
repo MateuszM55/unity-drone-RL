@@ -80,7 +80,10 @@ public static class DroneRewardHelper
         return -scale * angularVelocityMagnitude;
     }
 
-    /// <summary>Reward proportional to how well the drone's velocity aligns with the direction to target.</summary>
+    /// <summary>
+    /// Reward proportional to how well the drone's velocity aligns with the direction to target.
+    /// Both vectors must be expressed in the same coordinate frame (world or local).
+    /// </summary>
     public static float VelocityAlignmentReward(Vector3 velocity, Vector3 toTarget, float scale = 0.01f)
     {
         float distance = toTarget.magnitude;

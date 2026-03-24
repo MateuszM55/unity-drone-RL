@@ -14,13 +14,13 @@ using UnityEngine.InputSystem;
 ///   Action 2 → Motor RL thrust
 ///   Action 3 → Motor RR thrust
 ///
-/// OBSERVATION SPACE (18 floats):
-///   - Relative position to target    (3)
-///   - Drone velocity                 (3)
-///   - Drone angular velocity         (3)
-///   - Drone orientation (forward)    (3)
-///   - Drone orientation (up)         (3)
-///   - Drone orientation (right)      (3)
+/// OBSERVATION SPACE (18 floats — body-local frame where applicable):
+///   - Relative direction to target (local)  (3)
+///   - Drone velocity (local)                (3)
+///   - Drone angular velocity (local)        (3)
+///   - Drone orientation (forward)           (3)
+///   - Drone orientation (up)                (3)
+///   - Drone orientation (right)             (3)
 ///
 /// The drone model is generated via <see cref="DroneGenerator"/>.
 /// Rotor transforms are populated automatically by the generator.
@@ -82,16 +82,16 @@ public class DroneSimpleML_Agent : Agent
     {
         Vector3 targetPos = target != null ? target.localPosition : startPosition + Vector3.up * 3f;
 
-        // Relative position to target (3)
-        sensor.AddObservation(targetPos - transform.localPosition);
+        // Relative direction to target in body frame (3)
+        sensor.AddObservation(transform.InverseTransformDirection(targetPos - transform.localPosition));
 
-        // Velocity (3)
-        sensor.AddObservation(rb.linearVelocity);
+        // Velocity in body frame (3) — matches real IMU output
+        sensor.AddObservation(transform.InverseTransformDirection(rb.linearVelocity));
 
-        // Angular velocity (3)
-        sensor.AddObservation(rb.angularVelocity);
+        // Angular velocity in body frame (3) — matches real gyroscope output
+        sensor.AddObservation(transform.InverseTransformDirection(rb.angularVelocity));
 
-        // Orientation axes (9) — lets the agent understand its attitude
+        // Orientation axes (9) — world-frame attitude for gravity awareness
         sensor.AddObservation(transform.forward);
         sensor.AddObservation(transform.up);
         sensor.AddObservation(transform.right);
