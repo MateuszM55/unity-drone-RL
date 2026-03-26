@@ -25,6 +25,7 @@ public class DroneGenerator : MonoBehaviour
         // Create Body
         GameObject body = GameObject.CreatePrimitive(PrimitiveType.Cube);
         body.name = "Body";
+        body.layer = LayerMask.NameToLayer("Ignore Raycast");
         body.transform.parent = transform;
         body.transform.localPosition = Vector3.zero;
         body.transform.localScale = bodySize;
@@ -81,6 +82,7 @@ public class DroneGenerator : MonoBehaviour
     {
         GameObject rotor = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
         rotor.name = name;
+        rotor.layer = LayerMask.NameToLayer("Ignore Raycast");
         rotor.transform.parent = transform;
         rotor.transform.localPosition = localPos;
         rotor.transform.localScale = new Vector3(rotorRadius * 2, rotorHeight, rotorRadius * 2);

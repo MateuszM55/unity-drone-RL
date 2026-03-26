@@ -153,6 +153,7 @@ MonoBehaviour:
   m_DetectableTags:
   - Obstacle
   - Ground
+  - Target
   m_ObservationStacks: 1
   m_RayHitColor: {r: 1, g: 0, b: 0, a: 1}
   m_RayMissColor: {r: 0, g: 1, b: 0, a: 1}
