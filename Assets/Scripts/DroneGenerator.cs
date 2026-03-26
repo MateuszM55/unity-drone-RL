@@ -85,7 +85,9 @@ public class DroneGenerator : MonoBehaviour
         rotor.transform.localPosition = localPos;
         rotor.transform.localScale = new Vector3(rotorRadius * 2, rotorHeight, rotorRadius * 2);
 
+        // Replace the default CapsuleCollider with a BoxCollider that matches the rotor disc
         DestroyImmediate(rotor.GetComponent<Collider>());
+        rotor.AddComponent<BoxCollider>();
 
         // Apply rotor color safely
         if (rotor.TryGetComponent<Renderer>(out var r))
