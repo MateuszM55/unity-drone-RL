@@ -11,7 +11,7 @@ using UnityEngine.InputSystem;
 /// ACTION SPACE (4 Continuous Actions in [-1, 1]):
 ///   Action 0 → Motor FL thrust
 ///   Action 1 → Motor FR thrust
-///   Action 2 → Motor RL thrust
+///   Action 2 → Motor RL thrustRea
 ///   Action 3 → Motor RR thrust
 ///
 /// OBSERVATION SPACE (16 floats — body-local frame where applicable):
@@ -144,6 +144,17 @@ public class DroneSimpleML_Agent : Agent
         // Terminal: flew too far away
         var tooFar = DroneRewardHelper.CheckTooFar(distanceToTarget, maxEpisodeDistance);
         if (tooFar.IsTerminal) { SetReward(tooFar.Reward); EndEpisode(); return; }
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        // Ignore collision with the target (handled via distance check)
+        if (target != null && collision.transform == target)
+            return;
+
+        // Collision with obstacle or ground: -1.0 penalty
+        SetReward(-1.0f);
+        EndEpisode();
     }
 
     public override void Heuristic(in ActionBuffers actionsOut)
