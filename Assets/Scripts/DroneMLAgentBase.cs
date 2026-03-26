@@ -40,7 +40,12 @@ public abstract class DroneMLAgentBase : Agent
     [Header("Training")]
     [SerializeField] protected Transform target;
     [SerializeField] protected float maxEpisodeDistance = 20f;
-    [SerializeField] protected float reachedTargetDistance = 1f;
+
+    [Header("Touchdown")]
+    [Tooltip("Seconds to wait after landing on the target before ending the episode.")]
+    [SerializeField] protected float touchdownDelay = 1f;
+    [Tooltip("Reference speed (m/s) at which the landing reward halves. Lower = stricter.")]
+    [SerializeField] protected float maxSafeTouchdownSpeed = 2f;
 
     [Header("Safety / Termination")]
     [Tooltip("Maximum tilt angle (degrees) from world up before the episode is terminated.")]
@@ -51,6 +56,8 @@ public abstract class DroneMLAgentBase : Agent
     protected Quaternion startRotation;
     protected Keyboard keyboard;
     protected float maxTiltDot;
+    protected bool hasLanded;
+    protected float touchdownTimer;
 
     public override void Initialize()
     {
@@ -73,6 +80,10 @@ public abstract class DroneMLAgentBase : Agent
         // Reset drone physics
         rb.linearVelocity = Vector3.zero;
         rb.angularVelocity = Vector3.zero;
+
+        // Reset touchdown state
+        hasLanded = false;
+        touchdownTimer = 0f;
 
         // Reset drone to start position
         transform.localPosition = startPosition;
@@ -104,6 +115,17 @@ public abstract class DroneMLAgentBase : Agent
 
     protected virtual void FixedUpdate()
     {
+        // --- Touchdown countdown ---
+        if (hasLanded)
+        {
+            touchdownTimer -= Time.fixedDeltaTime;
+            if (touchdownTimer <= 0f)
+            {
+                EndEpisode();
+                return;
+            }
+        }
+
         // --- Quadratic linear drag: F_d = -½ · ρ · Cd · A · |v| · v ---
         Vector3 velocity = rb.linearVelocity;
         float speed = velocity.magnitude;
@@ -126,9 +148,18 @@ public abstract class DroneMLAgentBase : Agent
 
     protected virtual void OnCollisionEnter(Collision collision)
     {
-        // Ignore collision with the target (handled via distance check)
+        // Landing on the target: reward inversely proportional to touchdown speed
         if (target != null && collision.transform == target)
+        {
+            if (!hasLanded)
+            {
+                hasLanded = true;
+                touchdownTimer = touchdownDelay;
+                float speed = rb.linearVelocity.magnitude;
+                AddReward(DroneRewardHelper.TouchdownReward(speed, maxSafeTouchdownSpeed));
+            }
             return;
+        }
 
         // Collision with obstacle or ground: -1.0 penalty
         SetReward(-1.0f);

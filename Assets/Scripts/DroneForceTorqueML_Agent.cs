@@ -18,11 +18,12 @@ using UnityEngine;
 ///   - Omnidirectional 3D ray casts (Fibonacci Lattice) measuring distance to nearby objects
 ///
 /// REWARD FUNCTION:
-///   - Target reached:       +1.0  (terminal)
+///   - Touchdown reward:    1/(1+speed/maxSafe) on target collision (soft landing = high reward)
 ///   - Velocity-alignment:   dot(velocity, directionToTarget) per step ("compass" shaping)
 ///   - Collision penalty:    -1.0  (terminal, obstacle or ground)
 ///   - Tilt penalty:         -1.0  (terminal, drone up > maxTiltAngle from world up)
 ///   - Time penalty:         -0.001 per step (encourage fast flight)
+///   - Episode ends 1 s after touchdown
 ///
 /// PHYSICS MODEL:
 ///   - Thrust is applied along the drone's local Up axis (tilted drone = tilted thrust).
@@ -52,7 +53,6 @@ public class DroneForceTorqueML_Agent : DroneMLAgentBase
         // --- Curriculum Learning ---
         var envParams = Academy.Instance.EnvironmentParameters;
         float targetSpawnDistance = envParams.GetWithDefault("target_spawn_distance", maxEpisodeDistance);
-        reachedTargetDistance = envParams.GetWithDefault("precision_radius", reachedTargetDistance);
 
         // Randomize target placement
         if (target != null)
@@ -95,10 +95,6 @@ public class DroneForceTorqueML_Agent : DroneMLAgentBase
 
         AddReward(DroneRewardHelper.VelocityAlignmentReward(rb.linearVelocity, toTarget));
         AddReward(DroneRewardHelper.TimePenalty());
-
-        // Terminal: reached the target
-        var reached = DroneRewardHelper.CheckTargetReached(distanceToTarget, reachedTargetDistance);
-        if (reached.IsTerminal) { SetReward(reached.Reward); EndEpisode(); return; }
 
         // Terminal: flew too far away
         var tooFar = DroneRewardHelper.CheckTooFar(distanceToTarget, maxEpisodeDistance);

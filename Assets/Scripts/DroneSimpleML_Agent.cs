@@ -49,10 +49,6 @@ public class DroneSimpleML_Agent : DroneMLAgentBase
         AddReward(DroneRewardHelper.TiltPenalty(transform.up));
         AddReward(DroneRewardHelper.AngularVelocityPenalty(rb.angularVelocity.magnitude));
 
-        // Terminal: reached the target
-        var reached = DroneRewardHelper.CheckTargetReached(distanceToTarget, reachedTargetDistance);
-        if (reached.IsTerminal) { SetReward(reached.Reward); EndEpisode(); return; }
-
         // Terminal: fell below ground
         var fallen = DroneRewardHelper.CheckFallen(transform.localPosition.y);
         if (fallen.IsTerminal) { SetReward(fallen.Reward); EndEpisode(); return; }
