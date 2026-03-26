@@ -1,8 +1,6 @@
 using Unity.MLAgents;
-using Unity.MLAgents.Sensors;
 using Unity.MLAgents.Actuators;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 /// <summary>
 /// Force & Torque ML-Agent — "Acro Mode" reinforcement learning controller.
@@ -15,17 +13,9 @@ using UnityEngine.InputSystem;
 ///   Action 2 → Roll torque    (rotation around local Z-axis)
 ///   Action 3 → Throttle       (vertical lift force, remapped to [0, 1])
 ///
-/// OBSERVATION SPACE:
-///   Vector observations (16 floats — body-local frame where applicable):
-///     - Local unit direction to target        (3)  direction only, always [-1,1]
-///     - Squashed distance to target           (1)  tanh(d/10), always [0,1)
-///     - Drone velocity (local)                (3)
-///     - Drone angular velocity (local)        (3)
-///     - Drone orientation (forward)           (3)  world-frame attitude
-///     - Drone orientation (up)                (3)  world-frame attitude
-///     (right = cross(forward, up) — omitted, linearly dependent)
-///   Fibonacci Sphere Sensor (via FibonacciSphereSensorComponent):
-///     - Omnidirectional 3D ray casts (Fibonacci Lattice) measuring distance to nearby objects
+/// Additional observations from Fibonacci Sphere Sensor
+/// (via <see cref="FibonacciSphereSensorComponent"/>):
+///   - Omnidirectional 3D ray casts (Fibonacci Lattice) measuring distance to nearby objects
 ///
 /// REWARD FUNCTION:
 ///   - Target reached:       +1.0  (terminal)
@@ -46,61 +36,18 @@ using UnityEngine.InputSystem;
 ///   and the physics engine applies them. This removes the motor-mixing stage and
 ///   lets the agent reason in a more intuitive force/torque space.
 /// </summary>
-[RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(FibonacciSphereSensorComponent))]
-public class DroneForceTorqueML_Agent : Agent
+public class DroneForceTorqueML_Agent : DroneMLAgentBase
 {
-    [Header("Physics Settings")]
-    [SerializeField] private float mass = 1f;
-    [SerializeField] private float linearDrag = 0.05f;
-    [SerializeField] private float angularDrag = 0.05f;
-
     [Header("Force & Torque Limits")]
     [SerializeField] private float maxThrust = 40f;
     [SerializeField] private float maxPitchTorque = 1.0f;
     [SerializeField] private float maxRollTorque = 1.0f;
     [SerializeField] private float maxYawTorque = 0.15f;
 
-    [Header("Training")]
-    [SerializeField] private Transform target;
-    [SerializeField] private float maxEpisodeDistance = 20f;
-    [SerializeField] private float reachedTargetDistance = 1f;
-
-    [Header("Safety / Termination")]
-    [Tooltip("Maximum tilt angle (degrees) from world up before the episode is terminated.")]
-    [SerializeField] private float maxTiltAngle = 60f;
-
-    private Rigidbody rb;
-    private Vector3 startPosition;
-    private Quaternion startRotation;
-    private Keyboard keyboard;
-    private float maxTiltDot;
-
-    public override void Initialize()
-    {
-        rb = GetComponent<Rigidbody>();
-        rb.mass = mass;
-        rb.linearDamping = linearDrag;
-        rb.angularDamping = angularDrag;
-        rb.useGravity = true;
-        rb.centerOfMass = Vector3.zero;
-        rb.interpolation = RigidbodyInterpolation.Interpolate;
-
-        startPosition = transform.localPosition;
-        startRotation = transform.localRotation;
-        keyboard = Keyboard.current;
-        maxTiltDot = Mathf.Cos(maxTiltAngle * Mathf.Deg2Rad);
-    }
-
     public override void OnEpisodeBegin()
     {
-        // Reset drone physics
-        rb.linearVelocity = Vector3.zero;
-        rb.angularVelocity = Vector3.zero;
-
-        // Reset drone to start position
-        transform.localPosition = startPosition;
-        transform.localRotation = startRotation;
+        base.OnEpisodeBegin();
 
         // --- Curriculum Learning ---
         var envParams = Academy.Instance.EnvironmentParameters;
@@ -114,29 +61,6 @@ public class DroneForceTorqueML_Agent : Agent
             randomOffset.y = Mathf.Clamp(randomOffset.y, 2f, 10f);
             target.localPosition = startPosition + randomOffset;
         }
-    }
-
-    public override void CollectObservations(VectorSensor sensor)
-    {
-        Vector3 targetPos = target != null ? target.localPosition : startPosition + Vector3.up * 3f;
-
-        // Decompose target vector → local unit direction (3) + squashed distance (1)
-        DroneRewardHelper.DecomposeTargetVector(
-            transform, targetPos - transform.localPosition,
-            out Vector3 localDir, out float squashedDist);
-        sensor.AddObservation(localDir);
-        sensor.AddObservation(squashedDist);
-
-        // Velocity in body frame (3) — matches real IMU output
-        sensor.AddObservation(transform.InverseTransformDirection(rb.linearVelocity));
-
-        // Angular velocity in body frame (3) — matches real gyroscope output
-        sensor.AddObservation(transform.InverseTransformDirection(rb.angularVelocity));
-
-        // Orientation axes (6) — world-frame attitude for gravity awareness
-        // (right omitted: right = cross(forward, up), linearly dependent)
-        sensor.AddObservation(transform.forward);
-        sensor.AddObservation(transform.up);
     }
 
     public override void OnActionReceived(ActionBuffers actions)
@@ -179,17 +103,6 @@ public class DroneForceTorqueML_Agent : Agent
         // Terminal: flew too far away
         var tooFar = DroneRewardHelper.CheckTooFar(distanceToTarget, maxEpisodeDistance);
         if (tooFar.IsTerminal) { SetReward(tooFar.Reward); EndEpisode(); return; }
-    }
-
-    private void OnCollisionEnter(Collision collision)
-    {
-        // Ignore collision with the target (handled via distance check)
-        if (target != null && collision.transform == target)
-            return;
-
-        // Collision with obstacle or ground: -1.0 penalty
-        SetReward(-1.0f);
-        EndEpisode();
     }
 
     public override void Heuristic(in ActionBuffers actionsOut)
