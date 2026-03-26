@@ -72,11 +72,24 @@ public static class DroneRewardHelper
 
     // ───────────────────────── Continuous Shaping ──────────────────────────
 
-    /// <summary>Reward that increases as the drone gets closer to the target (0 at maxDistance, scale at 0).</summary>
-    public static float ProximityReward(float distanceToTarget, float maxDistance, float scale = 0.01f)
+    /// <summary>
+    /// Reward that increases as the drone covers more of the distance to the target.
+    /// Returns <c>scale * fractionMet</c> where <c>fractionMet = 1 − clamp(distance / maxDistance)</c>.
+    /// At the target the fraction is 1; at or beyond <paramref name="maxDistance"/> it is 0.
+    /// </summary>
+    /// <param name="dronePosition">Current world/local position of the drone.</param>
+    /// <param name="targetPosition">Position of the target.</param>
+    /// <param name="startPosition">Position the drone started from (used as the reference distance).</param>
+    /// <param name="scale">Multiplier applied to the fraction (default 0.01).</param>
+    public static float ProximityReward(Vector3 dronePosition, Vector3 targetPosition, Vector3 startPosition, float scale = 0.01f)
     {
-        float proximity = 1f - Mathf.Clamp01(distanceToTarget / maxDistance);
-        return scale * proximity;
+        float maxDistance = Vector3.Distance(startPosition, targetPosition);
+        if (maxDistance < 0.001f)
+            return scale;
+
+        float distanceToTarget = Vector3.Distance(dronePosition, targetPosition);
+        float fractionMet = 1f - Mathf.Clamp01(distanceToTarget / maxDistance);
+        return scale * fractionMet;
     }
 
     /// <summary>Penalty proportional to how far the drone's up axis deviates from world up.</summary>

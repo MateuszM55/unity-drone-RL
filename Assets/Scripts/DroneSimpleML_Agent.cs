@@ -46,6 +46,7 @@ public class DroneSimpleML_Agent : DroneMLAgentBase
         Vector3 targetPos = DroneRewardHelper.ResolveTargetPosition(target, startPosition);
         float distanceToTarget = Vector3.Distance(transform.localPosition, targetPos);
 
+        AddReward(DroneRewardHelper.ProximityReward(transform.localPosition, targetPos, startPosition));
         AddReward(DroneRewardHelper.TiltPenalty(transform.up));
         AddReward(DroneRewardHelper.AngularVelocityPenalty(rb.angularVelocity.magnitude));
 
