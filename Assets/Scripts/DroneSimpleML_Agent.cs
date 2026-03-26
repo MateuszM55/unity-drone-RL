@@ -44,14 +44,18 @@ public class DroneSimpleML_Agent : Agent
 
     [Header("Training")]
     [SerializeField] private Transform target;
-    [SerializeField] private float spawnRadius = 5f;
     [SerializeField] private float maxEpisodeDistance = 20f;
     [SerializeField] private float reachedTargetDistance = 1f;
+
+    [Header("Safety / Termination")]
+    [Tooltip("Maximum tilt angle (degrees) from world up before the episode is terminated.")]
+    [SerializeField] private float maxTiltAngle = 60f;
 
     private Rigidbody rb;
     private Vector3 startPosition;
     private Quaternion startRotation;
     private Keyboard keyboard;
+    private float maxTiltDot;
 
     public override void Initialize()
     {
@@ -66,6 +70,7 @@ public class DroneSimpleML_Agent : Agent
         startPosition = transform.localPosition;
         startRotation = transform.localRotation;
         keyboard = Keyboard.current;
+        maxTiltDot = Mathf.Cos(maxTiltAngle * Mathf.Deg2Rad);
     }
 
     public override void OnEpisodeBegin()
@@ -117,11 +122,14 @@ public class DroneSimpleML_Agent : Agent
             rb.AddForceAtPosition(forceVector, rotorTransforms[i].position);
         }
 
+        // Terminal: excessive tilt
+        var tilt = DroneRewardHelper.CheckExcessiveTilt(transform.up, maxTiltDot);
+        if (tilt.IsTerminal) { SetReward(tilt.Reward); EndEpisode(); return; }
+
         // --- Reward shaping (via shared helper) ---
         Vector3 targetPos = DroneRewardHelper.ResolveTargetPosition(target, startPosition);
         float distanceToTarget = Vector3.Distance(transform.localPosition, targetPos);
 
-        AddReward(DroneRewardHelper.ProximityReward(distanceToTarget, spawnRadius));
         AddReward(DroneRewardHelper.TiltPenalty(transform.up));
         AddReward(DroneRewardHelper.AngularVelocityPenalty(rb.angularVelocity.magnitude));
 
