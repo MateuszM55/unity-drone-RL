@@ -21,6 +21,14 @@ using UnityEngine.InputSystem;
 ///
 /// The drone model is generated via <see cref="DroneGenerator"/>.
 /// </summary>
+public enum Lesson
+{
+    /// <summary>Drone spawns directly above the target — focus on hovering and landing.</summary>
+    Landing = 0,
+    /// <summary>Drone spawns at a random point on a circle around the target — focus on navigation.</summary>
+    Navigation = 1
+}
+
 [RequireComponent(typeof(Rigidbody))]
 public abstract class DroneMLAgentBase : Agent
 {
@@ -46,6 +54,12 @@ public abstract class DroneMLAgentBase : Agent
     [SerializeField] protected float touchdownDelay = 1f;
     [Tooltip("Reference speed (m/s) at which the landing reward halves. Lower = stricter.")]
     [SerializeField] protected float maxSafeTouchdownSpeed = 2f;
+
+    [Header("Spawn / Curriculum")]
+    [Tooltip("Height above the target at which the drone spawns.")]
+    [SerializeField] protected float spawnHeight = 3f;
+    [Tooltip("Default Navigation spawn distance (overridden by the 'target_spawn_distance' environment parameter).")]
+    [SerializeField] protected float defaultSpawnDistance = 5f;
 
     [Header("Safety / Termination")]
     [Tooltip("Maximum tilt angle (degrees) from world up before the episode is terminated.")]
@@ -85,8 +99,32 @@ public abstract class DroneMLAgentBase : Agent
         hasLanded = false;
         touchdownTimer = 0f;
 
-        // Reset drone to start position
-        transform.localPosition = startPosition;
+        // Read curriculum parameters
+        var envParams = Academy.Instance.EnvironmentParameters;
+        Lesson lesson = (Lesson)(int)envParams.GetWithDefault("lesson", 0f);
+        float spawnDistance = envParams.GetWithDefault("target_spawn_distance", defaultSpawnDistance);
+
+        Vector3 targetPos = target != null ? target.localPosition : startPosition;
+
+        switch (lesson)
+        {
+            case Lesson.Landing:
+                // Start directly above the target
+                transform.localPosition = targetPos + Vector3.up * spawnHeight;
+                break;
+
+            case Lesson.Navigation:
+                // Start at a random point on a circle around the target
+                float angle = Random.Range(0f, 2f * Mathf.PI);
+                Vector3 offset = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * spawnDistance;
+                transform.localPosition = targetPos + offset + Vector3.up * spawnHeight;
+                break;
+
+            default:
+                transform.localPosition = startPosition;
+                break;
+        }
+
         transform.localRotation = startRotation;
     }
 

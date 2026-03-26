@@ -2750,6 +2750,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 119988723}
     - target: {fileID: 296110008661442355, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
+      propertyPath: spawnHeight
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 296110008661442355, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
       propertyPath: maxThrustPerMotor
       value: 5
       objectReference: {fileID: 0}
@@ -2799,7 +2803,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8785747301878209782, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 6.37
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 8785747301878209782, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
       propertyPath: m_LocalPosition.z

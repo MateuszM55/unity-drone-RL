@@ -21,3 +21,43 @@ behaviors:
     max_steps: 10000000
     time_horizon: 256
     summary_freq: 10000
+
+
+environment_parameters:
+  lesson:
+    curriculum:
+      - name: Lesson0_Landing
+        completion_criteria:
+          measure: reward
+          behavior: FlyToTarget
+          threshold: 1.5
+          min_lesson_length: 100
+        value: 0.0
+      - name: Lesson1_Navigation
+        completion_criteria:
+          measure: reward
+          behavior: FlyToTarget
+          threshold: 1.5
+          min_lesson_length: 100
+        value: 1.0
+      - name: Lesson2_FarNavigation
+        value: 1.0
+
+  target_spawn_distance:
+    curriculum:
+      - name: Lesson0_Landing
+        completion_criteria:
+          measure: reward
+          behavior: FlyToTarget
+          threshold: 1.5
+          min_lesson_length: 100
+        value: 3.0
+      - name: Lesson1_Navigation
+        completion_criteria:
+          measure: reward
+          behavior: FlyToTarget
+          threshold: 1.5
+          min_lesson_length: 100
+        value: 5.0
+      - name: Lesson2_FarNavigation
+        value: 15.0
