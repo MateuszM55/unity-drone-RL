@@ -11,7 +11,9 @@ public enum Lesson
     /// <summary>Drone spawns at a random point on a larger circle — longer-range navigation.</summary>
     FarNavigation = 2,
     /// <summary>Drone spawns far away with random obstacles placed between it and the target.</summary>
-    Obstacles = 3
+    Obstacles = 3,
+    /// <summary>Drone spawns at an even greater distance with more, widely-spaced obstacles.</summary>
+    FarObstacles = 4
 }
 
 /// <summary>
@@ -40,6 +42,18 @@ public class DroneCurriculumManager : MonoBehaviour
     [SerializeField] private float navigationSpawnDistance = 5f;
     [Tooltip("Spawn distance for the FarNavigation lesson.")]
     [SerializeField] private float farNavigationSpawnDistance = 15f;
+
+    [Header("FarObstacles Lesson")]
+    [Tooltip("Spawn distance for the FarObstacles lesson.")]
+    [SerializeField] private float farObstaclesSpawnDistance = 30f;
+    [Tooltip("Max distance from target before episode ends (FarObstacles lesson).")]
+    [SerializeField] private float farObstaclesMaxEpisodeDistance = 40f;
+    [Tooltip("Number of trees to spawn in the FarObstacles lesson.")]
+    [SerializeField] private int farObstaclesTreeCount = 15;
+    [Tooltip("Spawn radius for obstacles in the FarObstacles lesson.")]
+    [SerializeField] private float farObstaclesSpawnRadius = 25f;
+    [Tooltip("Minimum separation between obstacles in the FarObstacles lesson.")]
+    [SerializeField] private float farObstaclesMinSeparation = 10f;
 
     private PoissonObstacleGenerator obstacleGenerator;
 
@@ -77,9 +91,13 @@ public class DroneCurriculumManager : MonoBehaviour
             .GetWithDefault("lesson", 0f);
 
         // Adjust max episode distance per lesson
-        float maxEpisodeDistance = CurrentLesson == Lesson.FarNavigation || CurrentLesson == Lesson.Obstacles
-            ? farMaxEpisodeDistance
-            : nearMaxEpisodeDistance;
+        float maxEpisodeDistance;
+        if (CurrentLesson == Lesson.FarObstacles)
+            maxEpisodeDistance = farObstaclesMaxEpisodeDistance;
+        else if (CurrentLesson == Lesson.FarNavigation || CurrentLesson == Lesson.Obstacles)
+            maxEpisodeDistance = farMaxEpisodeDistance;
+        else
+            maxEpisodeDistance = nearMaxEpisodeDistance;
 
         Vector3 targetPos = target != null ? target.localPosition : startPosition;
 
@@ -117,6 +135,19 @@ public class DroneCurriculumManager : MonoBehaviour
 
                 // Spawn random obstacles inside the max-distance circle
                 obstacleGenerator.Generate(targetPos);
+                break;
+            }
+
+            case Lesson.FarObstacles:
+            {
+                // Start at an even greater distance with denser obstacle field
+                float angle = Random.Range(0f, 2f * Mathf.PI);
+                Vector3 offset = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * farObstaclesSpawnDistance;
+                drone.localPosition = targetPos + offset + Vector3.up * spawnHeight;
+
+                // Spawn more obstacles with wider spread and separation
+                obstacleGenerator.Generate(targetPos, farObstaclesTreeCount,
+                    farObstaclesSpawnRadius, farObstaclesMinSeparation);
                 break;
             }
 

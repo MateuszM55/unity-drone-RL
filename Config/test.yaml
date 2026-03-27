@@ -48,4 +48,11 @@ environment_parameters:
           min_lesson_length: 100
         value: 2.0
       - name: Lesson3_Obstacles
+        completion_criteria:
+          measure: reward
+          behavior: FlyToTarget
+          threshold: 0.8
+          min_lesson_length: 100
         value: 3.0
+      - name: Lesson4_FarObstacles
+        value: 4.0

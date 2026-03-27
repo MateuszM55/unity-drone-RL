@@ -16,23 +16,23 @@ public class PoissonObstacleGenerator : MonoBehaviour
     [Tooltip("Prefab to spawn as an obstacle.")]
     [SerializeField] private GameObject obstaclePrefab;
     [Tooltip("Maximum number of obstacles to place per episode.")]
-    [SerializeField] private int obstacleCount = 5;
+    [SerializeField] private int obstacleCount = 4;
 
     [Header("Spawn Ring")]
     [Tooltip("Obstacles are placed inside a ring around the target between min and max radius.")]
     [SerializeField] private float spawnRadius = 12f;
     [Tooltip("Minimum distance from the centre — obstacles won't spawn closer than this.")]
-    [SerializeField] private float minSpawnRadius = 3f;
+    [SerializeField] private float minSpawnRadius = 5f;
 
     [Header("Poisson Disk Sampling")]
     [Tooltip("Minimum distance between obstacles.")]
-    [SerializeField] private float minSeparation = 3f;
+    [SerializeField] private float minSeparation = 8f;
 
     [Header("Height")]
     [Tooltip("Minimum height for obstacle placement.")]
-    [SerializeField] private float minHeight = 0.5f;
+    [SerializeField] private float minHeight = 3f;
     [Tooltip("Maximum height for obstacle placement.")]
-    [SerializeField] private float maxHeight = 6f;
+    [SerializeField] private float maxHeight = 3f;
 
     [Header("Spawn Location")]
     [Tooltip("Parent transform under which pooled obstacles are instantiated. Defaults to this GameObject's transform.")]
@@ -107,6 +107,30 @@ public class PoissonObstacleGenerator : MonoBehaviour
             }
         }
         activeCount = count;
+    }
+
+    /// <summary>
+    /// Generates obstacles using the given per-call parameters instead of
+    /// the serialised defaults. The Poisson grid is rebuilt for the new
+    /// dimensions and restored afterwards.
+    /// </summary>
+    public void Generate(Vector3 center, int overrideCount, float overrideRadius, float overrideMinSep)
+    {
+        int origCount = obstacleCount;
+        float origRadius = spawnRadius;
+        float origMinSep = minSeparation;
+
+        obstacleCount = overrideCount;
+        spawnRadius = overrideRadius;
+        minSeparation = overrideMinSep;
+        InitPoissonGrid();
+
+        Generate(center);
+
+        obstacleCount = origCount;
+        spawnRadius = origRadius;
+        minSeparation = origMinSep;
+        InitPoissonGrid();
     }
 
     /// <summary>

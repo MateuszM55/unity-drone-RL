@@ -1517,6 +1517,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 2445584907222576922, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
+      propertyPath: minSpawnRadius
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 2445584907222576922, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
       propertyPath: obstaclePrefab
       value: 
       objectReference: {fileID: 1717360175}
