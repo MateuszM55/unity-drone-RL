@@ -47,3 +47,5 @@ environment_parameters:
           threshold: 0.9
           min_lesson_length: 100
         value: 2.0
+      - name: Lesson3_Obstacles
+        value: 3.0

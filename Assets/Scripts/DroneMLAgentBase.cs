@@ -28,7 +28,9 @@ public enum Lesson
     /// <summary>Drone spawns at a random point on a circle around the target — focus on navigation.</summary>
     Navigation = 1,
     /// <summary>Drone spawns at a random point on a larger circle — longer-range navigation.</summary>
-    FarNavigation = 2
+    FarNavigation = 2,
+    /// <summary>Drone spawns far away with random obstacles placed between it and the target.</summary>
+    Obstacles = 3
 }
 
 [RequireComponent(typeof(Rigidbody))]
@@ -68,6 +70,17 @@ public abstract class DroneMLAgentBase : Agent
     [Tooltip("Spawn distance for the FarNavigation lesson.")]
     [SerializeField] protected float farNavigationSpawnDistance = 15f;
 
+    [Header("Obstacles (Lesson 3)")]
+    [Tooltip("Prefab to spawn as an obstacle.")]
+    [SerializeField] protected GameObject obstaclePrefab;
+    [Tooltip("Number of obstacles to spawn during the Obstacles lesson.")]
+    [SerializeField] protected int obstacleCount = 5;
+    [Tooltip("Obstacles are placed inside a circle of this radius around the target.")]
+    [SerializeField] protected float obstacleSpawnRadius = 12f;
+    [Tooltip("Min / Max height range for obstacle placement.")]
+    [SerializeField] protected float obstacleMinHeight = 0.5f;
+    [SerializeField] protected float obstacleMaxHeight = 6f;
+
     [Header("Safety / Termination")]
     [Tooltip("Maximum tilt angle (degrees) from world up before the episode is terminated.")]
     [SerializeField] protected float maxTiltAngle = 60f;
@@ -80,6 +93,9 @@ public abstract class DroneMLAgentBase : Agent
     protected float maxEpisodeDistance;
     protected bool hasLanded;
     protected float touchdownTimer;
+    protected readonly System.Collections.Generic.List<GameObject> obstaclePool
+        = new System.Collections.Generic.List<GameObject>();
+    protected int activeObstacleCount;
 
     public override void Initialize()
     {
@@ -95,6 +111,8 @@ public abstract class DroneMLAgentBase : Agent
         startRotation = transform.localRotation;
         keyboard = Keyboard.current;
         maxTiltDot = Mathf.Cos(maxTiltAngle * Mathf.Deg2Rad);
+
+        InitObstaclePool();
     }
 
     public override void OnEpisodeBegin()
@@ -107,12 +125,15 @@ public abstract class DroneMLAgentBase : Agent
         hasLanded = false;
         touchdownTimer = 0f;
 
+        // Remove obstacles from the previous episode
+        ClearObstacles();
+
         // Read current lesson from curriculum
         Lesson lesson = (Lesson)(int)Academy.Instance.EnvironmentParameters
             .GetWithDefault("lesson", 0f);
 
         // Adjust max episode distance per lesson
-        maxEpisodeDistance = lesson == Lesson.FarNavigation
+        maxEpisodeDistance = lesson == Lesson.FarNavigation || lesson == Lesson.Obstacles
             ? farMaxEpisodeDistance
             : nearMaxEpisodeDistance;
 
@@ -143,12 +164,84 @@ public abstract class DroneMLAgentBase : Agent
                 break;
             }
 
+            case Lesson.Obstacles:
+            {
+                // Start far away, same as FarNavigation
+                float angle = Random.Range(0f, 2f * Mathf.PI);
+                Vector3 offset = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * farNavigationSpawnDistance;
+                transform.localPosition = targetPos + offset + Vector3.up * spawnHeight;
+
+                // Spawn random obstacles inside the max-distance circle
+                SpawnObstacles(targetPos);
+                break;
+            }
+
             default:
                 transform.localPosition = startPosition;
                 break;
         }
 
         transform.localRotation = startRotation;
+    }
+
+    protected void InitObstaclePool()
+    {
+        if (obstaclePrefab == null) return;
+
+        for (int i = 0; i < obstacleCount; i++)
+        {
+            GameObject obj = Instantiate(obstaclePrefab, Vector3.zero, Quaternion.identity, transform.parent);
+            obj.SetActive(false);
+            obstaclePool.Add(obj);
+        }
+    }
+
+    protected void EnsurePoolCapacity(int required)
+    {
+        if (obstaclePrefab == null) return;
+
+        while (obstaclePool.Count < required)
+        {
+            GameObject obj = Instantiate(obstaclePrefab, Vector3.zero, Quaternion.identity, transform.parent);
+            obj.SetActive(false);
+            obstaclePool.Add(obj);
+        }
+    }
+
+    protected void ClearObstacles()
+    {
+        for (int i = 0; i < activeObstacleCount; i++)
+        {
+            if (obstaclePool[i] != null)
+                obstaclePool[i].SetActive(false);
+        }
+        activeObstacleCount = 0;
+    }
+
+    protected void SpawnObstacles(Vector3 center)
+    {
+        if (obstaclePrefab == null) return;
+
+        EnsurePoolCapacity(obstacleCount);
+
+        for (int i = 0; i < obstacleCount; i++)
+        {
+            // Random position inside the circle
+            float r = Mathf.Sqrt(Random.Range(0f, 1f)) * obstacleSpawnRadius;
+            float angle = Random.Range(0f, 2f * Mathf.PI);
+            Vector3 pos = center + new Vector3(
+                Mathf.Cos(angle) * r,
+                Random.Range(obstacleMinHeight, obstacleMaxHeight),
+                Mathf.Sin(angle) * r);
+
+            // Random rotation around the vertical axis
+            Quaternion rot = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
+
+            GameObject obstacle = obstaclePool[i];
+            obstacle.transform.SetPositionAndRotation(pos, rot);
+            obstacle.SetActive(true);
+        }
+        activeObstacleCount = obstacleCount;
     }
 
     public override void CollectObservations(VectorSensor sensor)
