@@ -1,9 +1,10 @@
 using UnityEngine;
 
 /// <summary>
-/// Applies quadratic (velocity-squared) drag to a <see cref="Rigidbody"/>.
-/// Drop this on any GameObject with a Rigidbody to get realistic air resistance
-/// without relying on Unity's built-in linear damping.
+/// Owns the physical properties of the drone airframe: mass, gravity,
+/// interpolation, and quadratic (velocity-squared) aerodynamic drag.
+/// Drop this on any GameObject with a Rigidbody to get realistic
+/// physics without relying on Unity's built-in linear damping.
 ///
 /// Linear drag:  F_d = -½ · ρ · Cd · A · |v| · v
 /// Angular drag:  τ_d = -k_ang · |ω| · ω
@@ -11,6 +12,9 @@ using UnityEngine;
 [RequireComponent(typeof(Rigidbody))]
 public class DroneAerodynamics : MonoBehaviour
 {
+    [Header("Rigidbody")]
+    [SerializeField] private float mass = 1f;
+
     [Header("Quadratic Drag")]
     [Tooltip("Air density in kg/m³ (1.225 at sea level).")]
     [SerializeField] private float airDensity = 1.225f;
@@ -29,13 +33,19 @@ public class DroneAerodynamics : MonoBehaviour
     }
 
     /// <summary>
-    /// Zeroes Unity's built-in linear and angular damping so this component
-    /// is the sole source of aerodynamic drag.
+    /// Configures the <see cref="Rigidbody"/> for realistic drone physics:
+    /// sets mass, enables gravity, centres the CoM, enables interpolation,
+    /// and zeroes Unity's built-in damping so this component is the sole
+    /// source of aerodynamic drag.
     /// Call once during initialisation (e.g. from an Agent's <c>Initialize</c>).
     /// </summary>
-    public void InitialiseDamping()
+    public void InitialisePhysics()
     {
         if (rb == null) rb = GetComponent<Rigidbody>();
+        rb.mass = mass;
+        rb.useGravity = true;
+        rb.centerOfMass = Vector3.zero;
+        rb.interpolation = RigidbodyInterpolation.Interpolate;
         rb.linearDamping = 0f;
         rb.angularDamping = 0f;
     }

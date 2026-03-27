@@ -1,6 +1,19 @@
 using Unity.MLAgents;
 using UnityEngine;
 
+/// <summary>Curriculum lessons that control drone spawn placement and obstacles.</summary>
+public enum Lesson
+{
+    /// <summary>Drone spawns directly above the target — focus on hovering and landing.</summary>
+    Landing = 0,
+    /// <summary>Drone spawns at a random point on a circle around the target — focus on navigation.</summary>
+    Navigation = 1,
+    /// <summary>Drone spawns at a random point on a larger circle — longer-range navigation.</summary>
+    FarNavigation = 2,
+    /// <summary>Drone spawns far away with random obstacles placed between it and the target.</summary>
+    Obstacles = 3
+}
+
 /// <summary>
 /// Reads the ML-Agents curriculum, positions the drone at the correct
 /// spawn point for the current <see cref="Lesson"/>, and manages

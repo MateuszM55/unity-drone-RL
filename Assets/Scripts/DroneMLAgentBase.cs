@@ -5,11 +5,13 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 /// <summary>
-/// Abstract base class for drone ML-Agents. Provides shared physics setup,
-/// observation collection, episode reset, and collision handling.
-/// Aerodynamic drag is handled by the companion <see cref="DroneAerodynamics"/> component.
-/// Obstacle generation is handled by the companion <see cref="PoissonObstacleGenerator"/> component.
-/// Curriculum and spawn logic is handled by the companion <see cref="DroneCurriculumManager"/> component.
+/// Abstract base class for drone ML-Agents. Provides shared observation
+/// collection, episode reset, collision handling, and touchdown logic.
+///
+/// Companion components handle specialised concerns:
+///   • <see cref="DroneAerodynamics"/>         — mass, gravity, quadratic drag
+///   • <see cref="DroneCurriculumManager"/>    — curriculum, spawn placement, obstacles
+///
 /// Subclasses implement <see cref="Agent.OnActionReceived"/> and
 /// <see cref="Agent.Heuristic"/> for their specific control schemes.
 ///
@@ -24,26 +26,11 @@ using UnityEngine.InputSystem;
 ///
 /// The drone model is generated via <see cref="DroneGenerator"/>.
 /// </summary>
-public enum Lesson
-{
-    /// <summary>Drone spawns directly above the target — focus on hovering and landing.</summary>
-    Landing = 0,
-    /// <summary>Drone spawns at a random point on a circle around the target — focus on navigation.</summary>
-    Navigation = 1,
-    /// <summary>Drone spawns at a random point on a larger circle — longer-range navigation.</summary>
-    FarNavigation = 2,
-    /// <summary>Drone spawns far away with random obstacles placed between it and the target.</summary>
-    Obstacles = 3
-}
-
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(DroneAerodynamics))]
 [RequireComponent(typeof(DroneCurriculumManager))]
 public abstract class DroneMLAgentBase : Agent
 {
-    [Header("Physics Settings")]
-    [SerializeField] protected float mass = 1f;
-
     [Header("Touchdown")]
     [Tooltip("Seconds to wait after landing on the target before ending the episode.")]
     [SerializeField] protected float touchdownDelay = 1f;
@@ -70,13 +57,9 @@ public abstract class DroneMLAgentBase : Agent
     public override void Initialize()
     {
         rb = GetComponent<Rigidbody>();
-        rb.mass = mass;
-        rb.useGravity = true;
-        rb.centerOfMass = Vector3.zero;
-        rb.interpolation = RigidbodyInterpolation.Interpolate;
 
-        // Let DroneAerodynamics be the sole source of damping
-        GetComponent<DroneAerodynamics>().InitialiseDamping();
+        // Physics configuration (mass, gravity, damping) is owned by DroneAerodynamics
+        GetComponent<DroneAerodynamics>().InitialisePhysics();
 
         startPosition = transform.localPosition;
         startRotation = transform.localRotation;
@@ -89,16 +72,21 @@ public abstract class DroneMLAgentBase : Agent
 
     public override void OnEpisodeBegin()
     {
-        // Reset drone physics
+        ResetPhysics();
+        maxEpisodeDistance = curriculumManager.SetupEpisode(transform, startPosition, startRotation);
+    }
+
+    /// <summary>
+    /// Zeroes velocity / angular velocity and resets the touchdown state.
+    /// Called at the start of every episode before the curriculum manager
+    /// repositions the drone.
+    /// </summary>
+    protected void ResetPhysics()
+    {
         rb.linearVelocity = Vector3.zero;
         rb.angularVelocity = Vector3.zero;
-
-        // Reset touchdown state
         hasLanded = false;
         touchdownTimer = 0f;
-
-        // Delegate spawn placement, obstacle management, and distance limits to the curriculum manager
-        maxEpisodeDistance = curriculumManager.SetupEpisode(transform, startPosition, startRotation);
     }
 
     public override void CollectObservations(VectorSensor sensor)
@@ -126,7 +114,6 @@ public abstract class DroneMLAgentBase : Agent
 
     protected virtual void FixedUpdate()
     {
-        // --- Touchdown countdown ---
         if (hasLanded)
         {
             touchdownTimer -= Time.fixedDeltaTime;
@@ -136,8 +123,6 @@ public abstract class DroneMLAgentBase : Agent
                 return;
             }
         }
-
-        // Aerodynamic drag is now handled by DroneAerodynamics (FixedUpdate)
     }
 
     protected virtual void OnCollisionEnter(Collision collision)
