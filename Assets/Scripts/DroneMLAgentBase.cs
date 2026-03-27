@@ -8,6 +8,7 @@ using UnityEngine.InputSystem;
 /// Abstract base class for drone ML-Agents. Provides shared physics setup,
 /// observation collection, episode reset, and collision handling.
 /// Aerodynamic drag is handled by the companion <see cref="DroneAerodynamics"/> component.
+/// Obstacle generation is handled by the companion <see cref="PoissonObstacleGenerator"/> component.
 /// Subclasses implement <see cref="Agent.OnActionReceived"/> and
 /// <see cref="Agent.Heuristic"/> for their specific control schemes.
 ///
@@ -36,6 +37,7 @@ public enum Lesson
 
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(DroneAerodynamics))]
+[RequireComponent(typeof(PoissonObstacleGenerator))]
 public abstract class DroneMLAgentBase : Agent
 {
     [Header("Physics Settings")]
@@ -62,21 +64,6 @@ public abstract class DroneMLAgentBase : Agent
     [Tooltip("Spawn distance for the FarNavigation lesson.")]
     [SerializeField] protected float farNavigationSpawnDistance = 15f;
 
-    [Header("Obstacles (Lesson 3)")]
-    [Tooltip("Prefab to spawn as an obstacle.")]
-    [SerializeField] protected GameObject obstaclePrefab;
-    [Tooltip("Maximum number of obstacles to place during the Obstacles lesson.")]
-    [SerializeField] protected int obstacleCount = 5;
-    [Tooltip("Obstacles are placed inside a ring around the target between min and max radius.")]
-    [SerializeField] protected float obstacleSpawnRadius = 12f;
-    [Tooltip("Minimum distance from the target — obstacles won't spawn closer than this.")]
-    [SerializeField] protected float obstacleMinSpawnRadius = 3f;
-    [Tooltip("Minimum distance between obstacles (Poisson Disk Sampling radius).")]
-    [SerializeField] protected float obstacleMinSeparation = 3f;
-    [Tooltip("Min / Max height range for obstacle placement.")]
-    [SerializeField] protected float obstacleMinHeight = 0.5f;
-    [SerializeField] protected float obstacleMaxHeight = 6f;
-
     [Header("Safety / Termination")]
     [Tooltip("Maximum tilt angle (degrees) from world up before the episode is terminated.")]
     [SerializeField] protected float maxTiltAngle = 60f;
@@ -89,24 +76,7 @@ public abstract class DroneMLAgentBase : Agent
     protected float maxEpisodeDistance;
     protected bool hasLanded;
     protected float touchdownTimer;
-    protected readonly System.Collections.Generic.List<GameObject> obstaclePool
-        = new System.Collections.Generic.List<GameObject>();
-    protected int activeObstacleCount;
-
-    // ── Poisson Disk Sampling (zero-allocation) ──
-    private const int PdsCandidateAttempts = 30;
-    private float pdsAreaSize;
-    private float pdsCellSize;
-    private int pdsGridWidth;
-    private int pdsGridHeight;
-    private float pdsMinSepSqr;
-    private float pdsRadiusSqr;
-    private float pdsMinRadiusSqr;
-    private int[] pdsGrid;
-    private readonly System.Collections.Generic.List<Vector2> pdsActive
-        = new System.Collections.Generic.List<Vector2>();
-    private readonly System.Collections.Generic.List<Vector2> pdsPoints
-        = new System.Collections.Generic.List<Vector2>();
+    protected PoissonObstacleGenerator obstacleGenerator;
 
     public override void Initialize()
     {
@@ -124,8 +94,8 @@ public abstract class DroneMLAgentBase : Agent
         keyboard = Keyboard.current;
         maxTiltDot = Mathf.Cos(maxTiltAngle * Mathf.Deg2Rad);
 
-        InitObstaclePool();
-        InitPoissonGrid();
+        obstacleGenerator = GetComponent<PoissonObstacleGenerator>();
+        obstacleGenerator.Initialise(transform.parent);
     }
 
     public override void OnEpisodeBegin()
@@ -139,7 +109,7 @@ public abstract class DroneMLAgentBase : Agent
         touchdownTimer = 0f;
 
         // Remove obstacles from the previous episode
-        ClearObstacles();
+        obstacleGenerator.Clear();
 
         // Read current lesson from curriculum
         Lesson lesson = (Lesson)(int)Academy.Instance.EnvironmentParameters
@@ -185,7 +155,7 @@ public abstract class DroneMLAgentBase : Agent
                 transform.localPosition = targetPos + offset + Vector3.up * spawnHeight;
 
                 // Spawn random obstacles inside the max-distance circle
-                SpawnObstacles(targetPos);
+                obstacleGenerator.Generate(targetPos, transform.parent);
                 break;
             }
 
@@ -195,211 +165,6 @@ public abstract class DroneMLAgentBase : Agent
         }
 
         transform.localRotation = startRotation;
-    }
-
-    protected void InitObstaclePool()
-    {
-        if (obstaclePrefab == null) return;
-
-        for (int i = 0; i < obstacleCount; i++)
-        {
-            GameObject obj = Instantiate(obstaclePrefab, Vector3.zero, Quaternion.identity, transform.parent);
-            obj.SetActive(false);
-            obstaclePool.Add(obj);
-        }
-    }
-
-    protected void EnsurePoolCapacity(int required)
-    {
-        if (obstaclePrefab == null) return;
-
-        while (obstaclePool.Count < required)
-        {
-            GameObject obj = Instantiate(obstaclePrefab, Vector3.zero, Quaternion.identity, transform.parent);
-            obj.SetActive(false);
-            obstaclePool.Add(obj);
-        }
-    }
-
-    protected void ClearObstacles()
-    {
-        for (int i = 0; i < activeObstacleCount; i++)
-        {
-            if (obstaclePool[i] != null)
-                obstaclePool[i].SetActive(false);
-        }
-        activeObstacleCount = 0;
-    }
-
-    protected void SpawnObstacles(Vector3 center)
-    {
-        if (obstaclePrefab == null) return;
-
-        // --- Run Poisson Disk Sampling on the XZ plane ---
-        RunPoissonDiskSampling();
-
-        int count = Mathf.Min(pdsPoints.Count, obstacleCount);
-        EnsurePoolCapacity(count);
-
-        for (int i = 0; i < count; i++)
-        {
-            Vector2 pt = pdsPoints[i];
-
-            // Convert from PDS local [0, areaSize] to world offset [-radius, +radius]
-            Vector3 pos = center + new Vector3(
-                pt.x - obstacleSpawnRadius,
-                Random.Range(obstacleMinHeight, obstacleMaxHeight),
-                pt.y - obstacleSpawnRadius);
-
-            Quaternion rot = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
-
-            GameObject obstacle = obstaclePool[i];
-            obstacle.transform.SetPositionAndRotation(pos, rot);
-            obstacle.SetActive(true);
-
-            if (obstacle.TryGetComponent<Rigidbody>(out var obstacleRb))
-            {
-                obstacleRb.linearVelocity = Vector3.zero;
-                obstacleRb.angularVelocity = Vector3.zero;
-            }
-        }
-        activeObstacleCount = count;
-    }
-
-    // ── Poisson Disk Sampling ────────────────────────────────────────────
-
-    private void InitPoissonGrid()
-    {
-        pdsAreaSize = 2f * obstacleSpawnRadius;
-        pdsCellSize = obstacleMinSeparation / 1.41421356f; // r / sqrt(2)
-        pdsGridWidth = Mathf.CeilToInt(pdsAreaSize / pdsCellSize);
-        pdsGridHeight = Mathf.CeilToInt(pdsAreaSize / pdsCellSize);
-        pdsMinSepSqr = obstacleMinSeparation * obstacleMinSeparation;
-        pdsRadiusSqr = obstacleSpawnRadius * obstacleSpawnRadius;
-        pdsMinRadiusSqr = obstacleMinSpawnRadius * obstacleMinSpawnRadius;
-        pdsGrid = new int[pdsGridWidth * pdsGridHeight];
-
-        // Pre-size the lists to avoid runtime allocations
-        pdsActive.Capacity = Mathf.Max(pdsActive.Capacity, obstacleCount * 2);
-        pdsPoints.Capacity = Mathf.Max(pdsPoints.Capacity, obstacleCount * 2);
-    }
-
-    private void RunPoissonDiskSampling()
-    {
-        // Reset grid — fast integer fill, no allocations
-        for (int i = 0; i < pdsGrid.Length; i++)
-            pdsGrid[i] = -1;
-
-        pdsActive.Clear();
-        pdsPoints.Clear();
-
-        // First seed: random point inside the circular spawn area
-        Vector2 first;
-        do
-        {
-            first = new Vector2(
-                Random.Range(0f, pdsAreaSize),
-                Random.Range(0f, pdsAreaSize));
-        }
-        while (!PdsInsideRing(first));
-
-        PdsAddPoint(first);
-
-        // Main loop — Bridson's algorithm
-        while (pdsActive.Count > 0 && pdsPoints.Count < obstacleCount)
-        {
-            // Pick a random active point
-            int activeIdx = Random.Range(0, pdsActive.Count);
-            Vector2 origin = pdsActive[activeIdx];
-            bool anyAccepted = false;
-
-            for (int k = 0; k < PdsCandidateAttempts; k++)
-            {
-                // Random candidate in the annulus [r, 2r]
-                float angle = Random.Range(0f, 2f * Mathf.PI);
-                float dist = Random.Range(obstacleMinSeparation, 2f * obstacleMinSeparation);
-                Vector2 candidate = new Vector2(
-                    origin.x + Mathf.Cos(angle) * dist,
-                    origin.y + Mathf.Sin(angle) * dist);
-
-                // Bounds check
-                if (candidate.x < 0f || candidate.x >= pdsAreaSize ||
-                    candidate.y < 0f || candidate.y >= pdsAreaSize)
-                    continue;
-
-                // Circular area check (squared — no sqrt)
-                if (!PdsInsideRing(candidate))
-                    continue;
-
-                // Neighbor proximity check (squared — no sqrt)
-                if (!PdsIsValid(candidate))
-                    continue;
-
-                PdsAddPoint(candidate);
-                anyAccepted = true;
-
-                if (pdsPoints.Count >= obstacleCount)
-                    break;
-            }
-
-            // Dead end — remove from active list (O(1) swap-and-pop)
-            if (!anyAccepted)
-            {
-                int lastIdx = pdsActive.Count - 1;
-                pdsActive[activeIdx] = pdsActive[lastIdx];
-                pdsActive.RemoveAt(lastIdx);
-            }
-        }
-    }
-
-    private bool PdsInsideRing(Vector2 point)
-    {
-        float dx = point.x - obstacleSpawnRadius;
-        float dz = point.y - obstacleSpawnRadius;
-        float distSqr = dx * dx + dz * dz;
-        return distSqr <= pdsRadiusSqr && distSqr >= pdsMinRadiusSqr;
-    }
-
-    private void PdsAddPoint(Vector2 point)
-    {
-        int idx = pdsPoints.Count;
-        pdsPoints.Add(point);
-        pdsActive.Add(point);
-
-        int gx = (int)(point.x / pdsCellSize);
-        int gy = (int)(point.y / pdsCellSize);
-        pdsGrid[gy * pdsGridWidth + gx] = idx;
-    }
-
-    private bool PdsIsValid(Vector2 candidate)
-    {
-        int gx = (int)(candidate.x / pdsCellSize);
-        int gy = (int)(candidate.y / pdsCellSize);
-
-        // Check 5×5 neighbourhood (guaranteed to cover r with cellSize = r/√2)
-        int minX = Mathf.Max(0, gx - 2);
-        int maxX = Mathf.Min(pdsGridWidth - 1, gx + 2);
-        int minY = Mathf.Max(0, gy - 2);
-        int maxY = Mathf.Min(pdsGridHeight - 1, gy + 2);
-
-        for (int y = minY; y <= maxY; y++)
-        {
-            int row = y * pdsGridWidth;
-            for (int x = minX; x <= maxX; x++)
-            {
-                int pointIdx = pdsGrid[row + x];
-                if (pointIdx < 0) continue;
-
-                Vector2 existing = pdsPoints[pointIdx];
-                float dx = candidate.x - existing.x;
-                float dy = candidate.y - existing.y;
-
-                // Squared distance comparison — avoids sqrt
-                if (dx * dx + dy * dy < pdsMinSepSqr)
-                    return false;
-            }
-        }
-        return true;
     }
 
     public override void CollectObservations(VectorSensor sensor)

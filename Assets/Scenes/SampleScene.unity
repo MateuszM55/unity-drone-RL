@@ -526,6 +526,7 @@ GameObject:
   - component: {fileID: 119988722}
   - component: {fileID: 119988721}
   - component: {fileID: 119988720}
+  - component: {fileID: 119988724}
   m_Layer: 0
   m_Name: Target
   m_TagString: Target
@@ -626,6 +627,25 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
+--- !u!114 &119988724
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 119988719}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8ecab142f7b13fe42b53eefd9532ecc6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PoissonObstacleGenerator
+  obstaclePrefab: {fileID: 1717360175}
+  obstacleCount: 5
+  spawnRadius: 12
+  minSpawnRadius: 3
+  minSeparation: 3
+  minHeight: 3
+  maxHeight: 3
 --- !u!21 &152826646
 Material:
   serializedVersion: 8
@@ -1311,6 +1331,11 @@ Material:
     - _SpecColor: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
+--- !u!1 &1717360175 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8336889861662960252, guid: 0631f324ba6d9d240b3f86aef763c70c, type: 3}
+  m_PrefabInstance: {fileID: 968571539}
+  m_PrefabAsset: {fileID: 0}
 --- !u!21 &2128757829
 Material:
   serializedVersion: 8
@@ -1477,13 +1502,6 @@ MonoBehaviour:
   spawnHeight: 3
   navigationSpawnDistance: 5
   farNavigationSpawnDistance: 15
-  obstaclePrefab: {fileID: 8336889861662960252, guid: 0631f324ba6d9d240b3f86aef763c70c, type: 3}
-  obstacleCount: 10
-  obstacleSpawnRadius: 12
-  obstacleMinSpawnRadius: 5
-  obstacleMinSeparation: 8
-  obstacleMinHeight: 3
-  obstacleMaxHeight: 3
   maxTiltAngle: 60
   rotorTransforms:
   - {fileID: 371168594996312028}
@@ -1656,6 +1674,7 @@ GameObject:
   - component: {fileID: 2118092897749216604}
   - component: {fileID: 1974926352462651140}
   - component: {fileID: 8785747301531313547}
+  - component: {fileID: 8785747301531313548}
   m_Layer: 2
   m_Name: Drone
   m_TagString: Untagged
@@ -2225,6 +2244,25 @@ MonoBehaviour:
   dragCoefficient: 0.5
   crossSectionalArea: 0.04
   angularDragCoefficient: 0.005
+--- !u!114 &8785747301531313548
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2091706847218829287}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8ecab142f7b13fe42b53eefd9532ecc6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PoissonObstacleGenerator
+  obstaclePrefab: {fileID: 0}
+  obstacleCount: 5
+  spawnRadius: 12
+  minSpawnRadius: 3
+  minSeparation: 3
+  minHeight: 0.5
+  maxHeight: 6
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
