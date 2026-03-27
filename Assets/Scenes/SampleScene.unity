@@ -1538,8 +1538,7 @@ MonoBehaviour:
   agentParameters:
     maxStep: 0
   hasUpgradedFromAgentParameters: 1
-  MaxStep: 0
-  mass: 1
+  MaxStep: 1000
   touchdownDelay: 1
   maxSafeTouchdownSpeed: 2
   maxTiltAngle: 60
@@ -1714,7 +1713,6 @@ GameObject:
   - component: {fileID: 2118092897749216604}
   - component: {fileID: 1974926352462651140}
   - component: {fileID: 8785747301531313547}
-  - component: {fileID: 8785747301531313548}
   m_Layer: 2
   m_Name: Drone
   m_TagString: Untagged
@@ -2280,30 +2278,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c03dcc179f280f84683eefde4565ae3a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DroneAerodynamics
+  mass: 1
   airDensity: 1.225
   dragCoefficient: 0.5
   crossSectionalArea: 0.04
   angularDragCoefficient: 0.005
---- !u!114 &8785747301531313548
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2091706847218829287}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8ecab142f7b13fe42b53eefd9532ecc6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PoissonObstacleGenerator
-  obstaclePrefab: {fileID: 0}
-  obstacleCount: 5
-  spawnRadius: 12
-  minSpawnRadius: 3
-  minSeparation: 3
-  minHeight: 0.5
-  maxHeight: 6
-  spawnParent: {fileID: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
