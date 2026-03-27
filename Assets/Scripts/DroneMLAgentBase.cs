@@ -7,6 +7,7 @@ using UnityEngine.InputSystem;
 /// <summary>
 /// Abstract base class for drone ML-Agents. Provides shared physics setup,
 /// observation collection, episode reset, and collision handling.
+/// Aerodynamic drag is handled by the companion <see cref="DroneAerodynamics"/> component.
 /// Subclasses implement <see cref="Agent.OnActionReceived"/> and
 /// <see cref="Agent.Heuristic"/> for their specific control schemes.
 ///
@@ -34,20 +35,11 @@ public enum Lesson
 }
 
 [RequireComponent(typeof(Rigidbody))]
+[RequireComponent(typeof(DroneAerodynamics))]
 public abstract class DroneMLAgentBase : Agent
 {
     [Header("Physics Settings")]
     [SerializeField] protected float mass = 1f;
-
-    [Header("Quadratic Drag (replaces Unity's linear damping)")]
-    [Tooltip("Air density in kg/m³ (1.225 at sea level).")]
-    [SerializeField] protected float airDensity = 1.225f;
-    [Tooltip("Drag coefficient of the airframe (0.5–0.7 for a typical drone).")]
-    [SerializeField] protected float dragCoefficient = 0.5f;
-    [Tooltip("Cross-sectional area of the drone in m².")]
-    [SerializeField] protected float crossSectionalArea = 0.04f;
-    [Tooltip("Lumped angular drag coefficient (combines Cd, area, and geometry for rotational resistance).")]
-    [SerializeField] protected float angularDragCoefficient = 0.005f;
 
     [Header("Training")]
     [SerializeField] protected Transform target;
@@ -120,11 +112,12 @@ public abstract class DroneMLAgentBase : Agent
     {
         rb = GetComponent<Rigidbody>();
         rb.mass = mass;
-        rb.linearDamping = 0f;
-        rb.angularDamping = 0f;
         rb.useGravity = true;
         rb.centerOfMass = Vector3.zero;
         rb.interpolation = RigidbodyInterpolation.Interpolate;
+
+        // Let DroneAerodynamics be the sole source of damping
+        GetComponent<DroneAerodynamics>().InitialiseDamping();
 
         startPosition = transform.localPosition;
         startRotation = transform.localRotation;
@@ -445,24 +438,7 @@ public abstract class DroneMLAgentBase : Agent
             }
         }
 
-        // --- Quadratic linear drag: F_d = -½ · ρ · Cd · A · |v| · v ---
-        Vector3 velocity = rb.linearVelocity;
-        float speed = velocity.magnitude;
-        if (speed > 1e-4f)
-        {
-            Vector3 linearDragForce = -0.5f * airDensity * dragCoefficient
-                                      * crossSectionalArea * speed * velocity;
-            rb.AddForce(linearDragForce, ForceMode.Force);
-        }
-
-        // --- Quadratic angular drag: τ_d = -k_ang · |ω| · ω ---
-        Vector3 angVel = rb.angularVelocity;
-        float angSpeed = angVel.magnitude;
-        if (angSpeed > 1e-4f)
-        {
-            Vector3 angularDragTorque = -angularDragCoefficient * angSpeed * angVel;
-            rb.AddTorque(angularDragTorque, ForceMode.Force);
-        }
+        // Aerodynamic drag is now handled by DroneAerodynamics (FixedUpdate)
     }
 
     protected virtual void OnCollisionEnter(Collision collision)

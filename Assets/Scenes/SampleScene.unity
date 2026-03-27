@@ -1469,10 +1469,6 @@ MonoBehaviour:
   hasUpgradedFromAgentParameters: 1
   MaxStep: 0
   mass: 1
-  airDensity: 1.225
-  dragCoefficient: 0.7
-  crossSectionalArea: 0.02
-  angularDragCoefficient: 0.005
   target: {fileID: 119988723}
   nearMaxEpisodeDistance: 10
   farMaxEpisodeDistance: 20
@@ -1659,6 +1655,7 @@ GameObject:
   - component: {fileID: 3828447892222057582}
   - component: {fileID: 2118092897749216604}
   - component: {fileID: 1974926352462651140}
+  - component: {fileID: 8785747301531313547}
   m_Layer: 2
   m_Name: Drone
   m_TagString: Untagged
@@ -2212,6 +2209,22 @@ Transform:
   - {fileID: 4719214387455806200}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8785747301531313547
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2091706847218829287}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c03dcc179f280f84683eefde4565ae3a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DroneAerodynamics
+  airDensity: 1.225
+  dragCoefficient: 0.5
+  crossSectionalArea: 0.04
+  angularDragCoefficient: 0.005
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
