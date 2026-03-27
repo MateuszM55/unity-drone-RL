@@ -9,6 +9,7 @@ using UnityEngine.InputSystem;
 /// observation collection, episode reset, and collision handling.
 /// Aerodynamic drag is handled by the companion <see cref="DroneAerodynamics"/> component.
 /// Obstacle generation is handled by the companion <see cref="PoissonObstacleGenerator"/> component.
+/// Curriculum and spawn logic is handled by the companion <see cref="DroneCurriculumManager"/> component.
 /// Subclasses implement <see cref="Agent.OnActionReceived"/> and
 /// <see cref="Agent.Heuristic"/> for their specific control schemes.
 ///
@@ -37,32 +38,17 @@ public enum Lesson
 
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(DroneAerodynamics))]
-[RequireComponent(typeof(PoissonObstacleGenerator))]
+[RequireComponent(typeof(DroneCurriculumManager))]
 public abstract class DroneMLAgentBase : Agent
 {
     [Header("Physics Settings")]
     [SerializeField] protected float mass = 1f;
-
-    [Header("Training")]
-    [SerializeField] protected Transform target;
-    [Tooltip("Max distance from target before episode ends (Landing & Navigation lessons).")]
-    [SerializeField] protected float nearMaxEpisodeDistance = 10f;
-    [Tooltip("Max distance from target before episode ends (FarNavigation lesson).")]
-    [SerializeField] protected float farMaxEpisodeDistance = 20f;
 
     [Header("Touchdown")]
     [Tooltip("Seconds to wait after landing on the target before ending the episode.")]
     [SerializeField] protected float touchdownDelay = 1f;
     [Tooltip("Reference speed (m/s) at which the landing reward halves. Lower = stricter.")]
     [SerializeField] protected float maxSafeTouchdownSpeed = 2f;
-
-    [Header("Spawn / Curriculum")]
-    [Tooltip("Height above the target at which the drone spawns.")]
-    [SerializeField] protected float spawnHeight = 3f;
-    [Tooltip("Spawn distance for the Navigation lesson.")]
-    [SerializeField] protected float navigationSpawnDistance = 5f;
-    [Tooltip("Spawn distance for the FarNavigation lesson.")]
-    [SerializeField] protected float farNavigationSpawnDistance = 15f;
 
     [Header("Safety / Termination")]
     [Tooltip("Maximum tilt angle (degrees) from world up before the episode is terminated.")]
@@ -76,7 +62,10 @@ public abstract class DroneMLAgentBase : Agent
     protected float maxEpisodeDistance;
     protected bool hasLanded;
     protected float touchdownTimer;
-    protected PoissonObstacleGenerator obstacleGenerator;
+    protected DroneCurriculumManager curriculumManager;
+
+    /// <summary>Convenience accessor — delegates to <see cref="DroneCurriculumManager.Target"/>.</summary>
+    protected Transform target => curriculumManager.Target;
 
     public override void Initialize()
     {
@@ -94,8 +83,8 @@ public abstract class DroneMLAgentBase : Agent
         keyboard = Keyboard.current;
         maxTiltDot = Mathf.Cos(maxTiltAngle * Mathf.Deg2Rad);
 
-        obstacleGenerator = GetComponent<PoissonObstacleGenerator>();
-        obstacleGenerator.Initialise(transform.parent);
+        curriculumManager = GetComponent<DroneCurriculumManager>();
+        curriculumManager.Initialise(transform.parent);
     }
 
     public override void OnEpisodeBegin()
@@ -108,63 +97,8 @@ public abstract class DroneMLAgentBase : Agent
         hasLanded = false;
         touchdownTimer = 0f;
 
-        // Remove obstacles from the previous episode
-        obstacleGenerator.Clear();
-
-        // Read current lesson from curriculum
-        Lesson lesson = (Lesson)(int)Academy.Instance.EnvironmentParameters
-            .GetWithDefault("lesson", 0f);
-
-        // Adjust max episode distance per lesson
-        maxEpisodeDistance = lesson == Lesson.FarNavigation || lesson == Lesson.Obstacles
-            ? farMaxEpisodeDistance
-            : nearMaxEpisodeDistance;
-
-        Vector3 targetPos = target != null ? target.localPosition : startPosition;
-
-        switch (lesson)
-        {
-            case Lesson.Landing:
-                // Start directly above the target
-                transform.localPosition = targetPos + Vector3.up * spawnHeight;
-                break;
-
-            case Lesson.Navigation:
-            {
-                // Start at a random point on a circle around the target
-                float angle = Random.Range(0f, 2f * Mathf.PI);
-                Vector3 offset = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * navigationSpawnDistance;
-                transform.localPosition = targetPos + offset + Vector3.up * spawnHeight;
-                break;
-            }
-
-            case Lesson.FarNavigation:
-            {
-                // Start at a random point on a larger circle
-                float angle = Random.Range(0f, 2f * Mathf.PI);
-                Vector3 offset = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * farNavigationSpawnDistance;
-                transform.localPosition = targetPos + offset + Vector3.up * spawnHeight;
-                break;
-            }
-
-            case Lesson.Obstacles:
-            {
-                // Start far away, same as FarNavigation
-                float angle = Random.Range(0f, 2f * Mathf.PI);
-                Vector3 offset = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * farNavigationSpawnDistance;
-                transform.localPosition = targetPos + offset + Vector3.up * spawnHeight;
-
-                // Spawn random obstacles inside the max-distance circle
-                obstacleGenerator.Generate(targetPos, transform.parent);
-                break;
-            }
-
-            default:
-                transform.localPosition = startPosition;
-                break;
-        }
-
-        transform.localRotation = startRotation;
+        // Delegate spawn placement, obstacle management, and distance limits to the curriculum manager
+        maxEpisodeDistance = curriculumManager.SetupEpisode(transform, startPosition, startRotation);
     }
 
     public override void CollectObservations(VectorSensor sensor)

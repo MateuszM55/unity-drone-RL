@@ -526,7 +526,6 @@ GameObject:
   - component: {fileID: 119988722}
   - component: {fileID: 119988721}
   - component: {fileID: 119988720}
-  - component: {fileID: 119988724}
   m_Layer: 0
   m_Name: Target
   m_TagString: Target
@@ -627,25 +626,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
---- !u!114 &119988724
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 119988719}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8ecab142f7b13fe42b53eefd9532ecc6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PoissonObstacleGenerator
-  obstaclePrefab: {fileID: 1717360175}
-  obstacleCount: 5
-  spawnRadius: 12
-  minSpawnRadius: 3
-  minSeparation: 3
-  minHeight: 3
-  maxHeight: 3
 --- !u!21 &152826646
 Material:
   serializedVersion: 8
@@ -1190,6 +1170,76 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 0631f324ba6d9d240b3f86aef763c70c, type: 3}
+--- !u!1 &1164294898
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1164294899}
+  - component: {fileID: 1164294901}
+  - component: {fileID: 1164294900}
+  m_Layer: 0
+  m_Name: CurriculumManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1164294899
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1164294898}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.7071068, y: -0, z: -0, w: 0.7071068}
+  m_LocalPosition: {x: 0, y: -0.35, z: 0}
+  m_LocalScale: {x: 0, y: 0, z: 0}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1164294900
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1164294898}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a2fd301941e39f469ba78cfd83a408a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DroneCurriculumManager
+  target: {fileID: 119988723}
+  nearMaxEpisodeDistance: 10
+  farMaxEpisodeDistance: 20
+  spawnHeight: 3
+  navigationSpawnDistance: 5
+  farNavigationSpawnDistance: 15
+--- !u!114 &1164294901
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1164294898}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8ecab142f7b13fe42b53eefd9532ecc6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PoissonObstacleGenerator
+  obstaclePrefab: {fileID: 8336889861662960252, guid: 0631f324ba6d9d240b3f86aef763c70c, type: 3}
+  obstacleCount: 5
+  spawnRadius: 12
+  minSpawnRadius: 5
+  minSeparation: 5
+  minHeight: 3
+  maxHeight: 3
 --- !u!21 &1583401158
 Material:
   serializedVersion: 8
@@ -1331,11 +1381,6 @@ Material:
     - _SpecColor: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
---- !u!1 &1717360175 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 8336889861662960252, guid: 0631f324ba6d9d240b3f86aef763c70c, type: 3}
-  m_PrefabInstance: {fileID: 968571539}
-  m_PrefabAsset: {fileID: 0}
 --- !u!21 &2128757829
 Material:
   serializedVersion: 8
@@ -1494,14 +1539,8 @@ MonoBehaviour:
   hasUpgradedFromAgentParameters: 1
   MaxStep: 0
   mass: 1
-  target: {fileID: 119988723}
-  nearMaxEpisodeDistance: 10
-  farMaxEpisodeDistance: 20
   touchdownDelay: 1
   maxSafeTouchdownSpeed: 2
-  spawnHeight: 3
-  navigationSpawnDistance: 5
-  farNavigationSpawnDistance: 15
   maxTiltAngle: 60
   rotorTransforms:
   - {fileID: 371168594996312028}
@@ -2272,5 +2311,6 @@ SceneRoots:
   - {fileID: 832575519}
   - {fileID: 118807906}
   - {fileID: 8785747301531313546}
+  - {fileID: 1164294899}
   - {fileID: 119988723}
   - {fileID: 968571539}
