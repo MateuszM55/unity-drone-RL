@@ -2759,7 +2759,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 296110008661442355, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
       propertyPath: maxEpisodeDistance
-      value: 10
+      value: 20
       objectReference: {fileID: 0}
     - target: {fileID: 296110008661442355, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
       propertyPath: 'rotorTransforms.Array.data[0]'

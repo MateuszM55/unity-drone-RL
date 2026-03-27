@@ -49,7 +49,10 @@ public abstract class DroneMLAgentBase : Agent
 
     [Header("Training")]
     [SerializeField] protected Transform target;
-    [SerializeField] protected float maxEpisodeDistance = 20f;
+    [Tooltip("Max distance from target before episode ends (Landing & Navigation lessons).")]
+    [SerializeField] protected float nearMaxEpisodeDistance = 10f;
+    [Tooltip("Max distance from target before episode ends (FarNavigation lesson).")]
+    [SerializeField] protected float farMaxEpisodeDistance = 20f;
 
     [Header("Touchdown")]
     [Tooltip("Seconds to wait after landing on the target before ending the episode.")]
@@ -74,6 +77,7 @@ public abstract class DroneMLAgentBase : Agent
     protected Quaternion startRotation;
     protected Keyboard keyboard;
     protected float maxTiltDot;
+    protected float maxEpisodeDistance;
     protected bool hasLanded;
     protected float touchdownTimer;
 
@@ -106,6 +110,11 @@ public abstract class DroneMLAgentBase : Agent
         // Read current lesson from curriculum
         Lesson lesson = (Lesson)(int)Academy.Instance.EnvironmentParameters
             .GetWithDefault("lesson", 0f);
+
+        // Adjust max episode distance per lesson
+        maxEpisodeDistance = lesson == Lesson.FarNavigation
+            ? farMaxEpisodeDistance
+            : nearMaxEpisodeDistance;
 
         Vector3 targetPos = target != null ? target.localPosition : startPosition;
 
