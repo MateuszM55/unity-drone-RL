@@ -73,10 +73,14 @@ public abstract class DroneMLAgentBase : Agent
     [Header("Obstacles (Lesson 3)")]
     [Tooltip("Prefab to spawn as an obstacle.")]
     [SerializeField] protected GameObject obstaclePrefab;
-    [Tooltip("Number of obstacles to spawn during the Obstacles lesson.")]
+    [Tooltip("Maximum number of obstacles to place during the Obstacles lesson.")]
     [SerializeField] protected int obstacleCount = 5;
-    [Tooltip("Obstacles are placed inside a circle of this radius around the target.")]
+    [Tooltip("Obstacles are placed inside a ring around the target between min and max radius.")]
     [SerializeField] protected float obstacleSpawnRadius = 12f;
+    [Tooltip("Minimum distance from the target — obstacles won't spawn closer than this.")]
+    [SerializeField] protected float obstacleMinSpawnRadius = 3f;
+    [Tooltip("Minimum distance between obstacles (Poisson Disk Sampling radius).")]
+    [SerializeField] protected float obstacleMinSeparation = 3f;
     [Tooltip("Min / Max height range for obstacle placement.")]
     [SerializeField] protected float obstacleMinHeight = 0.5f;
     [SerializeField] protected float obstacleMaxHeight = 6f;
@@ -97,6 +101,21 @@ public abstract class DroneMLAgentBase : Agent
         = new System.Collections.Generic.List<GameObject>();
     protected int activeObstacleCount;
 
+    // ── Poisson Disk Sampling (zero-allocation) ──
+    private const int PdsCandidateAttempts = 30;
+    private float pdsAreaSize;
+    private float pdsCellSize;
+    private int pdsGridWidth;
+    private int pdsGridHeight;
+    private float pdsMinSepSqr;
+    private float pdsRadiusSqr;
+    private float pdsMinRadiusSqr;
+    private int[] pdsGrid;
+    private readonly System.Collections.Generic.List<Vector2> pdsActive
+        = new System.Collections.Generic.List<Vector2>();
+    private readonly System.Collections.Generic.List<Vector2> pdsPoints
+        = new System.Collections.Generic.List<Vector2>();
+
     public override void Initialize()
     {
         rb = GetComponent<Rigidbody>();
@@ -113,6 +132,7 @@ public abstract class DroneMLAgentBase : Agent
         maxTiltDot = Mathf.Cos(maxTiltAngle * Mathf.Deg2Rad);
 
         InitObstaclePool();
+        InitPoissonGrid();
     }
 
     public override void OnEpisodeBegin()
@@ -222,26 +242,171 @@ public abstract class DroneMLAgentBase : Agent
     {
         if (obstaclePrefab == null) return;
 
-        EnsurePoolCapacity(obstacleCount);
+        // --- Run Poisson Disk Sampling on the XZ plane ---
+        RunPoissonDiskSampling();
 
-        for (int i = 0; i < obstacleCount; i++)
+        int count = Mathf.Min(pdsPoints.Count, obstacleCount);
+        EnsurePoolCapacity(count);
+
+        for (int i = 0; i < count; i++)
         {
-            // Random position inside the circle
-            float r = Mathf.Sqrt(Random.Range(0f, 1f)) * obstacleSpawnRadius;
-            float angle = Random.Range(0f, 2f * Mathf.PI);
-            Vector3 pos = center + new Vector3(
-                Mathf.Cos(angle) * r,
-                Random.Range(obstacleMinHeight, obstacleMaxHeight),
-                Mathf.Sin(angle) * r);
+            Vector2 pt = pdsPoints[i];
 
-            // Random rotation around the vertical axis
+            // Convert from PDS local [0, areaSize] to world offset [-radius, +radius]
+            Vector3 pos = center + new Vector3(
+                pt.x - obstacleSpawnRadius,
+                Random.Range(obstacleMinHeight, obstacleMaxHeight),
+                pt.y - obstacleSpawnRadius);
+
             Quaternion rot = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
 
             GameObject obstacle = obstaclePool[i];
             obstacle.transform.SetPositionAndRotation(pos, rot);
             obstacle.SetActive(true);
+
+            if (obstacle.TryGetComponent<Rigidbody>(out var obstacleRb))
+            {
+                obstacleRb.linearVelocity = Vector3.zero;
+                obstacleRb.angularVelocity = Vector3.zero;
+            }
         }
-        activeObstacleCount = obstacleCount;
+        activeObstacleCount = count;
+    }
+
+    // ── Poisson Disk Sampling ────────────────────────────────────────────
+
+    private void InitPoissonGrid()
+    {
+        pdsAreaSize = 2f * obstacleSpawnRadius;
+        pdsCellSize = obstacleMinSeparation / 1.41421356f; // r / sqrt(2)
+        pdsGridWidth = Mathf.CeilToInt(pdsAreaSize / pdsCellSize);
+        pdsGridHeight = Mathf.CeilToInt(pdsAreaSize / pdsCellSize);
+        pdsMinSepSqr = obstacleMinSeparation * obstacleMinSeparation;
+        pdsRadiusSqr = obstacleSpawnRadius * obstacleSpawnRadius;
+        pdsMinRadiusSqr = obstacleMinSpawnRadius * obstacleMinSpawnRadius;
+        pdsGrid = new int[pdsGridWidth * pdsGridHeight];
+
+        // Pre-size the lists to avoid runtime allocations
+        pdsActive.Capacity = Mathf.Max(pdsActive.Capacity, obstacleCount * 2);
+        pdsPoints.Capacity = Mathf.Max(pdsPoints.Capacity, obstacleCount * 2);
+    }
+
+    private void RunPoissonDiskSampling()
+    {
+        // Reset grid — fast integer fill, no allocations
+        for (int i = 0; i < pdsGrid.Length; i++)
+            pdsGrid[i] = -1;
+
+        pdsActive.Clear();
+        pdsPoints.Clear();
+
+        // First seed: random point inside the circular spawn area
+        Vector2 first;
+        do
+        {
+            first = new Vector2(
+                Random.Range(0f, pdsAreaSize),
+                Random.Range(0f, pdsAreaSize));
+        }
+        while (!PdsInsideRing(first));
+
+        PdsAddPoint(first);
+
+        // Main loop — Bridson's algorithm
+        while (pdsActive.Count > 0 && pdsPoints.Count < obstacleCount)
+        {
+            // Pick a random active point
+            int activeIdx = Random.Range(0, pdsActive.Count);
+            Vector2 origin = pdsActive[activeIdx];
+            bool anyAccepted = false;
+
+            for (int k = 0; k < PdsCandidateAttempts; k++)
+            {
+                // Random candidate in the annulus [r, 2r]
+                float angle = Random.Range(0f, 2f * Mathf.PI);
+                float dist = Random.Range(obstacleMinSeparation, 2f * obstacleMinSeparation);
+                Vector2 candidate = new Vector2(
+                    origin.x + Mathf.Cos(angle) * dist,
+                    origin.y + Mathf.Sin(angle) * dist);
+
+                // Bounds check
+                if (candidate.x < 0f || candidate.x >= pdsAreaSize ||
+                    candidate.y < 0f || candidate.y >= pdsAreaSize)
+                    continue;
+
+                // Circular area check (squared — no sqrt)
+                if (!PdsInsideRing(candidate))
+                    continue;
+
+                // Neighbor proximity check (squared — no sqrt)
+                if (!PdsIsValid(candidate))
+                    continue;
+
+                PdsAddPoint(candidate);
+                anyAccepted = true;
+
+                if (pdsPoints.Count >= obstacleCount)
+                    break;
+            }
+
+            // Dead end — remove from active list (O(1) swap-and-pop)
+            if (!anyAccepted)
+            {
+                int lastIdx = pdsActive.Count - 1;
+                pdsActive[activeIdx] = pdsActive[lastIdx];
+                pdsActive.RemoveAt(lastIdx);
+            }
+        }
+    }
+
+    private bool PdsInsideRing(Vector2 point)
+    {
+        float dx = point.x - obstacleSpawnRadius;
+        float dz = point.y - obstacleSpawnRadius;
+        float distSqr = dx * dx + dz * dz;
+        return distSqr <= pdsRadiusSqr && distSqr >= pdsMinRadiusSqr;
+    }
+
+    private void PdsAddPoint(Vector2 point)
+    {
+        int idx = pdsPoints.Count;
+        pdsPoints.Add(point);
+        pdsActive.Add(point);
+
+        int gx = (int)(point.x / pdsCellSize);
+        int gy = (int)(point.y / pdsCellSize);
+        pdsGrid[gy * pdsGridWidth + gx] = idx;
+    }
+
+    private bool PdsIsValid(Vector2 candidate)
+    {
+        int gx = (int)(candidate.x / pdsCellSize);
+        int gy = (int)(candidate.y / pdsCellSize);
+
+        // Check 5×5 neighbourhood (guaranteed to cover r with cellSize = r/√2)
+        int minX = Mathf.Max(0, gx - 2);
+        int maxX = Mathf.Min(pdsGridWidth - 1, gx + 2);
+        int minY = Mathf.Max(0, gy - 2);
+        int maxY = Mathf.Min(pdsGridHeight - 1, gy + 2);
+
+        for (int y = minY; y <= maxY; y++)
+        {
+            int row = y * pdsGridWidth;
+            for (int x = minX; x <= maxX; x++)
+            {
+                int pointIdx = pdsGrid[row + x];
+                if (pointIdx < 0) continue;
+
+                Vector2 existing = pdsPoints[pointIdx];
+                float dx = candidate.x - existing.x;
+                float dy = candidate.y - existing.y;
+
+                // Squared distance comparison — avoids sqrt
+                if (dx * dx + dy * dy < pdsMinSepSqr)
+                    return false;
+            }
+        }
+        return true;
     }
 
     public override void CollectObservations(VectorSensor sensor)
