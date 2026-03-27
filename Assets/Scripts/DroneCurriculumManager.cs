@@ -40,10 +40,10 @@ public class DroneCurriculumManager : MonoBehaviour
     /// Caches component references and pre-allocates the obstacle pool.
     /// Call once from the agent's <c>Initialize</c>.
     /// </summary>
-    public void Initialise(Transform poolParent)
+    public void Initialise()
     {
         obstacleGenerator = GetComponent<PoissonObstacleGenerator>();
-        obstacleGenerator.Initialise(poolParent);
+        obstacleGenerator.Initialise();
     }
 
     /// <summary>
@@ -103,7 +103,7 @@ public class DroneCurriculumManager : MonoBehaviour
                 drone.localPosition = targetPos + offset + Vector3.up * spawnHeight;
 
                 // Spawn random obstacles inside the max-distance circle
-                obstacleGenerator.Generate(targetPos, drone.parent);
+                obstacleGenerator.Generate(targetPos);
                 break;
             }
 

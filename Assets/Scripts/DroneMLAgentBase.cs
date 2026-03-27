@@ -84,7 +84,7 @@ public abstract class DroneMLAgentBase : Agent
         maxTiltDot = Mathf.Cos(maxTiltAngle * Mathf.Deg2Rad);
 
         curriculumManager = GetComponent<DroneCurriculumManager>();
-        curriculumManager.Initialise(transform.parent);
+        curriculumManager.Initialise();
     }
 
     public override void OnEpisodeBegin()

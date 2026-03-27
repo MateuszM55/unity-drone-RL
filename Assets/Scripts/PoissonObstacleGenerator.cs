@@ -34,6 +34,10 @@ public class PoissonObstacleGenerator : MonoBehaviour
     [Tooltip("Maximum height for obstacle placement.")]
     [SerializeField] private float maxHeight = 6f;
 
+    [Header("Spawn Location")]
+    [Tooltip("Parent transform under which pooled obstacles are instantiated. Defaults to this GameObject's transform.")]
+    [SerializeField] private Transform spawnParent;
+
     // ── Object pool ──
     private readonly List<GameObject> pool = new List<GameObject>();
     private int activeCount;
@@ -54,14 +58,15 @@ public class PoissonObstacleGenerator : MonoBehaviour
     /// <summary>
     /// Pre-allocates the object pool and the Poisson grid.
     /// Call once during setup (e.g. from an Agent's <c>Initialize</c>).
+    /// If <see cref="spawnParent"/> was not assigned in the Inspector,
+    /// it defaults to this GameObject's transform.
     /// </summary>
-    /// <param name="poolParent">
-    /// Transform under which pooled obstacles are instantiated
-    /// (typically the training-area root).
-    /// </param>
-    public void Initialise(Transform poolParent)
+    public void Initialise()
     {
-        InitPool(poolParent);
+        if (spawnParent == null)
+            spawnParent = transform;
+
+        InitPool();
         InitPoissonGrid();
     }
 
@@ -70,14 +75,14 @@ public class PoissonObstacleGenerator : MonoBehaviour
     /// <paramref name="center"/> using Poisson Disk Sampling, then
     /// activates them from the pool.
     /// </summary>
-    public void Generate(Vector3 center, Transform poolParent)
+    public void Generate(Vector3 center)
     {
         if (obstaclePrefab == null) return;
 
         RunPoissonDiskSampling();
 
         int count = Mathf.Min(pdsPoints.Count, obstacleCount);
-        EnsurePoolCapacity(count, poolParent);
+        EnsurePoolCapacity(count);
 
         for (int i = 0; i < count; i++)
         {
@@ -119,25 +124,25 @@ public class PoissonObstacleGenerator : MonoBehaviour
 
     // ── Pool management ──────────────────────────────────────────────────
 
-    private void InitPool(Transform poolParent)
+    private void InitPool()
     {
         if (obstaclePrefab == null) return;
 
         for (int i = 0; i < obstacleCount; i++)
         {
-            GameObject obj = Instantiate(obstaclePrefab, Vector3.zero, Quaternion.identity, poolParent);
+            GameObject obj = Instantiate(obstaclePrefab, Vector3.zero, Quaternion.identity, spawnParent);
             obj.SetActive(false);
             pool.Add(obj);
         }
     }
 
-    private void EnsurePoolCapacity(int required, Transform poolParent)
+    private void EnsurePoolCapacity(int required)
     {
         if (obstaclePrefab == null) return;
 
         while (pool.Count < required)
         {
-            GameObject obj = Instantiate(obstaclePrefab, Vector3.zero, Quaternion.identity, poolParent);
+            GameObject obj = Instantiate(obstaclePrefab, Vector3.zero, Quaternion.identity, spawnParent);
             obj.SetActive(false);
             pool.Add(obj);
         }

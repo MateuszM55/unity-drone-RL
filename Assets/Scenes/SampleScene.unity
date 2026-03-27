@@ -1240,6 +1240,7 @@ MonoBehaviour:
   minSeparation: 5
   minHeight: 3
   maxHeight: 3
+  spawnParent: {fileID: 119988723}
 --- !u!21 &1583401158
 Material:
   serializedVersion: 8
@@ -2302,6 +2303,7 @@ MonoBehaviour:
   minSeparation: 3
   minHeight: 0.5
   maxHeight: 6
+  spawnParent: {fileID: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -2311,6 +2313,6 @@ SceneRoots:
   - {fileID: 832575519}
   - {fileID: 118807906}
   - {fileID: 8785747301531313546}
-  - {fileID: 1164294899}
   - {fileID: 119988723}
   - {fileID: 968571539}
+  - {fileID: 1164294899}
