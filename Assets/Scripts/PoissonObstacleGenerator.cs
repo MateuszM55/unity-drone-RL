@@ -66,6 +66,10 @@ public class PoissonObstacleGenerator : MonoBehaviour
         if (spawnParent == null)
             spawnParent = transform;
 
+        Debug.Assert(minSpawnRadius < spawnRadius,
+            $"[PoissonObstacleGenerator] minSpawnRadius ({minSpawnRadius}) must be < spawnRadius ({spawnRadius}). " +
+            "Otherwise the seed-point search will loop forever.");
+
         InitPool();
         InitPoissonGrid();
     }
@@ -200,14 +204,23 @@ public class PoissonObstacleGenerator : MonoBehaviour
         pdsPoints.Clear();
 
         // First seed: random point inside the circular spawn area
-        Vector2 first;
-        do
+        // Bounded loop to avoid hanging when the ring is degenerate.
+        Vector2 first = default;
+        bool foundSeed = false;
+        const int maxSeedAttempts = 1000;
+        for (int attempt = 0; attempt < maxSeedAttempts; attempt++)
         {
             first = new Vector2(
                 Random.Range(0f, pdsAreaSize),
                 Random.Range(0f, pdsAreaSize));
+            if (PdsInsideRing(first)) { foundSeed = true; break; }
         }
-        while (!PdsInsideRing(first));
+        if (!foundSeed)
+        {
+            Debug.LogWarning("[PoissonObstacleGenerator] Failed to find a valid seed point. " +
+                "Check that minSpawnRadius < spawnRadius.");
+            return;
+        }
 
         PdsAddPoint(first);
 
