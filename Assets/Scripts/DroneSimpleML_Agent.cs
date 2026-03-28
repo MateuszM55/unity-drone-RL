@@ -1,3 +1,4 @@
+using Unity.MLAgents;
 using Unity.MLAgents.Actuators;
 using Unity.MLAgents.Sensors;
 using UnityEngine;
@@ -19,13 +20,22 @@ using UnityEngine;
 /// </summary>
 public class DroneSimpleML_Agent : DroneMLAgentBase
 {
+    [Header("Debug - Live Rewards")]
+    public string debugDeltaDist;
+    public string debugEnergy;
+    public string debugSmoothness;
+    public string debugTilt;
+    public string debugAngularVel;
+    public string debugTime;
+    public string debugTotalStepReward;
+
     [Header("Motor Setup")]
     [Tooltip("Assigned automatically by DroneGenerator.\n" +
              "Order: FL(0), FR(1), RL(2), RR(3)")]
     [SerializeField] private Transform[] rotorTransforms;
 
     [Header("Motor Settings")]
-    [SerializeField] private float maxThrustPerMotor = 15f;
+    [SerializeField] private float maxThrustPerMotor = 5f;
 
     private readonly float[] _previousActions = new float[4];
     private readonly float[] _currentActionsBuffer = new float[4];
@@ -73,27 +83,56 @@ public class DroneSimpleML_Agent : DroneMLAgentBase
         Vector3 targetPos = DroneRewardHelper.ResolveTargetPosition(target, startPosition);
         float distanceToTarget = Vector3.Distance(transform.localPosition, targetPos);
 
-        AddReward(DroneRewardHelper.TiltPenalty(transform.up));
-        AddReward(DroneRewardHelper.AngularVelocityPenalty(rb.angularVelocity.magnitude));
+        float tiltPenalty      = DroneRewardHelper.TiltPenalty(transform.up);
+        float angularVelPenalty = DroneRewardHelper.AngularVelocityPenalty(rb.angularVelocity.magnitude);
         // Delta-distance: reward closing in, penalise drifting away, zero for hovering.
-        if (_previousDistance >= 0f)
-            AddReward(DroneRewardHelper.DeltaDistanceReward(_previousDistance, distanceToTarget));
+        float deltaReward = _previousDistance >= 0f
+            ? DroneRewardHelper.DeltaDistanceReward(_previousDistance, distanceToTarget)
+            : 0f;
         _previousDistance = distanceToTarget;
 
         for (int i = 0; i < 4; i++)
             _currentActionsBuffer[i] = actions.ContinuousActions[i];
-        AddReward(DroneRewardHelper.ActionSmoothnessPenalty(_currentActionsBuffer, _previousActions, 0.005f));
-        AddReward(DroneRewardHelper.EnergyPenalty(_currentActionsBuffer));
+        float smoothnessPenalty = DroneRewardHelper.ActionSmoothnessPenalty(_currentActionsBuffer, _previousActions, 0.005f);
+        float energyPenalty     = DroneRewardHelper.EnergyPenalty(_currentActionsBuffer);
         System.Array.Copy(_currentActionsBuffer, _previousActions, 4);
 
-        AddReward(DroneRewardHelper.TimePenalty(0.001f));
+        float timePenalty = DroneRewardHelper.TimePenalty(0.001f);
+
+        AddReward(tiltPenalty);
+        AddReward(angularVelPenalty);
+        AddReward(deltaReward);
+        AddReward(smoothnessPenalty);
+        AddReward(energyPenalty);
+        AddReward(timePenalty);
+
+        // --- TensorBoard stats ---
+        var stats = Academy.Instance.StatsRecorder;
+        stats.Add("Rewards/DeltaDistance",  deltaReward);
+        stats.Add("Rewards/Energy",         energyPenalty);
+        stats.Add("Rewards/Smoothness",     smoothnessPenalty);
+        stats.Add("Rewards/Time",           timePenalty);
+        stats.Add("Rewards/Tilt",           tiltPenalty);
+        stats.Add("Rewards/AngularVelocity",angularVelPenalty);
+
+        // --- Inspector debug (sign-aligned, fixed-point) ---
+        const string fmt = " 0.00000;-0.00000";
+        debugDeltaDist       = deltaReward.ToString(fmt);
+        debugEnergy          = energyPenalty.ToString(fmt);
+        debugSmoothness      = smoothnessPenalty.ToString(fmt);
+        debugTilt            = tiltPenalty.ToString(fmt);
+        debugAngularVel      = angularVelPenalty.ToString(fmt);
+        debugTime            = timePenalty.ToString(fmt);
+        float total          = deltaReward + energyPenalty + smoothnessPenalty
+                             + timePenalty + tiltPenalty + angularVelPenalty;
+        debugTotalStepReward = total.ToString(fmt);
 
         // Terminal: fell below ground
         var fallen = DroneRewardHelper.CheckFallen(transform.localPosition.y);
         if (fallen.IsTerminal) { SetReward(fallen.Reward); EndEpisode(); return; }
 
         // Terminal: flew too far away
-        var tooFar = DroneRewardHelper.CheckTooFar(distanceToTarget, maxEpisodeDistance);
+        var tooFar = DroneRewardHelper.CheckTooFar(distanceToTarget, maxEpisodeDistance, -5);
         if (tooFar.IsTerminal) { SetReward(tooFar.Reward); EndEpisode(); return; }
     }
 
