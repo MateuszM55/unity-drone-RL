@@ -37,11 +37,6 @@ public class FibonacciSphereSensorComponent : SensorComponent, IDisposable
     [Tooltip("Layer names to detect via one-hot encoding. Order matters (maps to observation indices).")]
     List<string> m_DetectableLayers = new List<string>();
 
-    [Header("Stacking")]
-    [SerializeField, Range(1, 50)]
-    [Tooltip("Number of observation frames to stack before feeding to the neural network.")]
-    int m_ObservationStacks = 1;
-
     [Header("Debug Gizmos")]
     [SerializeField]
     Color m_RayHitColor = Color.red;
@@ -88,13 +83,6 @@ public class FibonacciSphereSensorComponent : SensorComponent, IDisposable
         set => m_DetectableLayers = value;
     }
 
-    /// <summary>Number of observation frames to stack.</summary>
-    public int ObservationStacks
-    {
-        get => m_ObservationStacks;
-        set => m_ObservationStacks = value;
-    }
-
     // ──────────────────────────────────────────────
     //  Internal State
     // ──────────────────────────────────────────────
@@ -125,11 +113,6 @@ public class FibonacciSphereSensorComponent : SensorComponent, IDisposable
             m_RayLayerMask,
             transform
         );
-
-        if (m_ObservationStacks > 1)
-        {
-            return new ISensor[] { new StackingSensor(m_Sensor, m_ObservationStacks) };
-        }
 
         return new ISensor[] { m_Sensor };
     }
