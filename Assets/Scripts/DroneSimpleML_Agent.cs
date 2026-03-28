@@ -28,11 +28,13 @@ public class DroneSimpleML_Agent : DroneMLAgentBase
     [SerializeField] private float maxThrustPerMotor = 15f;
 
     private readonly float[] _previousActions = new float[4];
+    private float _previousDistance = -1f;
 
     public override void OnEpisodeBegin()
     {
         base.OnEpisodeBegin();
         System.Array.Clear(_previousActions, 0, _previousActions.Length);
+        _previousDistance = -1f;
     }
 
     public override void OnActionReceived(ActionBuffers actions)
@@ -64,10 +66,12 @@ public class DroneSimpleML_Agent : DroneMLAgentBase
         Vector3 targetPos = DroneRewardHelper.ResolveTargetPosition(target, startPosition);
         float distanceToTarget = Vector3.Distance(transform.localPosition, targetPos);
 
-        AddReward(DroneRewardHelper.ProximityReward(transform.localPosition, targetPos, startPosition));
         AddReward(DroneRewardHelper.TiltPenalty(transform.up));
         AddReward(DroneRewardHelper.AngularVelocityPenalty(rb.angularVelocity.magnitude));
-        AddReward(DroneRewardHelper.VelocityAlignmentReward(rb.linearVelocity, targetPos - transform.localPosition));
+        // Delta-distance: reward closing in, penalise drifting away, zero for hovering.
+        if (_previousDistance >= 0f)
+            AddReward(DroneRewardHelper.DeltaDistanceReward(_previousDistance, distanceToTarget));
+        _previousDistance = distanceToTarget;
         AddReward(DroneRewardHelper.ActionSmoothnessPenalty(currentActions, _previousActions));
         AddReward(DroneRewardHelper.TimePenalty(0.002f));
 

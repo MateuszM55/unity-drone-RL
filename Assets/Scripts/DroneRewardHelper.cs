@@ -92,6 +92,20 @@ public static class DroneRewardHelper
         return scale * fractionMet;
     }
 
+    /// <summary>
+    /// Potential-based progress reward: positive when the drone moves closer to the target,
+    /// negative when it moves away, and exactly zero when hovering in place.
+    /// Eliminates the position-farming exploit of <see cref="ProximityReward"/>.
+    /// <c>R = scale × (previousDistance − currentDistance)</c>
+    /// </summary>
+    /// <param name="previousDistance">Distance to target at the previous step.</param>
+    /// <param name="currentDistance">Distance to target at the current step.</param>
+    /// <param name="scale">Reward per metre of progress (default 0.1).</param>
+    public static float DeltaDistanceReward(float previousDistance, float currentDistance, float scale = 0.1f)
+    {
+        return scale * (previousDistance - currentDistance);
+    }
+
     /// <summary>Penalty proportional to how far the drone's up axis deviates from world up.</summary>
     public static float TiltPenalty(Vector3 droneUp, float scale = 0.005f)
     {
