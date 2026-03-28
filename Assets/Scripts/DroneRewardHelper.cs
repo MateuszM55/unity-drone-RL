@@ -106,6 +106,27 @@ public static class DroneRewardHelper
     }
 
     /// <summary>
+    /// Penalty proportional to the mean absolute change in motor commands between steps.
+    /// Encourages smooth, jitter-free control signals.
+    /// <c>penalty = −scale × mean(|current[i] − previous[i]|)</c>
+    /// </summary>
+    /// <param name="currentActions">Motor commands issued this step.</param>
+    /// <param name="previousActions">Motor commands issued the previous step.</param>
+    /// <param name="scale">Multiplier applied to the mean delta (default 0.01).</param>
+    public static float ActionSmoothnessPenalty(float[] currentActions, float[] previousActions, float scale = 0.01f)
+    {
+        if (currentActions == null || previousActions == null || currentActions.Length == 0)
+            return 0f;
+
+        float totalDelta = 0f;
+        int count = Mathf.Min(currentActions.Length, previousActions.Length);
+        for (int i = 0; i < count; i++)
+            totalDelta += Mathf.Abs(currentActions[i] - previousActions[i]);
+
+        return -scale * (totalDelta / count);
+    }
+
+    /// <summary>
     /// Reward proportional to how well the drone's velocity aligns with the direction to target.
     /// Both vectors must be expressed in the same coordinate frame (world or local).
     /// </summary>

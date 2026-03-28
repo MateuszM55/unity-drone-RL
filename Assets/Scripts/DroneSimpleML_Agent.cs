@@ -27,6 +27,14 @@ public class DroneSimpleML_Agent : DroneMLAgentBase
     [Header("Motor Settings")]
     [SerializeField] private float maxThrustPerMotor = 15f;
 
+    private readonly float[] _previousActions = new float[4];
+
+    public override void OnEpisodeBegin()
+    {
+        base.OnEpisodeBegin();
+        System.Array.Clear(_previousActions, 0, _previousActions.Length);
+    }
+
     public override void OnActionReceived(ActionBuffers actions)
     {
         if (rotorTransforms == null || rotorTransforms.Length != 4)
@@ -43,6 +51,11 @@ public class DroneSimpleML_Agent : DroneMLAgentBase
             rb.AddForceAtPosition(forceVector, rotorTransforms[i].position);
         }
 
+        // Capture raw actions for smoothness penalty before any early-out
+        float[] currentActions = new float[4];
+        for (int i = 0; i < 4; i++)
+            currentActions[i] = actions.ContinuousActions[i];
+
         // Terminal: excessive tilt
         var tilt = DroneRewardHelper.CheckExcessiveTilt(transform.up, maxTiltDot);
         if (tilt.IsTerminal) { SetReward(tilt.Reward); EndEpisode(); return; }
@@ -55,7 +68,11 @@ public class DroneSimpleML_Agent : DroneMLAgentBase
         AddReward(DroneRewardHelper.TiltPenalty(transform.up));
         AddReward(DroneRewardHelper.AngularVelocityPenalty(rb.angularVelocity.magnitude));
         AddReward(DroneRewardHelper.VelocityAlignmentReward(rb.linearVelocity, targetPos - transform.localPosition));
+        AddReward(DroneRewardHelper.ActionSmoothnessPenalty(currentActions, _previousActions));
         AddReward(DroneRewardHelper.TimePenalty(0.002f));
+
+        // Save actions for the next step's smoothness penalty
+        System.Array.Copy(currentActions, _previousActions, 4);
 
         // Terminal: fell below ground
         var fallen = DroneRewardHelper.CheckFallen(transform.localPosition.y);
