@@ -1,4 +1,5 @@
 using Unity.MLAgents.Actuators;
+using Unity.MLAgents.Sensors;
 using UnityEngine;
 
 /// <summary>
@@ -29,6 +30,18 @@ public class DroneSimpleML_Agent : DroneMLAgentBase
 
     private readonly float[] _previousActions = new float[4];
     private float _previousDistance = -1f;
+
+    /// <summary>
+    /// Extends base observations with the 4 previous motor actions so the
+    /// network can compute thrust deltas instead of absolute values each
+    /// step — eliminates oscillation and makes manoeuvres smoother.
+    /// </summary>
+    public override void CollectObservations(VectorSensor sensor)
+    {
+        base.CollectObservations(sensor);          // 16 floats from base
+        for (int i = 0; i < 4; i++)               // +4 previous actions
+            sensor.AddObservation(_previousActions[i]);
+    }
 
     public override void OnEpisodeBegin()
     {

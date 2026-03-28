@@ -15,7 +15,7 @@ using UnityEngine.InputSystem;
 /// Subclasses implement <see cref="Agent.OnActionReceived"/> and
 /// <see cref="Agent.Heuristic"/> for their specific control schemes.
 ///
-/// OBSERVATION SPACE (16 floats — body-local frame where applicable):
+/// OBSERVATION SPACE (20 floats — body-local frame where applicable):
 ///   - Local unit direction to target        (3)  direction only, always [-1,1]
 ///   - Squashed distance to target           (1)  tanh(d/10), always [0,1)
 ///   - Drone velocity (local)                (3)
@@ -23,6 +23,7 @@ using UnityEngine.InputSystem;
 ///   - Drone orientation (forward)           (3)  world-frame attitude
 ///   - Drone orientation (up)                (3)  world-frame attitude
 ///   (right = cross(forward, up) — omitted, linearly dependent)
+///   - Previous motor actions FL/FR/RL/RR    (4)  proprioception / muscle memory
 ///
 /// The drone model is generated via <see cref="DroneGenerator"/>.
 /// </summary>
