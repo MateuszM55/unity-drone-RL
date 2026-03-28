@@ -11,6 +11,10 @@ using UnityEngine;
 ///   Action 2 → Motor RL thrust
 ///   Action 3 → Motor RR thrust
 ///
+/// ACTION MAPPING — dead-zone:
+///   [-1, 0]  →  0   thrust  (network can easily learn "motor off")
+///   [ 0, 1]  →  [0, 1] thrust  (linear above zero)
+///
 /// Rotor transforms are populated automatically by <see cref="DroneGenerator"/>.
 /// </summary>
 public class DroneSimpleML_Agent : DroneMLAgentBase
@@ -31,8 +35,9 @@ public class DroneSimpleML_Agent : DroneMLAgentBase
         // Apply force at each rotor position
         for (int i = 0; i < 4; i++)
         {
-            // Map action from [-1, 1] to [0, 1] (motors can only push, not pull)
-            float normalized = (actions.ContinuousActions[i] + 1f) * 0.5f;
+            // Dead-zone mapping: [-1, 0] → 0 thrust, [0, 1] → linear thrust.
+            // The network's natural zero output means "motor off", not half-thrust.
+            float normalized = Mathf.Max(0f, actions.ContinuousActions[i]);
             float motorForce = normalized * maxThrustPerMotor;
             Vector3 forceVector = transform.up * motorForce;
             rb.AddForceAtPosition(forceVector, rotorTransforms[i].position);

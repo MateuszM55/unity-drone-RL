@@ -71,8 +71,9 @@ public class DroneForceTorqueML_Agent : DroneMLAgentBase
         float throttleInput = actions.ContinuousActions[3];
 
         // --- THRUST (vertical force along local Up) ---
-        // Remap throttle from [-1, 1] to [0, 1] (drones can't generate negative thrust)
-        float normalizedThrust = (throttleInput + 1f) * 0.5f;
+        // Dead-zone mapping: [-1, 0] → 0 thrust, [0, 1] → linear thrust.
+        // The network's natural zero output means "no thrust", not half-thrust.
+        float normalizedThrust = Mathf.Max(0f, throttleInput);
         float thrustForce = normalizedThrust * maxThrust;
         rb.AddForce(transform.up * thrustForce);
 
