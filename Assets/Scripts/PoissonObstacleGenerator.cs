@@ -28,6 +28,8 @@ public class PoissonObstacleGenerator : MonoBehaviour
     [Header("Poisson Disk Sampling")]
     [Tooltip("Minimum distance between obstacles.")]
     [SerializeField] private float minSeparation = 8f;
+    [Tooltip("Number of seed points scattered around the ring before growth starts. More seeds = better ring coverage when obstacleCount is low.")]
+    [SerializeField] private int pdsSeedCount = 3;
 
     [Header("Height")]
     [Tooltip("Minimum height for obstacle placement.")]
@@ -69,7 +71,7 @@ public class PoissonObstacleGenerator : MonoBehaviour
 
         Debug.Assert(minSpawnRadius < spawnRadius,
             $"[PoissonObstacleGenerator] minSpawnRadius ({minSpawnRadius}) must be < spawnRadius ({spawnRadius}). " +
-            "Otherwise the seed-point search will loop forever.");
+            "The spawn ring would have zero area.");
 
         InitPool();
         InitPoissonGrid();
@@ -207,26 +209,24 @@ public class PoissonObstacleGenerator : MonoBehaviour
         pdsActive.Clear();
         pdsPoints.Clear();
 
-        // First seed: random point inside the circular spawn area
-        // Bounded loop to avoid hanging when the ring is degenerate.
-        Vector2 first = default;
-        bool foundSeed = false;
-        const int maxSeedAttempts = 1000;
-        for (int attempt = 0; attempt < maxSeedAttempts; attempt++)
+        // Multiple seeds — one per angular sector of the ring.
+        // Dividing the circle into pdsSeedCount equal slices and picking a random
+        // point inside each slice ensures growth fronts start simultaneously all
+        // the way around, preventing the crystal-growth clumping problem.
+        // PdsIsValid guards each candidate so minimum-separation is never violated.
+        float angleStep = 2f * Mathf.PI / pdsSeedCount;
+        float halfStep  = angleStep * 0.5f;
+        for (int s = 0; s < pdsSeedCount; s++)
         {
-            first = new Vector2(
-                Random.Range(0f, pdsAreaSize),
-                Random.Range(0f, pdsAreaSize));
-            if (PdsInsideRing(first)) { foundSeed = true; break; }
+            if (pdsPoints.Count >= count) break;
+            float angle  = s * angleStep + Random.Range(-halfStep, halfStep);
+            float radius = Random.Range(minSpawnRadius, spawnRadius);
+            Vector2 seed = new Vector2(
+                pdsAreaSize * 0.5f + Mathf.Cos(angle) * radius,
+                pdsAreaSize * 0.5f + Mathf.Sin(angle) * radius);
+            if (pdsPoints.Count == 0 || PdsIsValid(seed))
+                PdsAddPoint(seed);
         }
-        if (!foundSeed)
-        {
-            Debug.LogWarning("[PoissonObstacleGenerator] Failed to find a valid seed point. " +
-                "Check that minSpawnRadius < spawnRadius.");
-            return;
-        }
-
-        PdsAddPoint(first);
 
         // Main loop — Bridson's algorithm
         while (pdsActive.Count > 0 && pdsPoints.Count < count)
