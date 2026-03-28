@@ -30,7 +30,7 @@ environment_parameters:
         completion_criteria:
           measure: reward
           behavior: FlyToTarget
-          threshold: 1.5
+          threshold: 0.8
           min_lesson_length: 100
         value: 0.0
       - name: Lesson1_Navigation
