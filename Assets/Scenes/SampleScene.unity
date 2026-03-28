@@ -413,7 +413,7 @@ GameObject:
   - component: {fileID: 118807905}
   - component: {fileID: 118807904}
   - component: {fileID: 118807903}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Plane
   m_TagString: Ground
   m_Icon: {fileID: 0}
@@ -526,7 +526,7 @@ GameObject:
   - component: {fileID: 119988722}
   - component: {fileID: 119988721}
   - component: {fileID: 119988720}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Target
   m_TagString: Target
   m_Icon: {fileID: 0}
@@ -1567,6 +1567,26 @@ PrefabInstance:
     - target: {fileID: 2914455323383113197, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5110642379680053202, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
+      propertyPath: m_RayLayerMask.m_Bits
+      value: 4294967295
+      objectReference: {fileID: 0}
+    - target: {fileID: 5110642379680053202, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
+      propertyPath: m_DetectableLayers.Array.size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 5110642379680053202, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
+      propertyPath: 'm_DetectableLayers.Array.data[0]'
+      value: Obstacle
+      objectReference: {fileID: 0}
+    - target: {fileID: 5110642379680053202, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
+      propertyPath: 'm_DetectableLayers.Array.data[1]'
+      value: Ground
+      objectReference: {fileID: 0}
+    - target: {fileID: 5110642379680053202, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
+      propertyPath: 'm_DetectableLayers.Array.data[2]'
+      value: Target
       objectReference: {fileID: 0}
     - target: {fileID: 5209300706112747641, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
       propertyPath: target

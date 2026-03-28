@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.MLAgents.Sensors;
@@ -8,16 +7,16 @@ using UnityEngine;
 /// <summary>
 /// ISensor that casts rays in a uniform spherical pattern (Fibonacci Lattice)
 /// using batched <see cref="RaycastCommand"/> for high-performance sensing.
-/// Each ray produces: 1 normalized distance + one-hot encoding for detectable tags.
-/// Observation size = RayCount * (1 + DetectableTagCount).
+/// Each ray produces: 1 normalized distance + one-hot encoding for detectable layers.
+/// Observation size = RayCount * (1 + DetectableLayerCount).
 /// </summary>
 public sealed class FibonacciSphereSensor : ISensor, IDisposable
 {
     readonly string m_Name;
     readonly int m_RayCount;
     readonly float m_RayLength;
-    readonly List<string> m_DetectableTags;
-    readonly int m_FloatsPerRay;         // 1 (distance) + tag count
+    readonly int[] m_DetectableLayers;
+    readonly int m_FloatsPerRay;         // 1 (distance) + layer count
     readonly int m_ObservationSize;
     readonly LayerMask m_LayerMask;
     readonly ObservationSpec m_ObservationSpec;
@@ -64,18 +63,18 @@ public sealed class FibonacciSphereSensor : ISensor, IDisposable
         string name,
         int rayCount,
         float rayLength,
-        List<string> detectableTags,
+        int[] detectableLayers,
         LayerMask layerMask,
         Transform transform)
     {
         m_Name = name;
         m_RayCount = rayCount;
         m_RayLength = rayLength;
-        m_DetectableTags = detectableTags ?? new List<string>();
+        m_DetectableLayers = detectableLayers ?? Array.Empty<int>();
         m_LayerMask = layerMask;
         m_Transform = transform;
 
-        m_FloatsPerRay = 1 + m_DetectableTags.Count;   // distance + one-hot
+        m_FloatsPerRay = 1 + m_DetectableLayers.Length; // distance + one-hot
         m_ObservationSize = m_RayCount * m_FloatsPerRay;
         m_ObservationSpec = ObservationSpec.Vector(m_ObservationSize);
 
@@ -204,20 +203,21 @@ public sealed class FibonacciSphereSensor : ISensor, IDisposable
                 ? hit.distance / m_RayLength
                 : 1f;
 
-            // One-hot tag encoding
-            for (int t = 0; t < m_DetectableTags.Count; t++)
+            // One-hot layer encoding (integer comparison — no string overhead)
+            for (int t = 0; t < m_DetectableLayers.Length; t++)
             {
                 m_Observations[baseIdx + 1 + t] = 0f;
             }
 
             if (hasHit)
             {
-                for (int t = 0; t < m_DetectableTags.Count; t++)
+                int hitLayer = hit.collider.gameObject.layer;
+                for (int t = 0; t < m_DetectableLayers.Length; t++)
                 {
-                    if (hit.collider.CompareTag(m_DetectableTags[t]))
+                    if (hitLayer == m_DetectableLayers[t])
                     {
                         m_Observations[baseIdx + 1 + t] = 1f;
-                        break; // An object can match at most one tag
+                        break; // An object can match at most one layer
                     }
                 }
             }

@@ -32,10 +32,10 @@ public class FibonacciSphereSensorComponent : SensorComponent, IDisposable
     [Tooltip("Physics layers the rays can hit.")]
     LayerMask m_RayLayerMask = -5; // Default physics layers
 
-    [Header("Tag Detection")]
+    [Header("Layer Detection")]
     [SerializeField]
-    [Tooltip("Tags to detect via one-hot encoding. Order matters (maps to observation indices).")]
-    List<string> m_DetectableTags = new List<string>();
+    [Tooltip("Layer names to detect via one-hot encoding. Order matters (maps to observation indices).")]
+    List<string> m_DetectableLayers = new List<string>();
 
     [Header("Stacking")]
     [SerializeField, Range(1, 50)]
@@ -81,11 +81,11 @@ public class FibonacciSphereSensorComponent : SensorComponent, IDisposable
         set => m_RayLayerMask = value;
     }
 
-    /// <summary>Tags to detect (one-hot encoded).</summary>
-    public List<string> DetectableTags
+    /// <summary>Layer names to detect (one-hot encoded).</summary>
+    public List<string> DetectableLayers
     {
-        get => m_DetectableTags;
-        set => m_DetectableTags = value;
+        get => m_DetectableLayers;
+        set => m_DetectableLayers = value;
     }
 
     /// <summary>Number of observation frames to stack.</summary>
@@ -110,11 +110,18 @@ public class FibonacciSphereSensorComponent : SensorComponent, IDisposable
     {
         Dispose();
 
+        // Convert layer names to indices once at creation time.
+        var layerIndices = new int[m_DetectableLayers.Count];
+        for (int i = 0; i < m_DetectableLayers.Count; i++)
+        {
+            layerIndices[i] = LayerMask.NameToLayer(m_DetectableLayers[i]);
+        }
+
         m_Sensor = new FibonacciSphereSensor(
             m_SensorName,
             m_RayCount,
             m_RayLength,
-            m_DetectableTags,
+            layerIndices,
             m_RayLayerMask,
             transform
         );
