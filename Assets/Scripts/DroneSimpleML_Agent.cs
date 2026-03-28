@@ -28,6 +28,7 @@ public class DroneSimpleML_Agent : DroneMLAgentBase
     [SerializeField] private float maxThrustPerMotor = 15f;
 
     private readonly float[] _previousActions = new float[4];
+    private readonly float[] _currentActionsBuffer = new float[4];
     private float _previousDistance = -1f;
 
     /// <summary>
@@ -79,17 +80,12 @@ public class DroneSimpleML_Agent : DroneMLAgentBase
             AddReward(DroneRewardHelper.DeltaDistanceReward(_previousDistance, distanceToTarget));
         _previousDistance = distanceToTarget;
 
-        // Compute smoothness penalty and update _previousActions in one pass — no allocation.
-        float totalDelta = 0f;
         for (int i = 0; i < 4; i++)
-        {
-            float current = actions.ContinuousActions[i];
-            totalDelta += Mathf.Abs(current - _previousActions[i]);
-            _previousActions[i] = current;
-        }
-        AddReward(-0.01f * (totalDelta / 4f));
+            _currentActionsBuffer[i] = actions.ContinuousActions[i];
+        AddReward(DroneRewardHelper.ActionSmoothnessPenalty(_currentActionsBuffer, _previousActions, 0.001f));
+        System.Array.Copy(_currentActionsBuffer, _previousActions, 4);
 
-        AddReward(DroneRewardHelper.TimePenalty(0.002f));
+        AddReward(DroneRewardHelper.TimePenalty(0.001f));
 
         // Terminal: fell below ground
         var fallen = DroneRewardHelper.CheckFallen(transform.localPosition.y);
