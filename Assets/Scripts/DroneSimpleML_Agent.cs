@@ -83,6 +83,7 @@ public class DroneSimpleML_Agent : DroneMLAgentBase
         for (int i = 0; i < 4; i++)
             _currentActionsBuffer[i] = actions.ContinuousActions[i];
         AddReward(DroneRewardHelper.ActionSmoothnessPenalty(_currentActionsBuffer, _previousActions, 0.001f));
+        AddReward(DroneRewardHelper.EnergyPenalty(_currentActionsBuffer));
         System.Array.Copy(_currentActionsBuffer, _previousActions, 4);
 
         AddReward(DroneRewardHelper.TimePenalty(0.001f));

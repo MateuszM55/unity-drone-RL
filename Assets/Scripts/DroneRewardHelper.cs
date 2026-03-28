@@ -161,6 +161,28 @@ public static class DroneRewardHelper
         return -scale;
     }
 
+    /// <summary>
+    /// Penalty proportional to the mean squared normalised thrust across all motors.
+    /// Discourages the network from saturating motors at full throttle when it isn't needed.
+    /// Actions are assumed to be in [−1, 1]; thrust is mapped to [0, 1] before squaring.
+    /// <c>penalty = −scale × mean((action[i] + 1) / 2)²</c>
+    /// </summary>
+    /// <param name="actions">Raw continuous actions in [−1, 1].</param>
+    /// <param name="scale">Multiplier applied to the mean energy (default 0.001).</param>
+    public static float EnergyPenalty(float[] actions, float scale = 0.001f)
+    {
+        if (actions == null || actions.Length == 0)
+            return 0f;
+
+        float total = 0f;
+        for (int i = 0; i < actions.Length; i++)
+        {
+            float thrust = (actions[i] + 1f) * 0.5f;
+            total += thrust * thrust;
+        }
+        return -scale * (total / actions.Length);
+    }
+
     // ────────────────────────── Utility ────────────────────────────────────
 
     /// <summary>Resolves the effective target position, falling back to a default hover point.</summary>
