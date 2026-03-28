@@ -6,8 +6,8 @@ using UnityEngine;
 /// Drop this on any GameObject with a Rigidbody to get realistic
 /// physics without relying on Unity's built-in linear damping.
 ///
-/// Linear drag:  F_d = -½ · ρ · Cd · A · |v| · v
-/// Angular drag:  τ_d = -k_ang · |ω| · ω
+/// Linear drag:   F_d   = -½ · ρ · Cd · A · |v| · v
+/// Angular drag:  τ_d_i = -k_i · |ω_i| · ω_i   (per local axis, i ∈ {x,y,z})
 /// </summary>
 [DisallowMultipleComponent]
 [RequireComponent(typeof(Rigidbody))]
@@ -23,8 +23,9 @@ public class DroneAerodynamics : MonoBehaviour
     [SerializeField] private float dragCoefficient = 0.5f;
     [Tooltip("Cross-sectional area of the drone in m².")]
     [SerializeField] private float crossSectionalArea = 0.04f;
-    [Tooltip("Lumped angular drag coefficient (combines Cd, area, and geometry for rotational resistance).")]
-    [SerializeField] private float angularDragCoefficient = 0.005f;
+    [Tooltip("Per-axis angular drag coefficients in local space (x = Pitch, y = Yaw, z = Roll).\n" +
+             "Yaw resistance is typically higher than Pitch/Roll on a quadcopter due to arm geometry.")]
+    [SerializeField] private Vector3 angularDragCoefficients = new Vector3(0.005f, 0.01f, 0.005f);
 
     private Rigidbody rb;
 
@@ -63,13 +64,16 @@ public class DroneAerodynamics : MonoBehaviour
             rb.AddForce(linearDragForce, ForceMode.Force);
         }
 
-        // --- Quadratic angular drag: τ_d = -k_ang · |ω| · ω ---
-        Vector3 angVel = rb.angularVelocity;
-        float angSpeed = angVel.magnitude;
-        if (angSpeed > 1e-4f)
+        // --- Quadratic angular drag: τ_d_i = -k_i · |ω_i| · ω_i  (per local axis) ---
+        // Work in local space so x/z always mean Pitch/Roll and y always means Yaw.
+        Vector3 localAngVel = transform.InverseTransformDirection(rb.angularVelocity);
+        if (localAngVel.magnitude > 1e-4f)
         {
-            Vector3 angularDragTorque = -angularDragCoefficient * angSpeed * angVel;
-            rb.AddTorque(angularDragTorque, ForceMode.Force);
+            Vector3 localDragTorque = new Vector3(
+                -angularDragCoefficients.x * Mathf.Abs(localAngVel.x) * localAngVel.x,
+                -angularDragCoefficients.y * Mathf.Abs(localAngVel.y) * localAngVel.y,
+                -angularDragCoefficients.z * Mathf.Abs(localAngVel.z) * localAngVel.z);
+            rb.AddTorque(transform.TransformDirection(localDragTorque), ForceMode.Force);
         }
     }
 }
