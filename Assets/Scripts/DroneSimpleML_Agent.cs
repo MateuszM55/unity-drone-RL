@@ -54,6 +54,7 @@ public class DroneSimpleML_Agent : DroneMLAgentBase
         AddReward(DroneRewardHelper.ProximityReward(transform.localPosition, targetPos, startPosition));
         AddReward(DroneRewardHelper.TiltPenalty(transform.up));
         AddReward(DroneRewardHelper.AngularVelocityPenalty(rb.angularVelocity.magnitude));
+        AddReward(DroneRewardHelper.VelocityAlignmentReward(rb.linearVelocity, targetPos - transform.localPosition));
         AddReward(DroneRewardHelper.TimePenalty(0.002f));
 
         // Terminal: fell below ground
