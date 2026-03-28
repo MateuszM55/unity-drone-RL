@@ -66,11 +66,6 @@ public class DroneSimpleML_Agent : DroneMLAgentBase
             rb.AddForceAtPosition(forceVector, rotorTransforms[i].position);
         }
 
-        // Capture raw actions for smoothness penalty before any early-out
-        float[] currentActions = new float[4];
-        for (int i = 0; i < 4; i++)
-            currentActions[i] = actions.ContinuousActions[i];
-
         // Terminal: excessive tilt
         var tilt = DroneRewardHelper.CheckExcessiveTilt(transform.up, maxTiltDot);
         if (tilt.IsTerminal) { SetReward(tilt.Reward); EndEpisode(); return; }
@@ -85,11 +80,18 @@ public class DroneSimpleML_Agent : DroneMLAgentBase
         if (_previousDistance >= 0f)
             AddReward(DroneRewardHelper.DeltaDistanceReward(_previousDistance, distanceToTarget));
         _previousDistance = distanceToTarget;
-        AddReward(DroneRewardHelper.ActionSmoothnessPenalty(currentActions, _previousActions));
-        AddReward(DroneRewardHelper.TimePenalty(0.002f));
 
-        // Save actions for the next step's smoothness penalty
-        System.Array.Copy(currentActions, _previousActions, 4);
+        // Compute smoothness penalty and update _previousActions in one pass — no allocation.
+        float totalDelta = 0f;
+        for (int i = 0; i < 4; i++)
+        {
+            float current = actions.ContinuousActions[i];
+            totalDelta += Mathf.Abs(current - _previousActions[i]);
+            _previousActions[i] = current;
+        }
+        AddReward(-0.01f * (totalDelta / 4f));
+
+        AddReward(DroneRewardHelper.TimePenalty(0.002f));
 
         // Terminal: fell below ground
         var fallen = DroneRewardHelper.CheckFallen(transform.localPosition.y);
