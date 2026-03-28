@@ -174,12 +174,13 @@ public sealed class FibonacciSphereSensor : ISensor, IDisposable
     {
         Vector3 origin = m_Transform.position;
         Quaternion rotation = m_Transform.rotation;
+        PhysicsScene physicsScene = m_Transform.gameObject.scene.GetPhysicsScene();
 
         // Populate commands
         for (int i = 0; i < m_RayCount; i++)
         {
             Vector3 worldDir = rotation * m_RayDirections[i];
-            m_RayCommands[i] = new RaycastCommand(origin, worldDir, new QueryParameters(m_LayerMask), m_RayLength);
+            m_RayCommands[i] = new RaycastCommand(physicsScene, origin, worldDir, new QueryParameters(m_LayerMask), m_RayLength);
         }
 
         // Schedule the batch — do NOT complete here; let Write() do it
