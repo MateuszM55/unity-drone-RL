@@ -8,6 +8,9 @@ using UnityEngine;
 /// </summary>
 public static class DroneRewardHelper
 {
+    /// <summary>Penalty applied when the drone collides with an obstacle or the ground.</summary>
+    public const float ObstaclePenalty = -1.0f;
+
     /// <summary>Result of a terminal-condition check.</summary>
     public struct TerminalCheck
     {
@@ -127,7 +130,7 @@ public static class DroneRewardHelper
     /// <param name="currentActions">Motor commands issued this step.</param>
     /// <param name="previousActions">Motor commands issued the previous step.</param>
     /// <param name="scale">Multiplier applied to the mean delta (default 0.01).</param>
-    public static float ActionSmoothnessPenalty(float[] currentActions, float[] previousActions, float scale = 0.01f)
+    public static float ActionSmoothnessPenalty(float[] currentActions, float[] previousActions, float scale = 0.001f)
     {
         if (currentActions == null || previousActions == null || currentActions.Length == 0)
             return 0f;

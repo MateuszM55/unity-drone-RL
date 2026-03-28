@@ -141,8 +141,8 @@ public abstract class DroneMLAgentBase : Agent
             return;
         }
 
-        // Collision with obstacle or ground: -1.0 penalty
-        SetReward(-1.0f);
+        // Collision with obstacle or ground
+        SetReward(DroneRewardHelper.ObstaclePenalty);
         EndEpisode();
     }
 }

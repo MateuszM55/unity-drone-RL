@@ -30,28 +30,28 @@ environment_parameters:
         completion_criteria:
           measure: reward
           behavior: FlyToTarget
-          threshold: 0.8
+          threshold: 0.7
           min_lesson_length: 100
         value: 0.0
       - name: Lesson1_Navigation
         completion_criteria:
           measure: reward
           behavior: FlyToTarget
-          threshold: 1
+          threshold: 0.8
           min_lesson_length: 100
         value: 1.0
       - name: Lesson2_FarNavigation
         completion_criteria:
           measure: reward
           behavior: FlyToTarget
-          threshold: 0.8
+          threshold: 1.5
           min_lesson_length: 100
         value: 2.0
       - name: Lesson3_Obstacles
         completion_criteria:
           measure: reward
           behavior: FlyToTarget
-          threshold: 0.5
+          threshold: 1.2
           min_lesson_length: 100
         value: 3.0
       - name: Lesson4_FarObstacles
