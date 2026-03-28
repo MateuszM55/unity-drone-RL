@@ -81,22 +81,42 @@ public class PoissonObstacleGenerator : MonoBehaviour
     /// </summary>
     public void Generate(Vector3 center)
     {
+        GenerateInternal(center, obstacleCount, spawnRadius, minSeparation);
+    }
+
+    /// <summary>
+    /// Generates obstacles using the given per-call parameters instead of
+    /// the serialised defaults.
+    /// </summary>
+    public void Generate(Vector3 center, int overrideCount, float overrideRadius, float overrideMinSep)
+    {
+        GenerateInternal(center, overrideCount, overrideRadius, overrideMinSep);
+    }
+
+    /// <summary>
+    /// Core generation logic. Rebuilds the Poisson grid for the given
+    /// dimensions, runs sampling, and activates obstacles from the pool.
+    /// No serialised fields are mutated.
+    /// </summary>
+    private void GenerateInternal(Vector3 center, int count, float radius, float sep)
+    {
         if (obstaclePrefab == null) return;
 
-        RunPoissonDiskSampling();
+        InitPoissonGrid(count, radius, sep);
+        RunPoissonDiskSampling(count, sep);
 
-        int count = Mathf.Min(pdsPoints.Count, obstacleCount);
-        EnsurePoolCapacity(count);
+        int placed = Mathf.Min(pdsPoints.Count, count);
+        EnsurePoolCapacity(placed);
 
-        for (int i = 0; i < count; i++)
+        for (int i = 0; i < placed; i++)
         {
             Vector2 pt = pdsPoints[i];
 
             // Convert from PDS local [0, areaSize] to world offset [-radius, +radius]
             Vector3 pos = center + new Vector3(
-                pt.x - spawnRadius,
+                pt.x - radius,
                 Random.Range(minHeight, maxHeight),
-                pt.y - spawnRadius);
+                pt.y - radius);
 
             Quaternion rot = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
 
@@ -110,31 +130,7 @@ public class PoissonObstacleGenerator : MonoBehaviour
                 obstacleRb.angularVelocity = Vector3.zero;
             }
         }
-        activeCount = count;
-    }
-
-    /// <summary>
-    /// Generates obstacles using the given per-call parameters instead of
-    /// the serialised defaults. The Poisson grid is rebuilt for the new
-    /// dimensions and restored afterwards.
-    /// </summary>
-    public void Generate(Vector3 center, int overrideCount, float overrideRadius, float overrideMinSep)
-    {
-        int origCount = obstacleCount;
-        float origRadius = spawnRadius;
-        float origMinSep = minSeparation;
-
-        obstacleCount = overrideCount;
-        spawnRadius = overrideRadius;
-        minSeparation = overrideMinSep;
-        InitPoissonGrid();
-
-        Generate(center);
-
-        obstacleCount = origCount;
-        spawnRadius = origRadius;
-        minSeparation = origMinSep;
-        InitPoissonGrid();
+        activeCount = placed;
     }
 
     /// <summary>
@@ -180,21 +176,26 @@ public class PoissonObstacleGenerator : MonoBehaviour
 
     private void InitPoissonGrid()
     {
-        pdsAreaSize = 2f * spawnRadius;
-        pdsCellSize = minSeparation / 1.41421356f; // r / sqrt(2)
+        InitPoissonGrid(obstacleCount, spawnRadius, minSeparation);
+    }
+
+    private void InitPoissonGrid(int count, float radius, float sep)
+    {
+        pdsAreaSize = 2f * radius;
+        pdsCellSize = sep / 1.41421356f; // r / sqrt(2)
         pdsGridWidth = Mathf.CeilToInt(pdsAreaSize / pdsCellSize);
         pdsGridHeight = Mathf.CeilToInt(pdsAreaSize / pdsCellSize);
-        pdsMinSepSqr = minSeparation * minSeparation;
-        pdsRadiusSqr = spawnRadius * spawnRadius;
+        pdsMinSepSqr = sep * sep;
+        pdsRadiusSqr = radius * radius;
         pdsMinRadiusSqr = minSpawnRadius * minSpawnRadius;
         pdsGrid = new int[pdsGridWidth * pdsGridHeight];
 
         // Pre-size the lists to avoid runtime allocations
-        pdsActive.Capacity = Mathf.Max(pdsActive.Capacity, obstacleCount * 2);
-        pdsPoints.Capacity = Mathf.Max(pdsPoints.Capacity, obstacleCount * 2);
+        pdsActive.Capacity = Mathf.Max(pdsActive.Capacity, count * 2);
+        pdsPoints.Capacity = Mathf.Max(pdsPoints.Capacity, count * 2);
     }
 
-    private void RunPoissonDiskSampling()
+    private void RunPoissonDiskSampling(int count, float sep)
     {
         // Reset grid — fast integer fill, no allocations
         for (int i = 0; i < pdsGrid.Length; i++)
@@ -225,7 +226,7 @@ public class PoissonObstacleGenerator : MonoBehaviour
         PdsAddPoint(first);
 
         // Main loop — Bridson's algorithm
-        while (pdsActive.Count > 0 && pdsPoints.Count < obstacleCount)
+        while (pdsActive.Count > 0 && pdsPoints.Count < count)
         {
             // Pick a random active point
             int activeIdx = Random.Range(0, pdsActive.Count);
@@ -236,7 +237,7 @@ public class PoissonObstacleGenerator : MonoBehaviour
             {
                 // Random candidate in the annulus [r, 2r]
                 float angle = Random.Range(0f, 2f * Mathf.PI);
-                float dist = Random.Range(minSeparation, 2f * minSeparation);
+                float dist = Random.Range(sep, 2f * sep);
                 Vector2 candidate = new Vector2(
                     origin.x + Mathf.Cos(angle) * dist,
                     origin.y + Mathf.Sin(angle) * dist);
@@ -257,7 +258,7 @@ public class PoissonObstacleGenerator : MonoBehaviour
                 PdsAddPoint(candidate);
                 anyAccepted = true;
 
-                if (pdsPoints.Count >= obstacleCount)
+                if (pdsPoints.Count >= count)
                     break;
             }
 

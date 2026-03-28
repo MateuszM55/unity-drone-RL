@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Unity.Collections;
+using Unity.Jobs;
 using Unity.MLAgents.Sensors;
 using UnityEngine;
 
@@ -32,6 +33,10 @@ public sealed class FibonacciSphereSensor : ISensor, IDisposable
     // Batched raycast native arrays — allocated once, reused every frame.
     NativeArray<RaycastCommand> m_RayCommands;
     NativeArray<RaycastHit> m_RayHits;
+
+    // Deferred job handle — scheduled in Update, completed in Write.
+    JobHandle m_PendingHandle;
+    bool m_HasPendingJob;
 
     /// <summary>
     /// The pre-computed local-space ray directions (for Gizmo drawing).
@@ -121,6 +126,14 @@ public sealed class FibonacciSphereSensor : ISensor, IDisposable
     /// <inheritdoc/>
     public int Write(ObservationWriter writer)
     {
+        // Complete the deferred raycast batch and process results
+        if (m_HasPendingJob)
+        {
+            m_PendingHandle.Complete();
+            m_HasPendingJob = false;
+            ProcessHits();
+        }
+
         for (int i = 0; i < m_ObservationSize; i++)
         {
             writer[i] = m_Observations[i];
@@ -140,7 +153,7 @@ public sealed class FibonacciSphereSensor : ISensor, IDisposable
         if (m_Transform == null)
             return;
 
-        PerceiveRays();
+        ScheduleRays();
     }
 
     /// <inheritdoc/>
@@ -153,7 +166,11 @@ public sealed class FibonacciSphereSensor : ISensor, IDisposable
     //  Batched Raycast (RaycastCommand + JobHandle)
     // ──────────────────────────────────────────────
 
-    void PerceiveRays()
+    /// <summary>
+    /// Populates raycast commands and schedules the batch.
+    /// The <see cref="JobHandle"/> is stored for deferred completion in <see cref="Write"/>.
+    /// </summary>
+    void ScheduleRays()
     {
         Vector3 origin = m_Transform.position;
         Quaternion rotation = m_Transform.rotation;
@@ -165,11 +182,16 @@ public sealed class FibonacciSphereSensor : ISensor, IDisposable
             m_RayCommands[i] = new RaycastCommand(origin, worldDir, new QueryParameters(m_LayerMask), m_RayLength);
         }
 
-        // Schedule and complete the batch
-        var handle = RaycastCommand.ScheduleBatch(m_RayCommands, m_RayHits, 32);
-        handle.Complete();
+        // Schedule the batch — do NOT complete here; let Write() do it
+        m_PendingHandle = RaycastCommand.ScheduleBatch(m_RayCommands, m_RayHits, 32);
+        m_HasPendingJob = true;
+    }
 
-        // Process hits
+    /// <summary>
+    /// Reads the completed raycast results and fills <see cref="m_Observations"/>.
+    /// </summary>
+    void ProcessHits()
+    {
         for (int i = 0; i < m_RayCount; i++)
         {
             int baseIdx = i * m_FloatsPerRay;
@@ -207,6 +229,11 @@ public sealed class FibonacciSphereSensor : ISensor, IDisposable
 
     public void Dispose()
     {
+        if (m_HasPendingJob)
+        {
+            m_PendingHandle.Complete();
+            m_HasPendingJob = false;
+        }
         if (m_RayCommands.IsCreated) m_RayCommands.Dispose();
         if (m_RayHits.IsCreated) m_RayHits.Dispose();
     }
