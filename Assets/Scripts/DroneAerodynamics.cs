@@ -9,6 +9,7 @@ using UnityEngine;
 /// Linear drag:  F_d = -½ · ρ · Cd · A · |v| · v
 /// Angular drag:  τ_d = -k_ang · |ω| · ω
 /// </summary>
+[DisallowMultipleComponent]
 [RequireComponent(typeof(Rigidbody))]
 public class DroneAerodynamics : MonoBehaviour
 {

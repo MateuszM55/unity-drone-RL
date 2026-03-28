@@ -25,6 +25,7 @@ public enum Lesson
 /// Call <see cref="Initialise"/> once, then <see cref="SetupEpisode"/>
 /// at the start of every episode.
 /// </summary>
+[DisallowMultipleComponent]
 [RequireComponent(typeof(PoissonObstacleGenerator))]
 public class DroneCurriculumManager : MonoBehaviour
 {

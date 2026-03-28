@@ -10,6 +10,7 @@ using UnityEngine;
 /// <see cref="Initialise"/> once, then <see cref="Generate"/> / <see cref="Clear"/>
 /// each episode.
 /// </summary>
+[DisallowMultipleComponent]
 public class PoissonObstacleGenerator : MonoBehaviour
 {
     [Header("Obstacle Prefab & Counts")]
@@ -101,6 +102,9 @@ public class PoissonObstacleGenerator : MonoBehaviour
     private void GenerateInternal(Vector3 center, int count, float radius, float sep)
     {
         if (obstaclePrefab == null) return;
+
+        // Deactivate any previously active obstacles
+        Clear();
 
         InitPoissonGrid(count, radius, sep);
         RunPoissonDiskSampling(count, sep);
@@ -197,9 +201,8 @@ public class PoissonObstacleGenerator : MonoBehaviour
 
     private void RunPoissonDiskSampling(int count, float sep)
     {
-        // Reset grid — fast integer fill, no allocations
-        for (int i = 0; i < pdsGrid.Length; i++)
-            pdsGrid[i] = -1;
+        // Reset grid — fast fill, no allocations
+        System.Array.Fill(pdsGrid, -1);
 
         pdsActive.Clear();
         pdsPoints.Clear();
