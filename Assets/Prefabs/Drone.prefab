@@ -458,6 +458,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2914455323383113197}
   - component: {fileID: 1405414569429997631}
+  - component: {fileID: 5779390530071386036}
   - component: {fileID: 2445584907222576922}
   - component: {fileID: 5209300706112747641}
   - component: {fileID: 5110642379680053202}
@@ -466,6 +467,8 @@ GameObject:
   - component: {fileID: 8473377846294626638}
   - component: {fileID: 2043904477814019484}
   - component: {fileID: 3387717839639751556}
+  - component: {fileID: 6977336109000679151}
+  - component: {fileID: 7509962756357790996}
   m_Layer: 2
   m_Name: Drone
   m_TagString: Untagged
@@ -510,12 +513,7 @@ MonoBehaviour:
   hasUpgradedFromAgentParameters: 1
   MaxStep: 10000
   touchdownDelay: 1
-  maxSafeTouchdownSpeed: 2
-  maxTiltAngle: 60
-  debugDeltaDist: 
-  debugEnergy: 
-  debugTime: 
-  debugTotalStepReward: 
+  rewardProfile: {fileID: 11400000, guid: 66b216d7f570ab94d9617f7738f35d7b, type: 2}
   rotorTransforms:
   - {fileID: 6062906994666559814}
   - {fileID: 2143227042439892398}
@@ -523,6 +521,27 @@ MonoBehaviour:
   - {fileID: 2521061130302904124}
   maxThrustPerMotor: 5
   timeToMaxThrust: 0.1
+--- !u!114 &5779390530071386036
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7373009167866404446}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99fe01f6ee69c6046a1eff840dbbc4ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DroneTelemetry
+  debugDeltaDist: 
+  debugProximity: 
+  debugEnergy: 
+  debugSmoothness: 
+  debugTilt: 
+  debugAngularVelocity: 
+  debugVelAlignment: 
+  debugTime: 
+  debugTotalStepReward: 
 --- !u!114 &2445584907222576922
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -618,7 +637,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Unity.ML-Agents::Unity.MLAgents.Policies.BehaviorParameters
   m_BrainParameters:
-    VectorObservationSize: 20
+    VectorObservationSize: 24
     NumStackedVectorObservations: 3
     m_ActionSpec:
       m_NumContinuousActions: 4
@@ -698,6 +717,30 @@ MonoBehaviour:
   bodyColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   frontRotorColor: {r: 1, g: 0, b: 0, a: 1}
   rearRotorColor: {r: 0, g: 0, b: 1, a: 1}
+--- !u!114 &6977336109000679151
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7373009167866404446}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5c8a731c7a7e9ef47ac900926fdcbb5c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DroneObserver
+--- !u!114 &7509962756357790996
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7373009167866404446}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cea5e370c45b3b946a6c858834339ca6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DroneRewardEvaluator
 --- !u!1 &7539602576558968694
 GameObject:
   m_ObjectHideFlags: 0

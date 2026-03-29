@@ -12,11 +12,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f51384c82e81c4a4f9e7aedc2395a6a0, type: 3}
   m_Name: IncrementalDrone
   m_EditorClassIdentifier: Assembly-CSharp::DroneRewardProfile
-  landingSuccess: 20
+  landingSuccess: 5
   obstacleCollision: -10
-  deltaDistanceScale: 1
+  deltaDistanceScale: 0.01
   energyScale: 0.001
   smoothnessScale: 0.0005
   timeScale: 0.001
   maxSafeLandingSpeed: 2
   maxTiltAngle: 60
+  targetReachedThreshold: 0.5
+  targetReachedReward: 1
+  tooFarPenalty: -1
+  fallenMinY: -0.5
+  fallenPenalty: -1
+  excessiveTiltPenalty: -1
+  proximityRewardScale: 0.01
+  tiltPenaltyScale: 0.005
+  angularVelocityPenaltyScale: 0.001
+  velocityAlignmentScale: 0.01
+  distanceNorm: 10
