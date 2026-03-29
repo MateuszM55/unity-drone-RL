@@ -1,7 +1,7 @@
 using UnityEngine;
 
 /// <summary>
-/// Scriptable-object "control panel" for all drone reward magnitudes and safety thresholds.
+/// Scriptable-object "control panel" for all drone reward magnitudes and thresholds.
 ///
 /// Create profiles via the Unity menu: Assets → Create → Drone → Reward Profile.
 /// Assign the desired profile to the <c>rewardProfile</c> field on any
@@ -12,7 +12,7 @@ using UnityEngine;
 public class DroneRewardProfile : ScriptableObject
 {
     [Header("Main Rewards")]
-    [Tooltip("Maximum reward for landing on the target (multiplied by the soft-landing factor).")]
+    [Tooltip("Flat reward given when the drone lands on the target.")]
     public float landingSuccess = 5f;
     [Tooltip("Terminal penalty applied when the drone collides with an obstacle or the ground.")]
     public float obstacleCollision = -10f;
@@ -31,13 +31,9 @@ public class DroneRewardProfile : ScriptableObject
     [Tooltip("Radius (metres) within which the fast-approach penalty is active.")]
     public float landingRadius = 5f;
 
-    [Header("Safety Thresholds")]
-    [Tooltip("Reference landing speed (m/s) at which the landing reward halves. Lower = stricter.")]
-    public float maxSafeLandingSpeed = 2f;
+    [Header("Terminal Condition Rewards")]
     [Tooltip("Maximum tilt angle (degrees) from world up before the episode is terminated.")]
     public float maxTiltAngle = 60f;
-
-    [Header("Terminal Condition Rewards")]
     [Tooltip("Distance threshold (metres) at which the drone is considered to have reached the target.")]
     public float targetReachedThreshold = 0.5f;
     [Tooltip("Reward given when the drone reaches the target (CheckTargetReached).")]

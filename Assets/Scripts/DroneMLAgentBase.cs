@@ -33,7 +33,7 @@ public abstract class DroneMLAgentBase : Agent
     [SerializeField] protected float touchdownDelay = 1f;
 
     [Header("Reward Profile")]
-    [Tooltip("Scriptable object that controls all reward magnitudes and safety thresholds.")]
+    [Tooltip("Scriptable object that controls all reward magnitudes and thresholds.")]
     [SerializeField] protected DroneRewardProfile rewardProfile;
 
     protected Rigidbody rb;
@@ -125,17 +125,14 @@ public abstract class DroneMLAgentBase : Agent
 
     protected virtual void OnCollisionEnter(Collision collision)
     {
-        // Landing on the target: reward inversely proportional to touchdown speed
+        // Landing on the target: flat touchdown reward
         if (target != null && collision.transform == target)
         {
             if (!hasLanded)
             {
                 hasLanded = true;
                 touchdownTimer = touchdownDelay;
-                float speed   = rb.linearVelocity.magnitude;
-                float maxSafe = rewardProfile != null ? rewardProfile.maxSafeLandingSpeed : 2f;
-                float scale   = rewardProfile != null ? rewardProfile.landingSuccess      : 1f;
-                AddReward(scale * DroneRewardHelper.TouchdownReward(speed, maxSafe));
+                AddReward(DroneRewardHelper.TouchdownReward(rewardProfile != null ? rewardProfile.landingSuccess : 1f));
             }
             return;
         }

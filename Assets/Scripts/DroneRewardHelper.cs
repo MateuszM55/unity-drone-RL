@@ -41,16 +41,11 @@ public static class DroneRewardHelper
         };
     }
 
-    /// <summary>
-    /// Reward for landing on the target, inversely proportional to touchdown speed.
-    /// Returns 1.0 at zero speed and falls towards 0 as speed increases.
-    /// <c>R = 1 / (1 + speed / maxSafeSpeed)</c>
-    /// </summary>
-    /// <param name="touchdownSpeed">Magnitude of the drone's velocity at the moment of contact.</param>
-    /// <param name="maxSafeSpeed">Reference speed at which the reward halves (default 2 m/s).</param>
-    public static float TouchdownReward(float touchdownSpeed, float maxSafeSpeed = 2f)
+    /// <summary>Flat reward given when the drone lands on the target.</summary>
+    /// <param name="flatValue">Reward magnitude configured in the reward profile.</param>
+    public static float TouchdownReward(float flatValue = 1f)
     {
-        return 1f / (1f + touchdownSpeed / maxSafeSpeed);
+        return flatValue;
     }
 
     // ───────────────────────── Continuous Shaping ──────────────────────────
