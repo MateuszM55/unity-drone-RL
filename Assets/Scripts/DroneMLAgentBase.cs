@@ -35,12 +35,17 @@ public abstract class DroneMLAgentBase : Agent
     [Header("Touchdown")]
     [Tooltip("Seconds to wait after landing on the target before ending the episode.")]
     [SerializeField] protected float touchdownDelay = 1f;
-    [Tooltip("Reference speed (m/s) at which the landing reward halves. Lower = stricter.")]
-    [SerializeField] protected float maxSafeTouchdownSpeed = 2f;
 
-    [Header("Safety / Termination")]
-    [Tooltip("Maximum tilt angle (degrees) from world up before the episode is terminated.")]
-    [SerializeField] protected float maxTiltAngle = 60f;
+    [Header("Reward Profile")]
+    [Tooltip("Scriptable object that controls all reward magnitudes and safety thresholds.")]
+    [SerializeField] protected DroneRewardProfile rewardProfile;
+
+    [Header("Debug - Live Rewards")]
+    public string debugDeltaDist;
+    public string debugEnergy;
+    public string debugSmoothness;
+    public string debugTime;
+    public string debugTotalStepReward;
 
     protected Rigidbody rb;
     protected Vector3 startPosition;
@@ -50,6 +55,7 @@ public abstract class DroneMLAgentBase : Agent
     protected float maxEpisodeDistance;
     protected bool hasLanded;
     protected float touchdownTimer;
+    protected float _previousDistance = -1f;
     protected DroneCurriculumManager curriculumManager;
 
     /// <summary>Convenience accessor — delegates to <see cref="DroneCurriculumManager.Target"/>.</summary>
@@ -65,7 +71,9 @@ public abstract class DroneMLAgentBase : Agent
         startPosition = transform.localPosition;
         startRotation = transform.localRotation;
         keyboard = Keyboard.current;
-        maxTiltDot = Mathf.Cos(maxTiltAngle * Mathf.Deg2Rad);
+        maxTiltDot = rewardProfile != null
+            ? Mathf.Cos(rewardProfile.maxTiltAngle * Mathf.Deg2Rad)
+            : Mathf.Cos(60f * Mathf.Deg2Rad);
 
         curriculumManager = GetComponent<DroneCurriculumManager>();
         curriculumManager.Initialise();
@@ -74,6 +82,7 @@ public abstract class DroneMLAgentBase : Agent
     public override void OnEpisodeBegin()
     {
         ResetPhysics();
+        _previousDistance = -1f;
         maxEpisodeDistance = curriculumManager.SetupEpisode(transform, startPosition, startRotation);
     }
 
@@ -135,14 +144,84 @@ public abstract class DroneMLAgentBase : Agent
             {
                 hasLanded = true;
                 touchdownTimer = touchdownDelay;
-                float speed = rb.linearVelocity.magnitude;
-                AddReward(DroneRewardHelper.TouchdownReward(speed, maxSafeTouchdownSpeed));
+                float speed   = rb.linearVelocity.magnitude;
+                float maxSafe = rewardProfile != null ? rewardProfile.maxSafeLandingSpeed : 2f;
+                float scale   = rewardProfile != null ? rewardProfile.landingSuccess      : 1f;
+                AddReward(scale * DroneRewardHelper.TouchdownReward(speed, maxSafe));
             }
             return;
         }
 
         // Collision with obstacle or ground
-        SetReward(DroneRewardHelper.ObstaclePenalty);
+        SetReward(rewardProfile != null ? rewardProfile.obstacleCollision : DroneRewardHelper.ObstaclePenalty);
         EndEpisode();
+    }
+
+    /// <summary>
+    /// Checks terminal conditions, computes standard per-step rewards using the reward
+    /// profile, sends stats to TensorBoard, and updates the Inspector debug strings.
+    /// Call this at the end of <see cref="Agent.OnActionReceived"/> after applying forces.
+    /// </summary>
+    /// <param name="currentActions">Continuous actions issued this step (smoothness + energy fallback).</param>
+    /// <param name="previousActions">Actions from the previous step; updated in-place after smoothness is computed.</param>
+    /// <param name="energyValues">
+    /// Values forwarded to <see cref="DroneRewardHelper.EnergyPenalty"/>.
+    /// Pass <c>null</c> to fall back to <paramref name="currentActions"/>.
+    /// </param>
+    /// <returns><c>true</c> if the episode was terminated; the caller must return immediately.</returns>
+    protected bool ApplyStandardRewards(float[] currentActions, float[] previousActions, float[] energyValues = null)
+    {
+        if (rewardProfile == null)
+        {
+            Debug.LogWarning($"[{name}] rewardProfile is not assigned — skipping standard rewards.", this);
+            return false;
+        }
+
+        Vector3 targetPos = DroneRewardHelper.ResolveTargetPosition(target, startPosition);
+        float distanceToTarget = Vector3.Distance(transform.localPosition, targetPos);
+
+        // --- Terminal conditions ---
+        var tilt = DroneRewardHelper.CheckExcessiveTilt(transform.up, maxTiltDot);
+        if (tilt.IsTerminal) { SetReward(rewardProfile.obstacleCollision); EndEpisode(); return true; }
+
+        var tooFar = DroneRewardHelper.CheckTooFar(distanceToTarget, maxEpisodeDistance, rewardProfile.obstacleCollision);
+        if (tooFar.IsTerminal) { SetReward(tooFar.Reward); EndEpisode(); return true; }
+
+        var fallen = DroneRewardHelper.CheckFallen(transform.localPosition.y);
+        if (fallen.IsTerminal) { SetReward(rewardProfile.obstacleCollision); EndEpisode(); return true; }
+
+        // --- Per-step rewards ---
+        float deltaReward = _previousDistance >= 0f
+            ? DroneRewardHelper.DeltaDistanceReward(_previousDistance, distanceToTarget, rewardProfile.deltaDistanceScale)
+            : 0f;
+        _previousDistance = distanceToTarget;
+
+        float energyPenalty     = DroneRewardHelper.EnergyPenalty(energyValues ?? currentActions, rewardProfile.energyScale);
+        float smoothnessPenalty = DroneRewardHelper.ActionSmoothnessPenalty(currentActions, previousActions, rewardProfile.smoothnessScale);
+        float timePenalty       = DroneRewardHelper.TimePenalty(rewardProfile.timeScale);
+
+        System.Array.Copy(currentActions, previousActions, Mathf.Min(currentActions.Length, previousActions.Length));
+
+        AddReward(deltaReward);
+        AddReward(energyPenalty);
+        AddReward(smoothnessPenalty);
+        AddReward(timePenalty);
+
+        // --- TensorBoard stats ---
+        var stats = Academy.Instance.StatsRecorder;
+        stats.Add("Rewards/DeltaDistance", deltaReward);
+        stats.Add("Rewards/Energy",        energyPenalty);
+        stats.Add("Rewards/Smoothness",    smoothnessPenalty);
+        stats.Add("Rewards/Time",          timePenalty);
+
+        // --- Inspector debug ---
+        const string fmt = " 0.00000;-0.00000";
+        debugDeltaDist       = deltaReward.ToString(fmt);
+        debugEnergy          = energyPenalty.ToString(fmt);
+        debugSmoothness      = smoothnessPenalty.ToString(fmt);
+        debugTime            = timePenalty.ToString(fmt);
+        debugTotalStepReward = (deltaReward + energyPenalty + smoothnessPenalty + timePenalty).ToString(fmt);
+
+        return false;
     }
 }

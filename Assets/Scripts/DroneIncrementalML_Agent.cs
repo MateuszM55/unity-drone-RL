@@ -17,12 +17,6 @@ using UnityEngine;
 /// </summary>
 public class DroneIncrementalML_Agent : DroneMLAgentBase
 {
-    [Header("Debug - Live Rewards")]
-    public string debugDeltaDist;
-    public string debugEnergy;
-    public string debugTime;
-    public string debugTotalStepReward;
-
     [Header("Motor Setup")]
     [Tooltip("Assigned automatically by DroneGenerator.\nOrder: FL(0), FR(1), RL(2), RR(3)")]
     [SerializeField] private Transform[] rotorTransforms;
@@ -37,8 +31,8 @@ public class DroneIncrementalML_Agent : DroneMLAgentBase
     private readonly float[] _currentThrusts = new float[4];
     private readonly float[] _previousActions = new float[4];
     private readonly float[] _currentActionsBuffer = new float[4];
+    private readonly float[] _normalizedThrusts = new float[4];
 
-    private float _previousDistance = -1f;
     private float _maxThrustChangePerStep;
 
     public override void Initialize()
@@ -68,14 +62,13 @@ public class DroneIncrementalML_Agent : DroneMLAgentBase
         base.OnEpisodeBegin();
         System.Array.Clear(_currentThrusts, 0, _currentThrusts.Length);
         System.Array.Clear(_previousActions, 0, _previousActions.Length);
-        _previousDistance = -1f;
     }
 
     public override void OnActionReceived(ActionBuffers actions)
     {
         if (rotorTransforms == null || rotorTransforms.Length != 4) return;
 
-        // 1. INTEGRAL CONTROL LOGIC
+        // 1. INTEGRAL CONTROL — integrate delta commands into physical thrust
         for (int i = 0; i < 4; i++)
         {
             float requestedChange = actions.ContinuousActions[i] * _maxThrustChangePerStep;
@@ -84,51 +77,18 @@ public class DroneIncrementalML_Agent : DroneMLAgentBase
             _currentThrusts[i] = Mathf.Clamp(_currentThrusts[i] + requestedChange, 0f, maxThrustPerMotor);
 
             // Apply force
-            Vector3 forceVector = transform.up * _currentThrusts[i];
-            rb.AddForceAtPosition(forceVector, rotorTransforms[i].position);
+            rb.AddForceAtPosition(transform.up * _currentThrusts[i], rotorTransforms[i].position);
         }
 
-        // 2. TERMINAL CONDITIONS
-        Vector3 targetPos = DroneRewardHelper.ResolveTargetPosition(target, startPosition);
-        float distanceToTarget = Vector3.Distance(transform.localPosition, targetPos);
+        // 2. BUILD BUFFERS — raw delta commands (smoothness) and actual thrusts (energy)
+        for (int i = 0; i < 4; i++)
+        {
+            _currentActionsBuffer[i] = actions.ContinuousActions[i];
+            _normalizedThrusts[i]    = _currentThrusts[i] / maxThrustPerMotor;
+        }
 
-        var tilt = DroneRewardHelper.CheckExcessiveTilt(transform.up, maxTiltDot);
-        if (tilt.IsTerminal) { SetReward(tilt.Reward); EndEpisode(); return; }
-
-        var tooFar = DroneRewardHelper.CheckTooFar(distanceToTarget, maxEpisodeDistance, -5);
-        if (tooFar.IsTerminal) { SetReward(tooFar.Reward); EndEpisode(); return; }
-
-        // 3. REWARD SHAPING
-        float deltaReward = _previousDistance >= 0f
-            ? DroneRewardHelper.DeltaDistanceReward(_previousDistance, distanceToTarget)
-            : 0f;
-        _previousDistance = distanceToTarget;
-
-        for (int i = 0; i < 4; i++) _currentActionsBuffer[i] = actions.ContinuousActions[i];
-
-        // Energy penalty targets the ACTUAL thrust being produced, not just the network action
-        float[] normalizedThrusts = new float[4];
-        for (int i = 0; i < 4; i++) normalizedThrusts[i] = _currentThrusts[i] / maxThrustPerMotor;
-        float energyPenalty = DroneRewardHelper.EnergyPenalty(normalizedThrusts);
-
-        System.Array.Copy(_currentActionsBuffer, _previousActions, 4);
-        float timePenalty = DroneRewardHelper.TimePenalty(0.001f);
-
-        AddReward(deltaReward);
-        AddReward(energyPenalty);
-        AddReward(timePenalty);
-
-        // 4. STATS & DEBUG
-        var stats = Academy.Instance.StatsRecorder;
-        stats.Add("Rewards/DeltaDistance", deltaReward);
-        stats.Add("Rewards/Energy", energyPenalty);
-        stats.Add("Rewards/Time", timePenalty);
-
-        const string fmt = " 0.00000;-0.00000";
-        debugDeltaDist = deltaReward.ToString(fmt);
-        debugEnergy = energyPenalty.ToString(fmt);
-        debugTime = timePenalty.ToString(fmt);
-        debugTotalStepReward = (deltaReward + energyPenalty + timePenalty).ToString(fmt);
+        // 3. STANDARD REWARDS — terminal checks, shaping, TensorBoard, debug strings
+        ApplyStandardRewards(_currentActionsBuffer, _previousActions, _normalizedThrusts);
     }
 
     public override void Heuristic(in ActionBuffers actionsOut)
