@@ -84,6 +84,9 @@ public abstract class DroneMLAgentBase : Agent
         ResetPhysics();
         _previousDistance = -1f;
         maxEpisodeDistance = curriculumManager.SetupEpisode(transform, startPosition, startRotation);
+
+        if (target == null)
+            Debug.LogWarning($"[{name}] No target is set.", this);
     }
 
     /// <summary>
@@ -101,8 +104,7 @@ public abstract class DroneMLAgentBase : Agent
 
     public override void CollectObservations(VectorSensor sensor)
     {
-        float hoverHeight = rewardProfile != null ? rewardProfile.fallbackHoverHeight : 3f;
-        Vector3 targetPos = target != null ? target.localPosition : startPosition + Vector3.up * hoverHeight;
+        Vector3 targetPos = target != null ? target.localPosition : startPosition;
 
         // Decompose target vector → local unit direction (3) + squashed distance (1)
         float distNorm = rewardProfile != null ? rewardProfile.distanceNorm : 10f;
@@ -179,7 +181,7 @@ public abstract class DroneMLAgentBase : Agent
             return false;
         }
 
-        Vector3 targetPos = DroneRewardHelper.ResolveTargetPosition(target, startPosition, rewardProfile.fallbackHoverHeight);
+        Vector3 targetPos = DroneRewardHelper.ResolveTargetPosition(target, startPosition);
         float distanceToTarget = Vector3.Distance(transform.localPosition, targetPos);
 
         // --- Terminal conditions ---

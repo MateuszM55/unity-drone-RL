@@ -59,6 +59,4 @@ public class DroneRewardProfile : ScriptableObject
     [Tooltip("Normalisation constant for the tanh-compressed distance observation. " +
              "Distance at which the observation value reaches ~0.76 (DecomposeTargetVector).")]
     public float distanceNorm = 10f;
-    [Tooltip("Fallback hover height used when no target Transform is present (ResolveTargetPosition).")]
-    public float fallbackHoverHeight = 3f;
 }
