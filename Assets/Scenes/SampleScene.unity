@@ -1504,10 +1504,6 @@ PrefabInstance:
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 1552945592}
-    - target: {fileID: 1405414569429997631, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
-      propertyPath: rewardProfile
-      value: 
-      objectReference: {fileID: 11400000, guid: 66b216d7f570ab94d9617f7738f35d7b, type: 2}
     - target: {fileID: 1463199317328062149, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
@@ -1520,6 +1516,10 @@ PrefabInstance:
       propertyPath: spawnParent
       value: 
       objectReference: {fileID: 1960055845}
+    - target: {fileID: 2445584907222576922, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
+      propertyPath: minSpawnRadius
+      value: 7
+      objectReference: {fileID: 0}
     - target: {fileID: 2445584907222576922, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
       propertyPath: obstaclePrefab
       value: 
@@ -1569,45 +1569,13 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 119988723}
     - target: {fileID: 5209300706112747641, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
-      propertyPath: curriculumPlan.Array.size
-      value: 9
+      propertyPath: manualLessonIndex
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5209300706112747641, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
-      propertyPath: 'curriculumPlan.Array.data[0]'
-      value: 
-      objectReference: {fileID: 11400000, guid: b3a203b4041f36342b288cffa865e67b, type: 2}
-    - target: {fileID: 5209300706112747641, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
-      propertyPath: 'curriculumPlan.Array.data[1]'
-      value: 
-      objectReference: {fileID: 11400000, guid: 49080aa6fc651b1418ecffabe50a3982, type: 2}
-    - target: {fileID: 5209300706112747641, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
-      propertyPath: 'curriculumPlan.Array.data[2]'
-      value: 
-      objectReference: {fileID: 11400000, guid: 953f4d5597b45b34fb14fbd51dbd553c, type: 2}
-    - target: {fileID: 5209300706112747641, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
-      propertyPath: 'curriculumPlan.Array.data[3]'
-      value: 
-      objectReference: {fileID: 11400000, guid: fa5f6d0c1b55922438e77ad4ade629a1, type: 2}
-    - target: {fileID: 5209300706112747641, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
-      propertyPath: 'curriculumPlan.Array.data[4]'
-      value: 
-      objectReference: {fileID: 11400000, guid: 18baa69f836dc9443b1b2e0443056928, type: 2}
-    - target: {fileID: 5209300706112747641, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
-      propertyPath: 'curriculumPlan.Array.data[5]'
-      value: 
-      objectReference: {fileID: 11400000, guid: 76da2acf62e39bf4da82f31e08ef4efb, type: 2}
-    - target: {fileID: 5209300706112747641, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
-      propertyPath: 'curriculumPlan.Array.data[6]'
-      value: 
-      objectReference: {fileID: 11400000, guid: c04ad385e0076ef488b7819244b9411f, type: 2}
-    - target: {fileID: 5209300706112747641, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
-      propertyPath: 'curriculumPlan.Array.data[7]'
-      value: 
-      objectReference: {fileID: 11400000, guid: c1793bc1d5f8bee458e4653cf7316176, type: 2}
-    - target: {fileID: 5209300706112747641, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
-      propertyPath: 'curriculumPlan.Array.data[8]'
-      value: 
-      objectReference: {fileID: 11400000, guid: ecdb0edce06502e41b9ac22e1640c52e, type: 2}
+      propertyPath: useManualLessonPreview
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6542250306051900023, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 

@@ -23,6 +23,12 @@ public class DroneCurriculumManager : MonoBehaviour
     [Tooltip("Ordered list of lesson profiles. The curriculum parameter 'lesson_index' selects which profile to use.")]
     [SerializeField] private List<LessonProfile> curriculumPlan = new List<LessonProfile>();
 
+    [Header("Editor Preview")]
+    [Tooltip("When enabled, ignores the ML-Agents Academy and uses Manual Lesson Index instead. For in-Editor testing only.")]
+    [SerializeField] private bool useManualLessonPreview;
+    [Tooltip("Lesson to preview when Use Manual Lesson Preview is checked.")]
+    [SerializeField, Min(0)] private int manualLessonIndex;
+
     private PoissonObstacleGenerator obstacleGenerator;
 
     /// <summary>The target transform assigned in the Inspector.</summary>
@@ -54,8 +60,9 @@ public class DroneCurriculumManager : MonoBehaviour
     {
         obstacleGenerator.Clear();
 
-        int lessonIndex = (int)Academy.Instance.EnvironmentParameters
-            .GetWithDefault("lesson_index", 0f);
+        int lessonIndex = useManualLessonPreview
+            ? manualLessonIndex
+            : (int)Academy.Instance.EnvironmentParameters.GetWithDefault("lesson_index", 0f);
         CurrentLessonIndex = Mathf.Clamp(lessonIndex, 0, Mathf.Max(0, curriculumPlan.Count - 1));
 
         if (curriculumPlan.Count == 0 || curriculumPlan[CurrentLessonIndex] == null)

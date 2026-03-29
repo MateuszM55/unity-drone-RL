@@ -17,4 +17,4 @@ MonoBehaviour:
   maxEpisodeDistance: 30
   obstacleCount: 24
   obstacleSpawnRadius: 15
-  obstacleMinSeparation: 5
+  obstacleMinSeparation: 8
