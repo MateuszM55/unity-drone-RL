@@ -53,6 +53,7 @@ public class DroneGenerator : MonoBehaviour
 #if UNITY_EDITOR
         LinkRotors<DronePDController>(newRotors, "rotorTransforms");
         LinkRotors<DroneSimpleML_Agent>(newRotors, "rotorTransforms");
+        LinkRotors<DroneIncrementalML_Agent>(newRotors, "rotorTransforms");
 #endif
     }
 
