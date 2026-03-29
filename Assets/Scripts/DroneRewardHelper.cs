@@ -186,6 +186,22 @@ public static class DroneRewardHelper
         return -scale * (total / actions.Length);
     }
 
+    /// <summary>
+    /// Penalty that discourages fast approaches inside a landing radius.
+    /// Zero outside <paramref name="landingRadius"/>; scales linearly with both
+    /// proximity and speed: <c>penalty = −scale × speed × (1 − distance / radius)</c>.
+    /// </summary>
+    /// <param name="speed">Drone speed in m/s.</param>
+    /// <param name="distanceToTarget">Current distance to the target.</param>
+    /// <param name="landingRadius">Radius within which the penalty is active.</param>
+    /// <param name="scale">Multiplier applied to the penalty (default 0.002).</param>
+    public static float FastApproachPenalty(float speed, float distanceToTarget, float landingRadius, float scale = 0.002f)
+    {
+        if (landingRadius < 0.001f) return 0f;
+        float proximity = 1f - Mathf.Clamp01(distanceToTarget / landingRadius);
+        return -scale * speed * proximity;
+    }
+
     // ────────────────────────── Utility ────────────────────────────────────
 
     /// <summary>Resolves the effective target position, falling back to a default hover point.</summary>

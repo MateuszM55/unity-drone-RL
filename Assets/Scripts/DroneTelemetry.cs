@@ -18,6 +18,7 @@ public class DroneTelemetry : MonoBehaviour
     public string debugAngularVelocity;
     public string debugVelAlignment;
     public string debugTime;
+    public string debugFastApproach;
     public string debugTotalStepReward;
 
     /// <summary>
@@ -36,6 +37,7 @@ public class DroneTelemetry : MonoBehaviour
         if (summary.AngularVelocity != 0f)   stats.Add("Rewards/AngularVelocity",    summary.AngularVelocity);
         if (summary.VelocityAlignment != 0f) stats.Add("Rewards/VelocityAlignment",  summary.VelocityAlignment);
         if (summary.Time != 0f)              stats.Add("Rewards/Time",               summary.Time);
+        if (summary.FastApproach != 0f)      stats.Add("Rewards/FastApproach",       summary.FastApproach);
 
         // --- Inspector debug (blank when zero) ---
         const string fmt = " 0.00000;-0.00000";
@@ -47,6 +49,7 @@ public class DroneTelemetry : MonoBehaviour
         debugAngularVelocity = summary.AngularVelocity != 0f   ? summary.AngularVelocity.ToString(fmt)   : "";
         debugVelAlignment    = summary.VelocityAlignment != 0f ? summary.VelocityAlignment.ToString(fmt) : "";
         debugTime            = summary.Time != 0f              ? summary.Time.ToString(fmt)              : "";
+        debugFastApproach    = summary.FastApproach != 0f      ? summary.FastApproach.ToString(fmt)      : "";
         debugTotalStepReward = summary.Total.ToString(fmt);
     }
 }

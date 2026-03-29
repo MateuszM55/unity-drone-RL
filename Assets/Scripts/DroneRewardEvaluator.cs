@@ -108,7 +108,9 @@ public class DroneRewardEvaluator : MonoBehaviour
                 rb.angularVelocity.magnitude, profile.angularVelocityPenaltyScale),
             DroneRewardHelper.VelocityAlignmentReward(
                 rb.linearVelocity, targetPosition - transform.localPosition, profile.velocityAlignmentScale),
-            DroneRewardHelper.TimePenalty(profile.timeScale)
+            DroneRewardHelper.TimePenalty(profile.timeScale),
+            DroneRewardHelper.FastApproachPenalty(
+                rb.linearVelocity.magnitude, distanceToTarget, profile.landingRadius, profile.fastApproachScale)
         );
 
         return new EvalResult { IsTerminal = false, StepRewards = summary };

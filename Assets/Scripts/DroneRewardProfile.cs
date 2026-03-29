@@ -26,6 +26,10 @@ public class DroneRewardProfile : ScriptableObject
     public float smoothnessScale = 0.0005f;
     [Tooltip("Constant time penalty per step to encourage faster task completion.")]
     public float timeScale = 0.001f;
+    [Tooltip("Scale for the fast-approach penalty inside the landing radius.")]
+    public float fastApproachScale = 0.002f;
+    [Tooltip("Radius (metres) within which the fast-approach penalty is active.")]
+    public float landingRadius = 5f;
 
     [Header("Safety Thresholds")]
     [Tooltip("Reference landing speed (m/s) at which the landing reward halves. Lower = stricter.")]
