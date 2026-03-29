@@ -1,6 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
-
+/// OUTDATED: This agent is an early experiment
 public class DronePDController : MonoBehaviour
 {
     [Header("Motor Setup")]

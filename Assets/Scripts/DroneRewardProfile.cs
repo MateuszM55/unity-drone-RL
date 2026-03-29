@@ -13,13 +13,13 @@ public class DroneRewardProfile : ScriptableObject
 {
     [Header("Main Rewards")]
     [Tooltip("Maximum reward for landing on the target (multiplied by the soft-landing factor).")]
-    public float landingSuccess = 20f;
+    public float landingSuccess = 5f;
     [Tooltip("Terminal penalty applied when the drone collides with an obstacle or the ground.")]
     public float obstacleCollision = -10f;
 
     [Header("Step Penalty Scales")]
     [Tooltip("Scale for the delta-distance (potential-based progress) reward per step.")]
-    public float deltaDistanceScale = 1.0f;
+    public float deltaDistanceScale = 0.01f;
     [Tooltip("Scale for the motor energy penalty per step.")]
     public float energyScale = 0.001f;
     [Tooltip("Scale for the action-smoothness penalty per step.")]
@@ -32,4 +32,33 @@ public class DroneRewardProfile : ScriptableObject
     public float maxSafeLandingSpeed = 2f;
     [Tooltip("Maximum tilt angle (degrees) from world up before the episode is terminated.")]
     public float maxTiltAngle = 60f;
+
+    [Header("Terminal Condition Rewards")]
+    [Tooltip("Reward given when the drone reaches the target (CheckTargetReached).")]
+    public float targetReachedReward = 1.0f;
+    [Tooltip("Penalty applied when the drone flies too far from the target (CheckTooFar).")]
+    public float tooFarPenalty = -1.0f;
+    [Tooltip("Minimum Y position (world space) before the drone is considered fallen (CheckFallen).")]
+    public float fallenMinY = -0.5f;
+    [Tooltip("Penalty applied when the drone falls below fallenMinY (CheckFallen).")]
+    public float fallenPenalty = -1.0f;
+    [Tooltip("Penalty applied when the drone tilts beyond maxTiltAngle (CheckExcessiveTilt).")]
+    public float excessiveTiltPenalty = -1.0f;
+
+    [Header("Continuous Shaping Scales")]
+    [Tooltip("Scale for the fraction-of-distance proximity reward (ProximityReward).")]
+    public float proximityRewardScale = 0.01f;
+    [Tooltip("Scale for the tilt-deviation penalty (TiltPenalty).")]
+    public float tiltPenaltyScale = 0.005f;
+    [Tooltip("Scale for the angular-velocity penalty (AngularVelocityPenalty).")]
+    public float angularVelocityPenaltyScale = 0.001f;
+    [Tooltip("Scale for the velocity-alignment reward (VelocityAlignmentReward).")]
+    public float velocityAlignmentScale = 0.01f;
+
+    [Header("Observation Parameters")]
+    [Tooltip("Normalisation constant for the tanh-compressed distance observation. " +
+             "Distance at which the observation value reaches ~0.76 (DecomposeTargetVector).")]
+    public float distanceNorm = 10f;
+    [Tooltip("Fallback hover height used when no target Transform is present (ResolveTargetPosition).")]
+    public float fallbackHoverHeight = 3f;
 }

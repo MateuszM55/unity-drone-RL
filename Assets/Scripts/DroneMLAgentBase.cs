@@ -101,12 +101,14 @@ public abstract class DroneMLAgentBase : Agent
 
     public override void CollectObservations(VectorSensor sensor)
     {
-        Vector3 targetPos = target != null ? target.localPosition : startPosition + Vector3.up * 3f;
+        float hoverHeight = rewardProfile != null ? rewardProfile.fallbackHoverHeight : 3f;
+        Vector3 targetPos = target != null ? target.localPosition : startPosition + Vector3.up * hoverHeight;
 
         // Decompose target vector → local unit direction (3) + squashed distance (1)
+        float distNorm = rewardProfile != null ? rewardProfile.distanceNorm : 10f;
         DroneRewardHelper.DecomposeTargetVector(
             transform, targetPos - transform.localPosition,
-            out Vector3 localDir, out float squashedDist);
+            out Vector3 localDir, out float squashedDist, distNorm);
         sensor.AddObservation(localDir);
         sensor.AddObservation(squashedDist);
 
@@ -177,18 +179,18 @@ public abstract class DroneMLAgentBase : Agent
             return false;
         }
 
-        Vector3 targetPos = DroneRewardHelper.ResolveTargetPosition(target, startPosition);
+        Vector3 targetPos = DroneRewardHelper.ResolveTargetPosition(target, startPosition, rewardProfile.fallbackHoverHeight);
         float distanceToTarget = Vector3.Distance(transform.localPosition, targetPos);
 
         // --- Terminal conditions ---
-        var tilt = DroneRewardHelper.CheckExcessiveTilt(transform.up, maxTiltDot);
-        if (tilt.IsTerminal) { SetReward(rewardProfile.obstacleCollision); EndEpisode(); return true; }
+        var tilt = DroneRewardHelper.CheckExcessiveTilt(transform.up, maxTiltDot, rewardProfile.excessiveTiltPenalty);
+        if (tilt.IsTerminal) { SetReward(tilt.Reward); EndEpisode(); return true; }
 
-        var tooFar = DroneRewardHelper.CheckTooFar(distanceToTarget, maxEpisodeDistance, rewardProfile.obstacleCollision);
+        var tooFar = DroneRewardHelper.CheckTooFar(distanceToTarget, maxEpisodeDistance, rewardProfile.tooFarPenalty);
         if (tooFar.IsTerminal) { SetReward(tooFar.Reward); EndEpisode(); return true; }
 
-        var fallen = DroneRewardHelper.CheckFallen(transform.localPosition.y);
-        if (fallen.IsTerminal) { SetReward(rewardProfile.obstacleCollision); EndEpisode(); return true; }
+        var fallen = DroneRewardHelper.CheckFallen(transform.localPosition.y, rewardProfile.fallenMinY, rewardProfile.fallenPenalty);
+        if (fallen.IsTerminal) { SetReward(fallen.Reward); EndEpisode(); return true; }
 
         // --- Per-step rewards ---
         float deltaReward = _previousDistance >= 0f

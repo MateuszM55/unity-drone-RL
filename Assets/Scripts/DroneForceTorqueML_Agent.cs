@@ -3,6 +3,7 @@ using Unity.MLAgents.Actuators;
 using UnityEngine;
 
 /// <summary>
+/// OUTDATED: This agent is an early experiment in direct force/torque control and may not be fully tuned.
 /// Force & Torque ML-Agent — "Acro Mode" reinforcement learning controller.
 /// Instead of commanding individual motors, the agent outputs high-level
 /// force/torque commands which are applied directly to the rigid body.
