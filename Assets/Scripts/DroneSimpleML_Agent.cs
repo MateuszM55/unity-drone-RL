@@ -24,8 +24,6 @@ public class DroneSimpleML_Agent : DroneMLAgentBase
     public string debugDeltaDist;
     public string debugEnergy;
     public string debugSmoothness;
-    public string debugTilt;
-    public string debugAngularVel;
     public string debugTime;
     public string debugTotalStepReward;
 
