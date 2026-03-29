@@ -45,6 +45,12 @@ public class PoissonObstacleGenerator : MonoBehaviour
     private readonly List<GameObject> pool = new List<GameObject>();
     private int activeCount;
 
+    // ── Runtime Guard ──
+    private bool _initialised;
+    private float _lockedSpawnRadius;
+    private float _lockedMinSeparation;
+    private int _lockedPdsSeedCount;
+
     // ── Poisson Disk Sampling (zero-allocation) ──
     private const int PdsCandidateAttempts = 30;
     private float pdsAreaSize;
@@ -75,6 +81,11 @@ public class PoissonObstacleGenerator : MonoBehaviour
 
         InitPool();
         InitPoissonGrid();
+
+        _lockedSpawnRadius   = spawnRadius;
+        _lockedMinSeparation = minSeparation;
+        _lockedPdsSeedCount  = pdsSeedCount;
+        _initialised         = true;
     }
 
     /// <summary>
@@ -150,6 +161,35 @@ public class PoissonObstacleGenerator : MonoBehaviour
                 pool[i].SetActive(false);
         }
         activeCount = 0;
+    }
+
+    // ── Runtime Guard ────────────────────────────────────────────────────
+
+    private void OnValidate()
+    {
+        if (!Application.isPlaying || !_initialised)
+            return;
+
+        bool reverted = false;
+
+        if (spawnRadius != _lockedSpawnRadius)
+        {
+            spawnRadius = _lockedSpawnRadius;
+            reverted    = true;
+        }
+        if (minSeparation != _lockedMinSeparation)
+        {
+            minSeparation = _lockedMinSeparation;
+            reverted      = true;
+        }
+        if (pdsSeedCount != _lockedPdsSeedCount)
+        {
+            pdsSeedCount = _lockedPdsSeedCount;
+            reverted     = true;
+        }
+
+        if (reverted)
+            Debug.LogWarning("[PoissonObstacleGenerator] spawnRadius, minSeparation and pdsSeedCount are locked during Play mode — they define the pre-allocated grid size. Stop Play before changing them.", this);
     }
 
     // ── Pool management ──────────────────────────────────────────────────
