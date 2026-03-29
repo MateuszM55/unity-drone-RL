@@ -9,7 +9,7 @@ using UnityEngine;
 public static class DroneRewardHelper
 {
     /// <summary>Penalty applied when the drone collides with an obstacle or the ground.</summary>
-    public const float ObstaclePenalty = -1.0f;
+    public const float ObstaclePenalty = -5.0f;
 
     /// <summary>Result of a terminal-condition check.</summary>
     public struct TerminalCheck

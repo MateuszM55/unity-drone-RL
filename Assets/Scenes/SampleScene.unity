@@ -1522,7 +1522,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2445584907222576922, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
       propertyPath: obstacleCount
-      value: 4
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 2445584907222576922, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
       propertyPath: minSpawnRadius
@@ -1581,8 +1581,12 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5110642379680053202, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
+      propertyPath: m_RayCount
+      value: 300
+      objectReference: {fileID: 0}
+    - target: {fileID: 5110642379680053202, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
       propertyPath: m_RayLayerMask.m_Bits
-      value: 4294967295
+      value: 448
       objectReference: {fileID: 0}
     - target: {fileID: 5110642379680053202, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
       propertyPath: m_DetectableLayers.Array.size
