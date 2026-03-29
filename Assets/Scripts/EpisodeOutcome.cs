@@ -4,7 +4,7 @@ public enum EpisodeOutcome
     /// <summary>The drone reached the target successfully.</summary>
     Success_TargetReached,
     /// <summary>The drone collided with an obstacle or the environment boundary.</summary>
-    Crash_Obstacle,
+    Crash,
     /// <summary>The drone exceeded the maximum safe tilt angle.</summary>
     Safety_ExcessiveTilt,
     /// <summary>The drone flew too far from the target.</summary>

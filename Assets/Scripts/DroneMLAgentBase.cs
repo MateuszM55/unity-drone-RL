@@ -142,7 +142,7 @@ public abstract class DroneMLAgentBase : Agent
 
         // Collision with obstacle or ground
         SetReward(rewardProfile != null ? rewardProfile.obstacleCollision : DroneRewardHelper.ObstaclePenalty);
-        telemetry.FlushEpisode(EpisodeOutcome.Crash_Obstacle);
+        telemetry.FlushEpisode(EpisodeOutcome.Crash);
         EndEpisode();
     }
 

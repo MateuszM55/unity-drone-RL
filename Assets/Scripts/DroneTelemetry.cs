@@ -26,7 +26,7 @@ public class DroneTelemetry : MonoBehaviour
     public string debugCurrentLesson;
     public string debugTotalEpisodes;
     public string debugSuccessRate;
-    public string debugCrashObstacleRate;
+    public string debugCrashRate;
     public string debugExcessiveTiltRate;
     public string debugBoundaryLeftRate;
     public string debugTimeoutRate;
@@ -46,7 +46,7 @@ public class DroneTelemetry : MonoBehaviour
     private Lesson _currentLesson;
     private int _totalEpisodes;
     private int _successCount;
-    private int _crashObstacleCount;
+    private int _crashCount;
     private int _excessiveTiltCount;
     private int _boundaryLeftCount;
     private int _timeoutCount;
@@ -105,7 +105,7 @@ public class DroneTelemetry : MonoBehaviour
         switch (reason)
         {
             case EpisodeOutcome.Success_TargetReached: _successCount++;       break;
-            case EpisodeOutcome.Crash_Obstacle:        _crashObstacleCount++; break;
+            case EpisodeOutcome.Crash:                 _crashCount++; break;
             case EpisodeOutcome.Safety_ExcessiveTilt:   _excessiveTiltCount++; break;
             case EpisodeOutcome.Safety_BoundaryLeft:    _boundaryLeftCount++;  break;
             case EpisodeOutcome.Timeout:               _timeoutCount++;       break;
@@ -126,7 +126,7 @@ public class DroneTelemetry : MonoBehaviour
         // --- TensorBoard: outcome percentages & lesson index ---
         float total = _totalEpisodes;
         stats.Add("Outcomes/Success",        _successCount       / total);
-        stats.Add("Outcomes/Crash_Obstacle", _crashObstacleCount / total);
+        stats.Add("Outcomes/Crash",         _crashCount / total);
         stats.Add("Outcomes/ExcessiveTilt",  _excessiveTiltCount / total);
         stats.Add("Outcomes/BoundaryLeft",   _boundaryLeftCount  / total);
         stats.Add("Outcomes/Timeout",        _timeoutCount       / total);
@@ -148,7 +148,7 @@ public class DroneTelemetry : MonoBehaviour
         debugCurrentLesson     = _currentLesson.ToString();
         debugTotalEpisodes     = _totalEpisodes.ToString();
         debugSuccessRate       = (_successCount       / total).ToString(pct);
-        debugCrashObstacleRate = (_crashObstacleCount / total).ToString(pct);
+        debugCrashRate         = (_crashCount         / total).ToString(pct);
         debugExcessiveTiltRate = (_excessiveTiltCount / total).ToString(pct);
         debugBoundaryLeftRate  = (_boundaryLeftCount  / total).ToString(pct);
         debugTimeoutRate       = (_timeoutCount       / total).ToString(pct);
@@ -181,7 +181,7 @@ public class DroneTelemetry : MonoBehaviour
     {
         _totalEpisodes      = 0;
         _successCount       = 0;
-        _crashObstacleCount = 0;
+        _crashCount         = 0;
         _excessiveTiltCount = 0;
         _boundaryLeftCount  = 0;
         _timeoutCount       = 0;
