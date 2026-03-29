@@ -83,7 +83,7 @@ public abstract class DroneMLAgentBase : Agent
         ResetPhysics();
         rewardEvaluator.ResetEpisode();
         maxEpisodeDistance = curriculumManager.SetupEpisode(transform, startPosition, startRotation);
-        telemetry.OnNewEpisode(curriculumManager.CurrentLesson);
+        telemetry.OnNewEpisode(curriculumManager.CurrentLessonIndex);
 
         if (target == null)
             Debug.LogWarning($"[{name}] No target is set.", this);

@@ -43,7 +43,7 @@ public class DroneTelemetry : MonoBehaviour
     private float _totalFastApproach;
 
     // --- Per-lesson outcome counters ---
-    private Lesson _currentLesson;
+    private int _currentLessonIndex;
     private int _totalEpisodes;
     private int _successCount;
     private int _crashCount;
@@ -130,7 +130,7 @@ public class DroneTelemetry : MonoBehaviour
         stats.Add("Outcomes/ExcessiveTilt",  _excessiveTiltCount / total);
         stats.Add("Outcomes/BoundaryLeft",   _boundaryLeftCount  / total);
         stats.Add("Outcomes/Timeout",        _timeoutCount       / total);
-        stats.Add("Environment/LessonIndex", (int)_currentLesson);
+        stats.Add("Environment/LessonIndex", _currentLessonIndex);
 
         // --- Reset reward accumulators (outcome counters persist per lesson) ---
         _totalDeltaDistance     = 0f;
@@ -145,7 +145,7 @@ public class DroneTelemetry : MonoBehaviour
 
         // --- Inspector: outcome rates ---
         const string pct = "P1";
-        debugCurrentLesson     = _currentLesson.ToString();
+        debugCurrentLesson     = _currentLessonIndex.ToString();
         debugTotalEpisodes     = _totalEpisodes.ToString();
         debugSuccessRate       = (_successCount       / total).ToString(pct);
         debugCrashRate         = (_crashCount         / total).ToString(pct);
@@ -160,18 +160,18 @@ public class DroneTelemetry : MonoBehaviour
     /// call) and performs a hard reset of outcome counters when the
     /// curriculum lesson changes.
     /// </summary>
-    public void OnNewEpisode(Lesson currentLesson)
+    public void OnNewEpisode(int lessonIndex)
     {
         // Detect MaxStep timeout — previous episode was never explicitly flushed
         if (!_flushed)
             FlushEpisode(EpisodeOutcome.Timeout);
 
         // Hard reset counters on lesson change
-        if (currentLesson != _currentLesson)
+        if (lessonIndex != _currentLessonIndex)
         {
             ResetOutcomeCounters();
-            _currentLesson = currentLesson;
-            debugCurrentLesson = _currentLesson.ToString();
+            _currentLessonIndex = lessonIndex;
+            debugCurrentLesson = _currentLessonIndex.ToString();
         }
 
         _flushed = false;
