@@ -30,5 +30,5 @@ MonoBehaviour:
   proximityRewardScale: 0
   tiltPenaltyScale: 0
   angularVelocityPenaltyScale: 0
-  velocityAlignmentScale: 0.01
+  velocityAlignmentScale: 0
   distanceNorm: 20

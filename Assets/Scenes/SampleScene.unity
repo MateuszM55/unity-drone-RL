@@ -1517,10 +1517,6 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 1960055845}
     - target: {fileID: 2445584907222576922, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
-      propertyPath: minSpawnRadius
-      value: 7
-      objectReference: {fileID: 0}
-    - target: {fileID: 2445584907222576922, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
       propertyPath: obstaclePrefab
       value: 
       objectReference: {fileID: 1717360175}
@@ -1564,26 +1560,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 5110642379680053202, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
-      propertyPath: m_RayCount
-      value: 200
-      objectReference: {fileID: 0}
-    - target: {fileID: 5110642379680053202, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
-      propertyPath: m_RayLength
-      value: 25
-      objectReference: {fileID: 0}
     - target: {fileID: 5209300706112747641, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
       propertyPath: target
       value: 
       objectReference: {fileID: 119988723}
-    - target: {fileID: 5209300706112747641, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
-      propertyPath: manualLessonIndex
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 5209300706112747641, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
-      propertyPath: useManualLessonPreview
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 6542250306051900023, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 

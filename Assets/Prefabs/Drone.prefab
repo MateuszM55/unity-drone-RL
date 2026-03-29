@@ -565,7 +565,7 @@ MonoBehaviour:
   obstaclePrefab: {fileID: 0}
   obstacleCount: 6
   spawnRadius: 12
-  minSpawnRadius: 5
+  minSpawnRadius: 7
   minSeparation: 8
   pdsSeedCount: 3
   minHeight: 3
@@ -609,8 +609,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FibonacciSphereSensorComponent
   m_SensorName: FibonacciSphereSensor
-  m_RayCount: 300
-  m_RayLength: 50
+  m_RayCount: 200
+  m_RayLength: 25
   m_RayLayerMask:
     serializedVersion: 2
     m_Bits: 448
