@@ -20,32 +20,12 @@ public static class DroneRewardHelper
 
     // ───────────────────────── Terminal Conditions ─────────────────────────
 
-    /// <summary>Returns terminal (+reward) when the drone is close enough to the target.</summary>
-    public static TerminalCheck CheckTargetReached(float distanceToTarget, float threshold, float reward = 1.0f)
-    {
-        return new TerminalCheck
-        {
-            IsTerminal = distanceToTarget < threshold,
-            Reward = reward
-        };
-    }
-
     /// <summary>Returns terminal (−penalty) when the drone is too far from the target.</summary>
     public static TerminalCheck CheckTooFar(float distanceToTarget, float maxDistance, float penalty = -1.0f)
     {
         return new TerminalCheck
         {
             IsTerminal = distanceToTarget > maxDistance,
-            Reward = penalty
-        };
-    }
-
-    /// <summary>Returns terminal (−penalty) when the drone falls below a Y threshold.</summary>
-    public static TerminalCheck CheckFallen(float yPosition, float minY = -0.5f, float penalty = -1.0f)
-    {
-        return new TerminalCheck
-        {
-            IsTerminal = yPosition < minY,
             Reward = penalty
         };
     }

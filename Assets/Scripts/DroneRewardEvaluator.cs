@@ -76,10 +76,6 @@ public class DroneRewardEvaluator : MonoBehaviour
         float distanceToTarget = Vector3.Distance(transform.localPosition, targetPosition);
 
         // --- Terminal conditions ---
-        var reached = DroneRewardHelper.CheckTargetReached(
-            distanceToTarget, profile.targetReachedThreshold, profile.targetReachedReward);
-        if (reached.IsTerminal) return MakeTerminal(reached.Reward, EpisodeOutcome.Success_TargetReached);
-
         var tilt = DroneRewardHelper.CheckExcessiveTilt(
             transform.up, maxTiltDot, profile.excessiveTiltPenalty);
         if (tilt.IsTerminal) return MakeTerminal(tilt.Reward, EpisodeOutcome.Safety_ExcessiveTilt);
@@ -87,10 +83,6 @@ public class DroneRewardEvaluator : MonoBehaviour
         var tooFar = DroneRewardHelper.CheckTooFar(
             distanceToTarget, maxEpisodeDistance, profile.tooFarPenalty);
         if (tooFar.IsTerminal) return MakeTerminal(tooFar.Reward, EpisodeOutcome.Safety_BoundaryLeft);
-
-        var fallen = DroneRewardHelper.CheckFallen(
-            transform.localPosition.y, profile.fallenMinY, profile.fallenPenalty);
-        if (fallen.IsTerminal) return MakeTerminal(fallen.Reward, EpisodeOutcome.Crash_Ground);
 
         // --- Per-step rewards ---
         float deltaReward = _previousDistance >= 0f
