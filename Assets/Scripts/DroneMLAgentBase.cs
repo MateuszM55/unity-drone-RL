@@ -42,8 +42,12 @@ public abstract class DroneMLAgentBase : Agent
 
     [Header("Debug - Live Rewards")]
     public string debugDeltaDist;
+    public string debugProximity;
     public string debugEnergy;
     public string debugSmoothness;
+    public string debugTilt;
+    public string debugAngularVelocity;
+    public string debugVelAlignment;
     public string debugTime;
     public string debugTotalStepReward;
 
@@ -185,6 +189,9 @@ public abstract class DroneMLAgentBase : Agent
         float distanceToTarget = Vector3.Distance(transform.localPosition, targetPos);
 
         // --- Terminal conditions ---
+        var reached = DroneRewardHelper.CheckTargetReached(distanceToTarget, rewardProfile.targetReachedThreshold, rewardProfile.targetReachedReward);
+        if (reached.IsTerminal) { SetReward(reached.Reward); EndEpisode(); return true; }
+
         var tilt = DroneRewardHelper.CheckExcessiveTilt(transform.up, maxTiltDot, rewardProfile.excessiveTiltPenalty);
         if (tilt.IsTerminal) { SetReward(tilt.Reward); EndEpisode(); return true; }
 
@@ -200,31 +207,49 @@ public abstract class DroneMLAgentBase : Agent
             : 0f;
         _previousDistance = distanceToTarget;
 
+        float proximityReward   = DroneRewardHelper.ProximityReward(transform.localPosition, targetPos, startPosition, rewardProfile.proximityRewardScale);
         float energyPenalty     = DroneRewardHelper.EnergyPenalty(energyValues ?? currentActions, rewardProfile.energyScale);
         float smoothnessPenalty = DroneRewardHelper.ActionSmoothnessPenalty(currentActions, previousActions, rewardProfile.smoothnessScale);
+        float tiltPenalty       = DroneRewardHelper.TiltPenalty(transform.up, rewardProfile.tiltPenaltyScale);
+        float angVelPenalty     = DroneRewardHelper.AngularVelocityPenalty(rb.angularVelocity.magnitude, rewardProfile.angularVelocityPenaltyScale);
+        float velAlignment      = DroneRewardHelper.VelocityAlignmentReward(rb.linearVelocity, targetPos - transform.localPosition, rewardProfile.velocityAlignmentScale);
         float timePenalty       = DroneRewardHelper.TimePenalty(rewardProfile.timeScale);
 
         System.Array.Copy(currentActions, previousActions, Mathf.Min(currentActions.Length, previousActions.Length));
 
         AddReward(deltaReward);
+        AddReward(proximityReward);
         AddReward(energyPenalty);
         AddReward(smoothnessPenalty);
+        AddReward(tiltPenalty);
+        AddReward(angVelPenalty);
+        AddReward(velAlignment);
         AddReward(timePenalty);
 
-        // --- TensorBoard stats ---
+        // --- TensorBoard stats (skip zero-value rewards) ---
         var stats = Academy.Instance.StatsRecorder;
-        stats.Add("Rewards/DeltaDistance", deltaReward);
-        stats.Add("Rewards/Energy",        energyPenalty);
-        stats.Add("Rewards/Smoothness",    smoothnessPenalty);
-        stats.Add("Rewards/Time",          timePenalty);
+        if (deltaReward != 0f)      stats.Add("Rewards/DeltaDistance",      deltaReward);
+        if (proximityReward != 0f)  stats.Add("Rewards/Proximity",         proximityReward);
+        if (energyPenalty != 0f)    stats.Add("Rewards/Energy",             energyPenalty);
+        if (smoothnessPenalty != 0f) stats.Add("Rewards/Smoothness",        smoothnessPenalty);
+        if (tiltPenalty != 0f)      stats.Add("Rewards/Tilt",              tiltPenalty);
+        if (angVelPenalty != 0f)    stats.Add("Rewards/AngularVelocity",   angVelPenalty);
+        if (velAlignment != 0f)     stats.Add("Rewards/VelocityAlignment", velAlignment);
+        if (timePenalty != 0f)      stats.Add("Rewards/Time",              timePenalty);
 
-        // --- Inspector debug ---
+        // --- Inspector debug (blank when zero) ---
         const string fmt = " 0.00000;-0.00000";
-        debugDeltaDist       = deltaReward.ToString(fmt);
-        debugEnergy          = energyPenalty.ToString(fmt);
-        debugSmoothness      = smoothnessPenalty.ToString(fmt);
-        debugTime            = timePenalty.ToString(fmt);
-        debugTotalStepReward = (deltaReward + energyPenalty + smoothnessPenalty + timePenalty).ToString(fmt);
+        debugDeltaDist       = deltaReward != 0f       ? deltaReward.ToString(fmt)      : "";
+        debugProximity       = proximityReward != 0f   ? proximityReward.ToString(fmt)  : "";
+        debugEnergy          = energyPenalty != 0f     ? energyPenalty.ToString(fmt)     : "";
+        debugSmoothness      = smoothnessPenalty != 0f ? smoothnessPenalty.ToString(fmt) : "";
+        debugTilt            = tiltPenalty != 0f       ? tiltPenalty.ToString(fmt)       : "";
+        debugAngularVelocity = angVelPenalty != 0f     ? angVelPenalty.ToString(fmt)     : "";
+        debugVelAlignment    = velAlignment != 0f      ? velAlignment.ToString(fmt)      : "";
+        debugTime            = timePenalty != 0f       ? timePenalty.ToString(fmt)       : "";
+        float totalStep = deltaReward + proximityReward + energyPenalty + smoothnessPenalty
+                        + tiltPenalty + angVelPenalty + velAlignment + timePenalty;
+        debugTotalStepReward = totalStep.ToString(fmt);
 
         return false;
     }

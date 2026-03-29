@@ -34,6 +34,8 @@ public class DroneRewardProfile : ScriptableObject
     public float maxTiltAngle = 60f;
 
     [Header("Terminal Condition Rewards")]
+    [Tooltip("Distance threshold (metres) at which the drone is considered to have reached the target.")]
+    public float targetReachedThreshold = 0.5f;
     [Tooltip("Reward given when the drone reaches the target (CheckTargetReached).")]
     public float targetReachedReward = 1.0f;
     [Tooltip("Penalty applied when the drone flies too far from the target (CheckTooFar).")]
