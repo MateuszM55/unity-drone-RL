@@ -83,8 +83,6 @@ public class DroneSimpleML_Agent : DroneMLAgentBase
         Vector3 targetPos = DroneRewardHelper.ResolveTargetPosition(target, startPosition);
         float distanceToTarget = Vector3.Distance(transform.localPosition, targetPos);
 
-        float tiltPenalty      = DroneRewardHelper.TiltPenalty(transform.up);
-        float angularVelPenalty = DroneRewardHelper.AngularVelocityPenalty(rb.angularVelocity.magnitude);
         // Delta-distance: reward closing in, penalise drifting away, zero for hovering.
         float deltaReward = _previousDistance >= 0f
             ? DroneRewardHelper.DeltaDistanceReward(_previousDistance, distanceToTarget)
@@ -99,8 +97,6 @@ public class DroneSimpleML_Agent : DroneMLAgentBase
 
         float timePenalty = DroneRewardHelper.TimePenalty(0.001f);
 
-        AddReward(tiltPenalty);
-        AddReward(angularVelPenalty);
         AddReward(deltaReward);
         AddReward(smoothnessPenalty);
         AddReward(energyPenalty);
@@ -112,19 +108,15 @@ public class DroneSimpleML_Agent : DroneMLAgentBase
         stats.Add("Rewards/Energy",         energyPenalty);
         stats.Add("Rewards/Smoothness",     smoothnessPenalty);
         stats.Add("Rewards/Time",           timePenalty);
-        stats.Add("Rewards/Tilt",           tiltPenalty);
-        stats.Add("Rewards/AngularVelocity",angularVelPenalty);
 
         // --- Inspector debug (sign-aligned, fixed-point) ---
         const string fmt = " 0.00000;-0.00000";
         debugDeltaDist       = deltaReward.ToString(fmt);
         debugEnergy          = energyPenalty.ToString(fmt);
         debugSmoothness      = smoothnessPenalty.ToString(fmt);
-        debugTilt            = tiltPenalty.ToString(fmt);
-        debugAngularVel      = angularVelPenalty.ToString(fmt);
         debugTime            = timePenalty.ToString(fmt);
         float total          = deltaReward + energyPenalty + smoothnessPenalty
-                             + timePenalty + tiltPenalty + angularVelPenalty;
+                             + timePenalty;
         debugTotalStepReward = total.ToString(fmt);
 
         // Terminal: fell below ground
