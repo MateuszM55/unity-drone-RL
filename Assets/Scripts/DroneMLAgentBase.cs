@@ -83,6 +83,7 @@ public abstract class DroneMLAgentBase : Agent
         ResetPhysics();
         rewardEvaluator.ResetEpisode();
         maxEpisodeDistance = curriculumManager.SetupEpisode(transform, startPosition, startRotation);
+        telemetry.OnNewEpisode(curriculumManager.CurrentLesson);
 
         if (target == null)
             Debug.LogWarning($"[{name}] No target is set.", this);
@@ -115,7 +116,7 @@ public abstract class DroneMLAgentBase : Agent
             touchdownTimer -= Time.fixedDeltaTime;
             if (touchdownTimer <= 0f)
             {
-                telemetry.FlushEpisode();
+                telemetry.FlushEpisode(EpisodeOutcome.Success_TargetReached);
                 EndEpisode();
                 return;
             }
@@ -141,7 +142,7 @@ public abstract class DroneMLAgentBase : Agent
 
         // Collision with obstacle or ground
         SetReward(rewardProfile != null ? rewardProfile.obstacleCollision : DroneRewardHelper.ObstaclePenalty);
-        telemetry.FlushEpisode();
+        telemetry.FlushEpisode(EpisodeOutcome.Crash_Obstacle);
         EndEpisode();
     }
 
@@ -175,7 +176,7 @@ public abstract class DroneMLAgentBase : Agent
         if (result.IsTerminal)
         {
             SetReward(result.TerminalReward);
-            telemetry.FlushEpisode();
+            telemetry.FlushEpisode(result.Outcome);
             EndEpisode();
             return true;
         }

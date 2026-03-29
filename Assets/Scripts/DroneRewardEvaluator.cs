@@ -25,6 +25,8 @@ public class DroneRewardEvaluator : MonoBehaviour
         public bool IsTerminal;
         /// <summary>Reward to apply via <c>SetReward</c> when <see cref="IsTerminal"/> is true.</summary>
         public float TerminalReward;
+        /// <summary>Why the episode ended (valid only when <see cref="IsTerminal"/> is true).</summary>
+        public EpisodeOutcome Outcome;
         /// <summary>Per-step reward breakdown (valid only when <see cref="IsTerminal"/> is false).</summary>
         public RewardStepSummary StepRewards;
     }
@@ -76,19 +78,19 @@ public class DroneRewardEvaluator : MonoBehaviour
         // --- Terminal conditions ---
         var reached = DroneRewardHelper.CheckTargetReached(
             distanceToTarget, profile.targetReachedThreshold, profile.targetReachedReward);
-        if (reached.IsTerminal) return MakeTerminal(reached.Reward);
+        if (reached.IsTerminal) return MakeTerminal(reached.Reward, EpisodeOutcome.Success_TargetReached);
 
         var tilt = DroneRewardHelper.CheckExcessiveTilt(
             transform.up, maxTiltDot, profile.excessiveTiltPenalty);
-        if (tilt.IsTerminal) return MakeTerminal(tilt.Reward);
+        if (tilt.IsTerminal) return MakeTerminal(tilt.Reward, EpisodeOutcome.Safety_ExcessiveTilt);
 
         var tooFar = DroneRewardHelper.CheckTooFar(
             distanceToTarget, maxEpisodeDistance, profile.tooFarPenalty);
-        if (tooFar.IsTerminal) return MakeTerminal(tooFar.Reward);
+        if (tooFar.IsTerminal) return MakeTerminal(tooFar.Reward, EpisodeOutcome.Safety_BoundaryLeft);
 
         var fallen = DroneRewardHelper.CheckFallen(
             transform.localPosition.y, profile.fallenMinY, profile.fallenPenalty);
-        if (fallen.IsTerminal) return MakeTerminal(fallen.Reward);
+        if (fallen.IsTerminal) return MakeTerminal(fallen.Reward, EpisodeOutcome.Crash_Ground);
 
         // --- Per-step rewards ---
         float deltaReward = _previousDistance >= 0f
@@ -116,8 +118,8 @@ public class DroneRewardEvaluator : MonoBehaviour
         return new EvalResult { IsTerminal = false, StepRewards = summary };
     }
 
-    private static EvalResult MakeTerminal(float reward)
+    private static EvalResult MakeTerminal(float reward, EpisodeOutcome outcome)
     {
-        return new EvalResult { IsTerminal = true, TerminalReward = reward };
+        return new EvalResult { IsTerminal = true, TerminalReward = reward, Outcome = outcome };
     }
 }
