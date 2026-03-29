@@ -51,7 +51,7 @@ environment_parameters:
         completion_criteria:
           measure: reward
           behavior: FlyToTarget
-          threshold: 1.2
+          threshold: 0.4
           min_lesson_length: 100
         value: 3.0
       - name: Lesson4_FarObstacles
