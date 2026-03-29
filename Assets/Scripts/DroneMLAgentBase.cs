@@ -115,6 +115,7 @@ public abstract class DroneMLAgentBase : Agent
             touchdownTimer -= Time.fixedDeltaTime;
             if (touchdownTimer <= 0f)
             {
+                telemetry.FlushEpisode();
                 EndEpisode();
                 return;
             }
@@ -140,6 +141,7 @@ public abstract class DroneMLAgentBase : Agent
 
         // Collision with obstacle or ground
         SetReward(rewardProfile != null ? rewardProfile.obstacleCollision : DroneRewardHelper.ObstaclePenalty);
+        telemetry.FlushEpisode();
         EndEpisode();
     }
 
@@ -173,6 +175,7 @@ public abstract class DroneMLAgentBase : Agent
         if (result.IsTerminal)
         {
             SetReward(result.TerminalReward);
+            telemetry.FlushEpisode();
             EndEpisode();
             return true;
         }

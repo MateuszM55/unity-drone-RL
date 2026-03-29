@@ -21,23 +21,33 @@ public class DroneTelemetry : MonoBehaviour
     public string debugFastApproach;
     public string debugTotalStepReward;
 
+    // --- Per-episode accumulators ---
+    private float _totalDeltaDistance;
+    private float _totalProximity;
+    private float _totalEnergy;
+    private float _totalSmoothness;
+    private float _totalTilt;
+    private float _totalAngularVelocity;
+    private float _totalVelocityAlignment;
+    private float _totalTime;
+    private float _totalFastApproach;
+
     /// <summary>
-    /// Logs the per-step reward components to TensorBoard (skipping zero-value
-    /// entries) and updates the Inspector debug strings.
+    /// Accumulates per-step reward components into episode totals and
+    /// updates the Inspector debug strings.
     /// </summary>
     public void Record(RewardStepSummary summary)
     {
-        // --- TensorBoard stats (skip zero-value rewards) ---
-        var stats = Academy.Instance.StatsRecorder;
-        if (summary.DeltaDistance != 0f)     stats.Add("Rewards/DeltaDistance",      summary.DeltaDistance);
-        if (summary.Proximity != 0f)         stats.Add("Rewards/Proximity",          summary.Proximity);
-        if (summary.Energy != 0f)            stats.Add("Rewards/Energy",             summary.Energy);
-        if (summary.Smoothness != 0f)        stats.Add("Rewards/Smoothness",         summary.Smoothness);
-        if (summary.Tilt != 0f)              stats.Add("Rewards/Tilt",               summary.Tilt);
-        if (summary.AngularVelocity != 0f)   stats.Add("Rewards/AngularVelocity",    summary.AngularVelocity);
-        if (summary.VelocityAlignment != 0f) stats.Add("Rewards/VelocityAlignment",  summary.VelocityAlignment);
-        if (summary.Time != 0f)              stats.Add("Rewards/Time",               summary.Time);
-        if (summary.FastApproach != 0f)      stats.Add("Rewards/FastApproach",       summary.FastApproach);
+        // --- Accumulate episode totals ---
+        _totalDeltaDistance     += summary.DeltaDistance;
+        _totalProximity         += summary.Proximity;
+        _totalEnergy            += summary.Energy;
+        _totalSmoothness        += summary.Smoothness;
+        _totalTilt              += summary.Tilt;
+        _totalAngularVelocity   += summary.AngularVelocity;
+        _totalVelocityAlignment += summary.VelocityAlignment;
+        _totalTime              += summary.Time;
+        _totalFastApproach      += summary.FastApproach;
 
         // --- Inspector debug (blank when zero) ---
         const string fmt = " 0.00000;-0.00000";
@@ -51,5 +61,34 @@ public class DroneTelemetry : MonoBehaviour
         debugTime            = summary.Time != 0f              ? summary.Time.ToString(fmt)              : "";
         debugFastApproach    = summary.FastApproach != 0f      ? summary.FastApproach.ToString(fmt)      : "";
         debugTotalStepReward = summary.Total.ToString(fmt);
+    }
+
+    /// <summary>
+    /// Writes the accumulated episode totals to TensorBoard (skipping zero-value
+    /// entries), then resets all accumulators for the next episode.
+    /// Call this exactly once, immediately before <see cref="Agent.EndEpisode"/>.
+    /// </summary>
+    public void FlushEpisode()
+    {
+        var stats = Academy.Instance.StatsRecorder;
+        if (_totalDeltaDistance != 0f)     stats.Add("Rewards/DeltaDistance",     _totalDeltaDistance);
+        if (_totalProximity != 0f)         stats.Add("Rewards/Proximity",         _totalProximity);
+        if (_totalEnergy != 0f)            stats.Add("Rewards/Energy",            _totalEnergy);
+        if (_totalSmoothness != 0f)        stats.Add("Rewards/Smoothness",        _totalSmoothness);
+        if (_totalTilt != 0f)              stats.Add("Rewards/Tilt",              _totalTilt);
+        if (_totalAngularVelocity != 0f)   stats.Add("Rewards/AngularVelocity",   _totalAngularVelocity);
+        if (_totalVelocityAlignment != 0f) stats.Add("Rewards/VelocityAlignment", _totalVelocityAlignment);
+        if (_totalTime != 0f)              stats.Add("Rewards/Time",              _totalTime);
+        if (_totalFastApproach != 0f)      stats.Add("Rewards/FastApproach",      _totalFastApproach);
+
+        _totalDeltaDistance     = 0f;
+        _totalProximity         = 0f;
+        _totalEnergy            = 0f;
+        _totalSmoothness        = 0f;
+        _totalTilt              = 0f;
+        _totalAngularVelocity   = 0f;
+        _totalVelocityAlignment = 0f;
+        _totalTime              = 0f;
+        _totalFastApproach      = 0f;
     }
 }
