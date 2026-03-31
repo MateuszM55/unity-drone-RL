@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: IncrementalDrone
   m_EditorClassIdentifier: Assembly-CSharp::DroneRewardProfile
   landingSuccess: 5
-  obstacleCollision: -1
-  deltaDistanceScale: 0.01
-  energyScale: 0.001
+  obstacleCollision: -5
+  deltaDistanceScale: 0.1
+  energyScale: 0.0001
   smoothnessScale: 0
   timeScale: 0.001
   fastApproachScale: 0.002
@@ -26,7 +26,7 @@ MonoBehaviour:
   tooFarPenalty: -1
   fallenMinY: -0.5
   fallenPenalty: -1
-  excessiveTiltPenalty: -1
+  excessiveTiltPenalty: -5
   proximityRewardScale: 0
   tiltPenaltyScale: 0
   angularVelocityPenaltyScale: 0
