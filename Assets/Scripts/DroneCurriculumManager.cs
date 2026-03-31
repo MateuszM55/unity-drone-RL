@@ -62,7 +62,7 @@ public class DroneCurriculumManager : MonoBehaviour
 
         int lessonIndex = useManualLessonPreview
             ? manualLessonIndex
-            : (int)Academy.Instance.EnvironmentParameters.GetWithDefault("lesson_index", 0f);
+            : (int)Academy.Instance.EnvironmentParameters.GetWithDefault("lesson", 0f);
         CurrentLessonIndex = Mathf.Clamp(lessonIndex, 0, Mathf.Max(0, curriculumPlan.Count - 1));
 
         if (curriculumPlan.Count == 0 || curriculumPlan[CurrentLessonIndex] == null)
