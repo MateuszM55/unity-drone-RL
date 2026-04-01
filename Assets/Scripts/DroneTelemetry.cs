@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Unity.MLAgents;
 using UnityEngine;
 
@@ -22,9 +23,9 @@ public class DroneTelemetry : MonoBehaviour
     public string debugFastApproach;
     public string debugTotalStepReward;
 
-    [Header("Debug - Episode Outcomes (per lesson)")]
+    [Header("Debug - Episode Outcomes (rolling 100-episode window)")]
     public string debugCurrentLesson;
-    public string debugTotalEpisodes;
+    public string debugWindowEpisodes;
     public string debugSuccessRate;
     public string debugCrashRate;
     public string debugExcessiveTiltRate;
@@ -42,9 +43,10 @@ public class DroneTelemetry : MonoBehaviour
     private float _totalTime;
     private float _totalFastApproach;
 
-    // --- Per-lesson outcome counters ---
+    // --- Rolling 100-episode outcome window ---
+    private const int RollingWindowSize = 100;
+    private readonly Queue<EpisodeOutcome> _outcomeWindow = new Queue<EpisodeOutcome>(RollingWindowSize);
     private int _currentLessonIndex;
-    private int _totalEpisodes;
     private int _successCount;
     private int _crashCount;
     private int _excessiveTiltCount;
@@ -90,9 +92,11 @@ public class DroneTelemetry : MonoBehaviour
     }
 
     /// <summary>
-    /// Writes accumulated episode reward totals and outcome percentages to
-    /// TensorBoard, then resets the reward accumulators. Outcome counters
-    /// persist until a lesson change triggers a hard reset.
+    /// Writes accumulated episode reward totals and rolling-window outcome
+    /// percentages to TensorBoard, then resets the reward accumulators.
+    /// Outcome rates are computed over the most recent 100 episodes (or fewer
+    /// if the window has not yet filled). The window is cleared when the
+    /// curriculum lesson changes.
     /// Call exactly once per episode, immediately before <c>EndEpisode</c>.
     /// </summary>
     public void FlushEpisode(EpisodeOutcome reason)
@@ -100,16 +104,14 @@ public class DroneTelemetry : MonoBehaviour
         if (_flushed) return;
         _flushed = true;
 
-        // --- Record outcome ---
-        _totalEpisodes++;
-        switch (reason)
+        // --- Record outcome in rolling window ---
+        if (_outcomeWindow.Count >= RollingWindowSize)
         {
-            case EpisodeOutcome.Success_TargetReached: _successCount++;       break;
-            case EpisodeOutcome.Crash:                 _crashCount++; break;
-            case EpisodeOutcome.Safety_ExcessiveTilt:   _excessiveTiltCount++; break;
-            case EpisodeOutcome.Safety_BoundaryLeft:    _boundaryLeftCount++;  break;
-            case EpisodeOutcome.Timeout:               _timeoutCount++;       break;
+            EpisodeOutcome evicted = _outcomeWindow.Dequeue();
+            DecrementOutcome(evicted);
         }
+        _outcomeWindow.Enqueue(reason);
+        IncrementOutcome(reason);
 
         // --- TensorBoard: episode reward totals ---
         var stats = Academy.Instance.StatsRecorder;
@@ -123,13 +125,13 @@ public class DroneTelemetry : MonoBehaviour
         if (_totalTime != 0f)              stats.Add("Rewards/Time",              _totalTime);
         if (_totalFastApproach != 0f)      stats.Add("Rewards/FastApproach",      _totalFastApproach);
 
-        // --- TensorBoard: outcome percentages & lesson index ---
-        float total = _totalEpisodes;
-        stats.Add("Outcomes/Success",        _successCount       / total);
-        stats.Add("Outcomes/Crash",         _crashCount / total);
-        stats.Add("Outcomes/ExcessiveTilt",  _excessiveTiltCount / total);
-        stats.Add("Outcomes/BoundaryLeft",   _boundaryLeftCount  / total);
-        stats.Add("Outcomes/Timeout",        _timeoutCount       / total);
+        // --- TensorBoard: rolling-window outcome percentages ---
+        float windowCount = _outcomeWindow.Count;
+        stats.Add("Outcomes/Success",        _successCount       / windowCount);
+        stats.Add("Outcomes/Crash",          _crashCount         / windowCount);
+        stats.Add("Outcomes/ExcessiveTilt",  _excessiveTiltCount / windowCount);
+        stats.Add("Outcomes/BoundaryLeft",   _boundaryLeftCount  / windowCount);
+        stats.Add("Outcomes/Timeout",        _timeoutCount       / windowCount);
 
         // --- Reset reward accumulators (outcome counters persist per lesson) ---
         _totalDeltaDistance     = 0f;
@@ -142,15 +144,15 @@ public class DroneTelemetry : MonoBehaviour
         _totalTime              = 0f;
         _totalFastApproach      = 0f;
 
-        // --- Inspector: outcome rates ---
+        // --- Inspector: rolling-window outcome rates ---
         const string pct = "P1";
         debugCurrentLesson     = _currentLessonIndex.ToString();
-        debugTotalEpisodes     = _totalEpisodes.ToString();
-        debugSuccessRate       = (_successCount       / total).ToString(pct);
-        debugCrashRate         = (_crashCount         / total).ToString(pct);
-        debugExcessiveTiltRate = (_excessiveTiltCount / total).ToString(pct);
-        debugBoundaryLeftRate  = (_boundaryLeftCount  / total).ToString(pct);
-        debugTimeoutRate       = (_timeoutCount       / total).ToString(pct);
+        debugWindowEpisodes    = _outcomeWindow.Count + " / " + RollingWindowSize;
+        debugSuccessRate       = (_successCount       / windowCount).ToString(pct);
+        debugCrashRate         = (_crashCount         / windowCount).ToString(pct);
+        debugExcessiveTiltRate = (_excessiveTiltCount / windowCount).ToString(pct);
+        debugBoundaryLeftRate  = (_boundaryLeftCount  / windowCount).ToString(pct);
+        debugTimeoutRate       = (_timeoutCount       / windowCount).ToString(pct);
     }
 
     /// <summary>
@@ -176,9 +178,33 @@ public class DroneTelemetry : MonoBehaviour
         _flushed = false;
     }
 
+    private void IncrementOutcome(EpisodeOutcome outcome)
+    {
+        switch (outcome)
+        {
+            case EpisodeOutcome.Success_TargetReached: _successCount++;       break;
+            case EpisodeOutcome.Crash:                 _crashCount++;         break;
+            case EpisodeOutcome.Safety_ExcessiveTilt:   _excessiveTiltCount++; break;
+            case EpisodeOutcome.Safety_BoundaryLeft:    _boundaryLeftCount++;  break;
+            case EpisodeOutcome.Timeout:               _timeoutCount++;       break;
+        }
+    }
+
+    private void DecrementOutcome(EpisodeOutcome outcome)
+    {
+        switch (outcome)
+        {
+            case EpisodeOutcome.Success_TargetReached: _successCount--;       break;
+            case EpisodeOutcome.Crash:                 _crashCount--;         break;
+            case EpisodeOutcome.Safety_ExcessiveTilt:   _excessiveTiltCount--; break;
+            case EpisodeOutcome.Safety_BoundaryLeft:    _boundaryLeftCount--;  break;
+            case EpisodeOutcome.Timeout:               _timeoutCount--;       break;
+        }
+    }
+
     private void ResetOutcomeCounters()
     {
-        _totalEpisodes      = 0;
+        _outcomeWindow.Clear();
         _successCount       = 0;
         _crashCount         = 0;
         _excessiveTiltCount = 0;
