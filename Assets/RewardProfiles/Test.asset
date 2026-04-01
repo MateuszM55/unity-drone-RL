@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f51384c82e81c4a4f9e7aedc2395a6a0, type: 3}
   m_Name: Test
   m_EditorClassIdentifier: Assembly-CSharp::DroneRewardProfile
-  landingSuccess: 1
-  obstacleCollision: -1
+  landingSuccess: -5
+  obstacleCollision: -5
   deltaDistanceScale: 0.1
   energyScale: 0
   smoothnessScale: 0
@@ -26,7 +26,7 @@ MonoBehaviour:
   tooFarPenalty: -1
   fallenMinY: -0.5
   fallenPenalty: -1
-  excessiveTiltPenalty: -1
+  excessiveTiltPenalty: -5
   proximityRewardScale: 0
   tiltPenaltyScale: 0
   angularVelocityPenaltyScale: 0

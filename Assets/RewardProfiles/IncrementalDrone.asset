@@ -15,7 +15,7 @@ MonoBehaviour:
   landingSuccess: 5
   obstacleCollision: -5
   deltaDistanceScale: 0.1
-  energyScale: 0.0001
+  energyScale: 0
   smoothnessScale: 0
   timeScale: 0.001
   fastApproachScale: 0.002

@@ -1505,6 +1505,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 1552945592}
     - target: {fileID: 1405414569429997631, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
+      propertyPath: MaxStep
+      value: 5000
+      objectReference: {fileID: 0}
+    - target: {fileID: 1405414569429997631, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
       propertyPath: rewardProfile
       value: 
       objectReference: {fileID: 11400000, guid: 66b216d7f570ab94d9617f7738f35d7b, type: 2}
