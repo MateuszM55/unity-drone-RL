@@ -301,8 +301,9 @@ public class PoissonObstacleGenerator : MonoBehaviour
                 PdsAddPoint(candidate);
                 anyAccepted = true;
 
-                if (pdsPoints.Count >= count)
-                    break;
+                // Break after accepting one candidate so every active seed
+                // grows at the same rate — prevents quadrant clumping.
+                break;
             }
 
             // Dead end — remove from active list (O(1) swap-and-pop)
