@@ -130,7 +130,6 @@ public class DroneTelemetry : MonoBehaviour
         stats.Add("Outcomes/ExcessiveTilt",  _excessiveTiltCount / total);
         stats.Add("Outcomes/BoundaryLeft",   _boundaryLeftCount  / total);
         stats.Add("Outcomes/Timeout",        _timeoutCount       / total);
-        stats.Add("Environment/LessonIndex", _currentLessonIndex);
 
         // --- Reset reward accumulators (outcome counters persist per lesson) ---
         _totalDeltaDistance     = 0f;
