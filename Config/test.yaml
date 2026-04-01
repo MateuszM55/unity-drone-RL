@@ -25,64 +25,61 @@ behaviors:
 environment_parameters:
   lesson:
     curriculum:
-      # --- Phase 1: Increasing Distance ---
       - name: Lesson0_Clear_SpawnDistance1
         completion_criteria:
           measure: reward
           behavior: FlyToTarget
-          threshold: 0.3
-          min_lesson_length: 100
+          threshold: 6.5
+          min_lesson_length: 5000
         value: 0.0
       - name: Lesson1_Clear_SpawnDistance2
         completion_criteria:
           measure: reward
           behavior: FlyToTarget
-          threshold: 0.3
-          min_lesson_length: 100
+          threshold: 6.0
+          min_lesson_length: 5000
         value: 1.0
       - name: Lesson2_Clear_SpawnDistance3
         completion_criteria:
           measure: reward
           behavior: FlyToTarget
-          threshold: 0.3
-          min_lesson_length: 100
+          threshold: 6.0
+          min_lesson_length: 5000
         value: 2.0
       - name: Lesson3_Clear_SpawnDistance4
         completion_criteria:
           measure: reward
           behavior: FlyToTarget
-          threshold: 0.3
-          min_lesson_length: 100
+          threshold: 5.5
+          min_lesson_length: 5000
         value: 3.0
       - name: Lesson4_Clear_SpawnDistance5
         completion_criteria:
           measure: reward
           behavior: FlyToTarget
-          threshold: 0.3
-          min_lesson_length: 100
+          threshold: 5.5
+          min_lesson_length: 5000
         value: 4.0
-        
-      # --- Phase 2: Obstacles ---
       - name: Lesson5_Obstacles_Difficulty1
         completion_criteria:
           measure: reward
           behavior: FlyToTarget
-          threshold: 0.3
-          min_lesson_length: 100
+          threshold: 4.5
+          min_lesson_length: 8000
         value: 5.0
       - name: Lesson6_Obstacles_Difficulty2
         completion_criteria:
           measure: reward
           behavior: FlyToTarget
-          threshold: 0.3
-          min_lesson_length: 100
+          threshold: 4.0
+          min_lesson_length: 10000
         value: 6.0
       - name: Lesson7_Obstacles_Difficulty3
         completion_criteria:
           measure: reward
           behavior: FlyToTarget
-          threshold: 0.3
-          min_lesson_length: 100
+          threshold: 3.5
+          min_lesson_length: 10000
         value: 7.0
       - name: Lesson8_Obstacles_Difficulty4
         value: 8.0
