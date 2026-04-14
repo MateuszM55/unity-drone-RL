@@ -134,6 +134,11 @@ public class HexSwissCheeseObstacleGenerator : MonoBehaviour
         float outerRSqr = outerR * outerR;
         float innerRSqr = innerR * innerR;
 
+        // ── Random rotation for dynamic lanes ──
+        float randomAngle = Random.Range(0f, Mathf.PI * 2f);
+        float cosA = Mathf.Cos(randomAngle);
+        float sinA = Mathf.Sin(randomAngle);
+
         // ── Phase 1: Build the hexagonal grid ──
         // Row height for a hex grid = spacing * sqrt(3) / 2
         float rowHeight = spacing * 0.8660254f;
@@ -156,11 +161,16 @@ public class HexSwissCheeseObstacleGenerator : MonoBehaviour
                 if (oddRow) x += halfSpacing;
 
                 // ── Phase 2: Cookie-cut to ring ──
+                // Distance check (rotation doesn't change distance)
                 float distSqr = x * x + z * z;
                 if (distSqr < innerRSqr || distSqr > outerRSqr)
                     continue;
 
-                candidates.Add(new Vector2(x, z));
+                // Apply the rotation matrix
+                float rotatedX = x * cosA - z * sinA;
+                float rotatedZ = x * sinA + z * cosA;
+
+                candidates.Add(new Vector2(rotatedX, rotatedZ));
             }
         }
 
@@ -254,6 +264,7 @@ public class HexSwissCheeseObstacleGenerator : MonoBehaviour
         float outerRSqr  = spawnRadius * spawnRadius;
         float innerRSqr  = minSpawnRadius * minSpawnRadius;
 
+        // Note: Gizmos show non-rotated grid since rotation is randomized per episode
         int cols = Mathf.CeilToInt(2f * spawnRadius / hexSpacing) + 1;
         int rows = Mathf.CeilToInt(2f * spawnRadius / rowHeight)  + 1;
 
