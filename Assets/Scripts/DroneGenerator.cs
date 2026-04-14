@@ -51,7 +51,6 @@ public class DroneGenerator : MonoBehaviour
 
         // Link rotor transforms to controllers via serialized properties
 #if UNITY_EDITOR
-        LinkRotors<DronePDController>(newRotors, "rotorTransforms");
         LinkRotors<DroneSimpleML_Agent>(newRotors, "rotorTransforms");
         LinkRotors<DroneIncrementalML_Agent>(newRotors, "rotorTransforms");
 #endif
