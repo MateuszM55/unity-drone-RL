@@ -5,15 +5,14 @@ using UnityEngine;
 /// <summary>
 /// Reads the ML-Agents curriculum lesson index, selects the matching
 /// <see cref="LessonProfile"/> from <see cref="curriculumPlan"/>, positions
-/// the drone, and manages per-episode obstacle generation via
-/// <see cref="PoissonObstacleGenerator"/>.
+/// the drone, and manages per-episode obstacle generation via either
+/// <see cref="PoissonObstacleGenerator"/> or <see cref="HexSwissCheeseObstacleGenerator"/>.
 ///
 /// Attach to the same GameObject as the drone agent.
 /// Call <see cref="Initialise"/> once, then <see cref="SetupEpisode"/>
 /// at the start of every episode.
 /// </summary>
 [DisallowMultipleComponent]
-[RequireComponent(typeof(PoissonObstacleGenerator))]
 public class DroneCurriculumManager : MonoBehaviour
 {
     [Header("Training")]
@@ -29,7 +28,12 @@ public class DroneCurriculumManager : MonoBehaviour
     [Tooltip("Lesson to preview when Use Manual Lesson Preview is checked.")]
     [SerializeField, Min(0)] private int manualLessonIndex;
 
-    private PoissonObstacleGenerator obstacleGenerator;
+    [Header("Obstacle Generator")]
+    [Tooltip("When true, uses the Hex Swiss Cheese generator instead of Poisson Disk Sampling.")]
+    [SerializeField] private bool useHexSwissCheese;
+
+    private PoissonObstacleGenerator poissonGenerator;
+    private HexSwissCheeseObstacleGenerator hexGenerator;
 
     /// <summary>The target transform assigned in the Inspector.</summary>
     public Transform Target => target;
@@ -43,8 +47,20 @@ public class DroneCurriculumManager : MonoBehaviour
     /// </summary>
     public void Initialise()
     {
-        obstacleGenerator = GetComponent<PoissonObstacleGenerator>();
-        obstacleGenerator.Initialise();
+        if (useHexSwissCheese)
+        {
+            hexGenerator = GetComponent<HexSwissCheeseObstacleGenerator>();
+            Debug.Assert(hexGenerator != null,
+                "[DroneCurriculumManager] useHexSwissCheese is enabled but no HexSwissCheeseObstacleGenerator component was found.");
+            hexGenerator.Initialise();
+        }
+        else
+        {
+            poissonGenerator = GetComponent<PoissonObstacleGenerator>();
+            Debug.Assert(poissonGenerator != null,
+                "[DroneCurriculumManager] No PoissonObstacleGenerator component was found.");
+            poissonGenerator.Initialise();
+        }
     }
 
     /// <summary>
@@ -58,7 +74,10 @@ public class DroneCurriculumManager : MonoBehaviour
     /// <returns>Max allowed distance from target before the episode is terminated.</returns>
     public float SetupEpisode(Transform drone, Vector3 startPosition, Quaternion startRotation)
     {
-        obstacleGenerator.Clear();
+        if (useHexSwissCheese)
+            hexGenerator.Clear();
+        else
+            poissonGenerator.Clear();
 
         int lessonIndex = useManualLessonPreview
             ? manualLessonIndex
@@ -90,8 +109,14 @@ public class DroneCurriculumManager : MonoBehaviour
 
         // Spawn obstacles
         if (profile.obstacleCount > 0)
-            obstacleGenerator.Generate(targetPos, profile.obstacleCount,
-                profile.obstacleSpawnRadius, profile.obstacleMinSeparation);
+        {
+            if (useHexSwissCheese)
+                hexGenerator.Generate(targetPos, profile.obstacleCount,
+                    profile.obstacleSpawnRadius, profile.obstacleMinSeparation);
+            else
+                poissonGenerator.Generate(targetPos, profile.obstacleCount,
+                    profile.obstacleSpawnRadius, profile.obstacleMinSeparation);
+        }
 
         drone.localRotation = startRotation;
         return profile.maxEpisodeDistance;
