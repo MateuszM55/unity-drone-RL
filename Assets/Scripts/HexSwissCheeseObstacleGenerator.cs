@@ -164,24 +164,18 @@ public class HexSwissCheeseObstacleGenerator : MonoBehaviour
             }
         }
 
-        // ── Phase 3: Swiss cheese — probabilistic culling ──
-        survivors.Clear();
-        for (int i = 0; i < candidates.Count; i++)
-        {
-            if (Random.value <= fillDensity)
-                survivors.Add(candidates[i]);
-        }
-
-        // Shuffle and cap at requested count
-        ShuffleInPlace(survivors);
-        int placed = Mathf.Min(survivors.Count, count);
+        // ── Phase 3: Exact-count shuffle — deterministic density, zero binomial variance ──
+        // Shuffle all candidates, then take exactly the target count instead of
+        // coin-flipping each point (which causes binomial variance and empty episodes).
+        ShuffleInPlace(candidates);
+        int placed = Mathf.Min(Mathf.RoundToInt(candidates.Count * fillDensity), count);
 
         EnsurePoolCapacity(placed);
 
         // ── Phase 4: Jitter & spawn ──
         for (int i = 0; i < placed; i++)
         {
-            Vector2 pt = survivors[i];
+            Vector2 pt = candidates[i];
 
             // Random direction + distance within safe jitter radius
             float angle = Random.Range(0f, 2f * Mathf.PI);

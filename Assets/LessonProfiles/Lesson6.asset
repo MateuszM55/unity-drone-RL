@@ -16,7 +16,7 @@ MonoBehaviour:
   spawnRadius: 35
   maxEpisodeDistance: 45
   maxObstacleCount: 99
-  obstacleSpawnRadius: 20
+  obstacleSpawnRadius: 30
   minObstacleSpawnRadius: 5
   hexSpacing: 10
   hexMinDistance: 5

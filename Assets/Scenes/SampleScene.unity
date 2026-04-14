@@ -1574,11 +1574,11 @@ PrefabInstance:
       objectReference: {fileID: 119988723}
     - target: {fileID: 5209300706112747641, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
       propertyPath: manualLessonIndex
-      value: 5
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 5209300706112747641, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
       propertyPath: useManualLessonPreview
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6542250306051900023, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
