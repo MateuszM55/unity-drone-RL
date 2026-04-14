@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DroneRewardProfile
   landingSuccess: 5
   obstacleCollision: -5
-  deltaDistanceScale: 0.1
+  deltaDistanceScale: 0
+  normalizedDeltaDistanceMaxProgressReward: 3
   energyScale: 0
   smoothnessScale: 0
   timeScale: 0.001

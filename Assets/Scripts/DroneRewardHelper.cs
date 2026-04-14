@@ -84,6 +84,25 @@ public static class DroneRewardHelper
         return scale * (previousDistance - currentDistance);
     }
 
+    /// <summary>
+    /// Potential-based progress reward normalised by the episode's starting distance.
+    /// Because the delta is divided by <paramref name="startDistance"/>, moving 1 % of the
+    /// original distance always yields the same reward regardless of how far the drone
+    /// started from the target (e.g. 50 m or 5 m).
+    /// <c>R = maxProgressReward × (previousDistance − currentDistance) / startDistance</c>
+    /// </summary>
+    /// <param name="previousDistance">Distance to target at the previous step.</param>
+    /// <param name="currentDistance">Distance to target at the current step.</param>
+    /// <param name="startDistance">Distance to target at episode start (used as normaliser).</param>
+    /// <param name="maxProgressReward">Reward earned when the drone covers the full start distance in one step (default 0.1).</param>
+    public static float NormalizedDeltaDistanceReward(float previousDistance, float currentDistance, float startDistance, float maxProgressReward = 0.1f)
+    {
+        if (startDistance < 0.001f)
+            return 0f;
+
+        return maxProgressReward * (previousDistance - currentDistance) / startDistance;
+    }
+
     /// <summary>Penalty proportional to how far the drone's up axis deviates from world up.</summary>
     public static float TiltPenalty(Vector3 droneUp, float scale = 0.005f)
     {

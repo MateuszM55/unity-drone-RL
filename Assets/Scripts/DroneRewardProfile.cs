@@ -20,6 +20,10 @@ public class DroneRewardProfile : ScriptableObject
     [Header("Step Penalty Scales")]
     [Tooltip("Scale for the delta-distance (potential-based progress) reward per step.")]
     public float deltaDistanceScale = 0.01f;
+    [Tooltip("Scale for the normalised delta-distance reward. The delta is divided by the " +
+             "episode start distance so equal fractional progress always yields the same reward " +
+             "regardless of how far the drone started from the target.")]
+    public float normalizedDeltaDistanceMaxProgressReward = 8f;
     [Tooltip("Scale for the motor energy penalty per step.")]
     public float energyScale = 0.001f;
     [Tooltip("Scale for the action-smoothness penalty per step.")]
