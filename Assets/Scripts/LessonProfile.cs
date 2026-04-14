@@ -27,6 +27,4 @@ public class LessonProfile : ScriptableObject
     public float hexObstacleDensity = 0.35f;
     [Tooltip("Radius within which obstacles are placed around the target.")]
     public float obstacleSpawnRadius = 12f;
-    [Tooltip("Minimum separation between obstacles (Poisson disk sampling).")]
-    public float obstacleMinSeparation = 8f;
 }

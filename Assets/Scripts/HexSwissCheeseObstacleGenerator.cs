@@ -101,24 +101,13 @@ public class HexSwissCheeseObstacleGenerator : MonoBehaviour
     }
 
     /// <summary>
-    /// Simplified override that mirrors the Poisson generator's signature.
-    /// Uses serialised hex-specific defaults for spacing/density.
+    /// Generates obstacles using per-call count, outer radius, and density.
+    /// Uses the serialised hex spacing, min distance, and inner radius as defaults.
     /// </summary>
-    public void Generate(Vector3 center, int overrideCount, float overrideRadius, float overrideMinSep)
+    public void Generate(Vector3 center, int overrideCount, float overrideRadius, float overrideDensity)
     {
-        float spacing = overrideMinSep * 1.5f;
         GenerateInternal(center, overrideCount, overrideRadius, minSpawnRadius,
-                         spacing, overrideMinSep, density);
-    }
-
-    /// <summary>
-    /// Simplified override that mirrors the Poisson generator's signature and accepts an explicit density.
-    /// </summary>
-    public void Generate(Vector3 center, int overrideCount, float overrideRadius, float overrideMinSep, float overrideDensity)
-    {
-        float spacing = overrideMinSep * 1.5f;
-        GenerateInternal(center, overrideCount, overrideRadius, minSpawnRadius,
-                         spacing, overrideMinSep, overrideDensity);
+                         hexSpacing, minDistance, overrideDensity);
     }
 
     /// <summary>Deactivates all obstacles spawned during the current episode.</summary>
