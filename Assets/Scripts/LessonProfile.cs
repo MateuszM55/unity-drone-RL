@@ -22,9 +22,23 @@ public class LessonProfile : ScriptableObject
     [Header("Obstacles")]
     [Tooltip("Number of obstacles to spawn each episode. 0 = no obstacles.")]
     public int maxObstacleCount = 0;
-    [Tooltip("Fraction of hex grid points to keep (0 = empty, 1 = all points). Used by the Hex Swiss Cheese generator.")]
+    [Tooltip("Outer radius of the obstacle ring around the target.")]
+    public float obstacleSpawnRadius = 12f;
+    [Tooltip("Inner radius — obstacles won't spawn closer than this to the target.")]
+    public float minObstacleSpawnRadius = 5f;
+
+    [Header("Hex Grid")]
+    [Tooltip("Centre-to-centre distance between hex cells. Must be greater than hexMinDistance.")]
+    public float hexSpacing = 6f;
+    [Tooltip("Absolute minimum distance between any two obstacles. Must be less than hexSpacing.")]
+    public float hexMinDistance = 4f;
+    [Tooltip("Fraction of hex grid points to keep (0 = empty, 1 = all points).")]
     [Range(0f, 1f)]
     public float hexObstacleDensity = 0.35f;
-    [Tooltip("Radius within which obstacles are placed around the target.")]
-    public float obstacleSpawnRadius = 12f;
+
+    [Header("Obstacle Height")]
+    [Tooltip("Minimum height for obstacle placement.")]
+    public float obstacleMinHeight = 3f;
+    [Tooltip("Maximum height for obstacle placement.")]
+    public float obstacleMaxHeight = 3f;
 }

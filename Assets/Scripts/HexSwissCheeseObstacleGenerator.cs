@@ -86,7 +86,18 @@ public class HexSwissCheeseObstacleGenerator : MonoBehaviour
     public void Generate(Vector3 center)
     {
         GenerateInternal(center, maxObstacleCount, spawnRadius, minSpawnRadius,
-                         hexSpacing, minDistance, density);
+                         hexSpacing, minDistance, density, minHeight, maxHeight);
+    }
+
+    /// <summary>
+    /// Generates obstacles around <paramref name="center"/> using fully overridden parameters.
+    /// Call this from a curriculum manager to apply per-lesson settings.
+    /// </summary>
+    public void Generate(Vector3 center, int count, float outerR, float innerR,
+                         float spacing, float minDist, float fillDensity,
+                         float minH, float maxH)
+    {
+        GenerateInternal(center, count, outerR, innerR, spacing, minDist, fillDensity, minH, maxH);
     }
 
     /// <summary>Deactivates all obstacles spawned during the current episode.</summary>
@@ -103,7 +114,8 @@ public class HexSwissCheeseObstacleGenerator : MonoBehaviour
     // ── Core algorithm ───────────────────────────────────────────────────
 
     private void GenerateInternal(Vector3 center, int count, float outerR, float innerR,
-                                  float spacing, float minDist, float fillDensity)
+                                  float spacing, float minDist, float fillDensity,
+                                  float minH, float maxH)
     {
         if (obstaclePrefab == null) return;
 
@@ -171,7 +183,7 @@ public class HexSwissCheeseObstacleGenerator : MonoBehaviour
 
             Vector3 pos = center + new Vector3(
                 pt.x + jx,
-                Random.Range(minHeight, maxHeight),
+                Random.Range(minH, maxH),
                 pt.y + jz);
 
             Quaternion rot = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);

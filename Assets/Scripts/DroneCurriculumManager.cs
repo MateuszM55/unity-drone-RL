@@ -92,8 +92,15 @@ public class DroneCurriculumManager : MonoBehaviour
         // Spawn obstacles
         if (profile.maxObstacleCount > 0)
         {
-            hexGenerator.Generate(targetPos, profile.maxObstacleCount,
-                profile.obstacleSpawnRadius, profile.hexObstacleDensity);
+            hexGenerator.Generate(targetPos,
+                profile.maxObstacleCount,
+                profile.obstacleSpawnRadius,
+                profile.minObstacleSpawnRadius,
+                profile.hexSpacing,
+                profile.hexMinDistance,
+                profile.hexObstacleDensity,
+                profile.obstacleMinHeight,
+                profile.obstacleMaxHeight);
         }
 
         drone.localRotation = startRotation;
