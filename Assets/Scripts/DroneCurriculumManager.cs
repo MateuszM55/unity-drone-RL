@@ -108,13 +108,13 @@ public class DroneCurriculumManager : MonoBehaviour
         }
 
         // Spawn obstacles
-        if (profile.obstacleCount > 0)
+        if (profile.maxObstacleCount > 0)
         {
             if (useHexSwissCheese)
-                hexGenerator.Generate(targetPos, profile.obstacleCount,
-                    profile.obstacleSpawnRadius, profile.obstacleMinSeparation);
+                hexGenerator.Generate(targetPos, profile.maxObstacleCount,
+                    profile.obstacleSpawnRadius, profile.obstacleMinSeparation, profile.hexObstacleDensity);
             else
-                poissonGenerator.Generate(targetPos, profile.obstacleCount,
+                poissonGenerator.Generate(targetPos, profile.maxObstacleCount,
                     profile.obstacleSpawnRadius, profile.obstacleMinSeparation);
         }
 

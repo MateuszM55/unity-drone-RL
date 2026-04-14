@@ -25,7 +25,7 @@ public class HexSwissCheeseObstacleGenerator : MonoBehaviour
     [Tooltip("Prefab to spawn as an obstacle.")]
     [SerializeField] private GameObject obstaclePrefab;
     [Tooltip("Maximum number of obstacles to place per episode.")]
-    [SerializeField] private int obstacleCount = 20;
+    [SerializeField] private int maxObstacleCount = 20;
 
     [Header("Spawn Ring")]
     [Tooltip("Outer radius of the obstacle ring around the centre.")]
@@ -61,9 +61,6 @@ public class HexSwissCheeseObstacleGenerator : MonoBehaviour
     private readonly List<Vector2> candidates = new List<Vector2>();
     private readonly List<Vector2> survivors = new List<Vector2>();
 
-    // ── Runtime guard ──
-    private bool _initialised;
-
     // ─────────────────────────────────────────────────────────────────────
 
     /// <summary>
@@ -81,7 +78,6 @@ public class HexSwissCheeseObstacleGenerator : MonoBehaviour
             $"[HexSwissCheese] minDistance ({minDistance}) must be < hexSpacing ({hexSpacing}).");
 
         InitPool();
-        _initialised = true;
     }
 
     /// <summary>
@@ -89,7 +85,7 @@ public class HexSwissCheeseObstacleGenerator : MonoBehaviour
     /// </summary>
     public void Generate(Vector3 center)
     {
-        GenerateInternal(center, obstacleCount, spawnRadius, minSpawnRadius,
+        GenerateInternal(center, maxObstacleCount, spawnRadius, minSpawnRadius,
                          hexSpacing, minDistance, density);
     }
 
@@ -113,6 +109,16 @@ public class HexSwissCheeseObstacleGenerator : MonoBehaviour
         float spacing = overrideMinSep * 1.5f;
         GenerateInternal(center, overrideCount, overrideRadius, minSpawnRadius,
                          spacing, overrideMinSep, density);
+    }
+
+    /// <summary>
+    /// Simplified override that mirrors the Poisson generator's signature and accepts an explicit density.
+    /// </summary>
+    public void Generate(Vector3 center, int overrideCount, float overrideRadius, float overrideMinSep, float overrideDensity)
+    {
+        float spacing = overrideMinSep * 1.5f;
+        GenerateInternal(center, overrideCount, overrideRadius, minSpawnRadius,
+                         spacing, overrideMinSep, overrideDensity);
     }
 
     /// <summary>Deactivates all obstacles spawned during the current episode.</summary>
@@ -221,7 +227,7 @@ public class HexSwissCheeseObstacleGenerator : MonoBehaviour
     {
         if (obstaclePrefab == null) return;
 
-        for (int i = 0; i < obstacleCount; i++)
+        for (int i = 0; i < maxObstacleCount; i++)
         {
             GameObject obj = Instantiate(obstaclePrefab, Vector3.zero, Quaternion.identity, spawnParent);
             obj.SetActive(false);

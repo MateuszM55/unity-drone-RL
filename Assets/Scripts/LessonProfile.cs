@@ -21,7 +21,10 @@ public class LessonProfile : ScriptableObject
 
     [Header("Obstacles")]
     [Tooltip("Number of obstacles to spawn each episode. 0 = no obstacles.")]
-    public int obstacleCount = 0;
+    public int maxObstacleCount = 0;
+    [Tooltip("Fraction of hex grid points to keep (0 = empty, 1 = all points). Used by the Hex Swiss Cheese generator.")]
+    [Range(0f, 1f)]
+    public float hexObstacleDensity = 0.35f;
     [Tooltip("Radius within which obstacles are placed around the target.")]
     public float obstacleSpawnRadius = 12f;
     [Tooltip("Minimum separation between obstacles (Poisson disk sampling).")]
