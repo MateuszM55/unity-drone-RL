@@ -13,8 +13,13 @@ MonoBehaviour:
   m_Name: Lesson6
   m_EditorClassIdentifier: Assembly-CSharp::LessonProfile
   spawnHeight: 5
-  spawnRadius: 25
-  maxEpisodeDistance: 40
-  obstacleCount: 14
+  spawnRadius: 35
+  maxEpisodeDistance: 45
+  maxObstacleCount: 99
   obstacleSpawnRadius: 20
-  obstacleMinSeparation: 6
+  minObstacleSpawnRadius: 5
+  hexSpacing: 10
+  hexMinDistance: 5
+  hexObstacleDensity: 0.4
+  obstacleMinHeight: 3
+  obstacleMaxHeight: 3

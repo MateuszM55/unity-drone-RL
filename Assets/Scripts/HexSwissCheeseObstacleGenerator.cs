@@ -53,6 +53,14 @@ public class HexSwissCheeseObstacleGenerator : MonoBehaviour
     [Tooltip("Parent transform under which pooled obstacles are instantiated. Defaults to this GameObject's transform.")]
     [SerializeField] private Transform spawnParent;
 
+    [Header("Gizmos")]
+    [Tooltip("Draw hex grid centre points in the Scene view.")]
+    [SerializeField] private bool showGizmos = true;
+    [Tooltip("Radius of each gizmo sphere drawn at a grid centre.")]
+    [SerializeField] private float gizmoRadius = 0.15f;
+    [Tooltip("Colour used for the grid-centre spheres.")]
+    [SerializeField] private Color gizmoColor = new Color(0f, 1f, 0.5f, 0.8f);
+
     // ── Object pool ──
     private readonly List<GameObject> pool = new List<GameObject>();
     private int activeCount;
@@ -238,6 +246,42 @@ public class HexSwissCheeseObstacleGenerator : MonoBehaviour
             Vector2 tmp = list[i];
             list[i] = list[j];
             list[j] = tmp;
+        }
+    }
+
+    // ── Editor visualisation ─────────────────────────────────────────────
+
+    private void OnDrawGizmos()
+    {
+        if (!showGizmos) return;
+
+        float rowHeight  = hexSpacing * 0.8660254f;
+        float halfSpacing = hexSpacing * 0.5f;
+        float outerRSqr  = spawnRadius * spawnRadius;
+        float innerRSqr  = minSpawnRadius * minSpawnRadius;
+
+        int cols = Mathf.CeilToInt(2f * spawnRadius / hexSpacing) + 1;
+        int rows = Mathf.CeilToInt(2f * spawnRadius / rowHeight)  + 1;
+
+        Vector3 center = transform.position;
+        Gizmos.color = gizmoColor;
+
+        for (int row = 0; row < rows; row++)
+        {
+            float z = -spawnRadius + row * rowHeight;
+            bool oddRow = (row & 1) == 1;
+
+            for (int col = 0; col < cols; col++)
+            {
+                float x = -spawnRadius + col * hexSpacing;
+                if (oddRow) x += halfSpacing;
+
+                float distSqr = x * x + z * z;
+                if (distSqr < innerRSqr || distSqr > outerRSqr)
+                    continue;
+
+                Gizmos.DrawSphere(center + new Vector3(x, 0f, z), gizmoRadius);
+            }
         }
     }
 }
