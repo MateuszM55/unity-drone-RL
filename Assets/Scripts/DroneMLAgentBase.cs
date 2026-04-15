@@ -12,7 +12,7 @@ using UnityEngine.InputSystem;
 ///   • <see cref="DroneAerodynamics"/>         — mass, gravity, quadratic drag
 ///   • <see cref="DroneCurriculumManager"/>    — curriculum, spawn placement, obstacles
 ///   • <see cref="DroneObserver"/>             — observation collection
-///   • <see cref="DroneRewardEvaluator"/>      — terminal checks, per-step reward math
+///   • <see cref="DroneRewardManager"/>      — terminal checks, per-step reward math
 ///   • <see cref="DroneTelemetry"/>            — TensorBoard stats, Inspector debug strings
 ///
 /// Subclasses implement <see cref="Agent.OnActionReceived"/> and
@@ -24,7 +24,7 @@ using UnityEngine.InputSystem;
 [RequireComponent(typeof(DroneAerodynamics))]
 [RequireComponent(typeof(DroneCurriculumManager))]
 [RequireComponent(typeof(DroneObserver))]
-[RequireComponent(typeof(DroneRewardEvaluator))]
+[RequireComponent(typeof(DroneRewardManager))]
 [RequireComponent(typeof(DroneTelemetry))]
 public abstract class DroneMLAgentBase : Agent
 {
@@ -46,7 +46,7 @@ public abstract class DroneMLAgentBase : Agent
     protected float touchdownTimer;
     protected DroneCurriculumManager curriculumManager;
     protected DroneObserver observer;
-    protected DroneRewardEvaluator rewardEvaluator;
+    protected DroneRewardManager rewardEvaluator;
     protected DroneTelemetry telemetry;
 
     /// <summary>Convenience accessor — delegates to <see cref="DroneCurriculumManager.Target"/>.</summary>
@@ -72,7 +72,7 @@ public abstract class DroneMLAgentBase : Agent
         observer = GetComponent<DroneObserver>();
         observer.Initialise();
 
-        rewardEvaluator = GetComponent<DroneRewardEvaluator>();
+        rewardEvaluator = GetComponent<DroneRewardManager>();
         rewardEvaluator.Initialise();
 
         telemetry = GetComponent<DroneTelemetry>();
@@ -132,26 +132,26 @@ public abstract class DroneMLAgentBase : Agent
             {
                 hasLanded = true;
                 touchdownTimer = touchdownDelay;
-                AddReward(DroneRewardHelper.TouchdownReward(rewardProfile != null ? rewardProfile.landingSuccess : 1f));
+                AddReward(DroneRewardMath.TouchdownReward(rewardProfile != null ? rewardProfile.landingSuccess : 1f));
             }
             return;
         }
 
         // Collision with obstacle or ground
-        SetReward(rewardProfile != null ? rewardProfile.obstacleCollision : DroneRewardHelper.ObstaclePenalty);
+        SetReward(rewardProfile != null ? rewardProfile.obstacleCollision : DroneRewardMath.ObstaclePenalty);
         telemetry.FlushEpisode(EpisodeOutcome.Crash);
         EndEpisode();
     }
 
     /// <summary>
-    /// Delegates to <see cref="DroneRewardEvaluator"/> for terminal checks and
+    /// Delegates to <see cref="DroneRewardManager"/> for terminal checks and
     /// per-step reward computation, then forwards results to <see cref="DroneTelemetry"/>.
     /// Call this at the end of <see cref="Agent.OnActionReceived"/> after applying forces.
     /// </summary>
     /// <param name="currentActions">Continuous actions issued this step (smoothness + energy fallback).</param>
     /// <param name="previousActions">Actions from the previous step; updated in-place after smoothness is computed.</param>
     /// <param name="energyValues">
-    /// Values forwarded to <see cref="DroneRewardHelper.EnergyPenalty"/>.
+    /// Values forwarded to <see cref="DroneRewardMath.EnergyPenalty"/>.
     /// Pass <c>null</c> to fall back to <paramref name="currentActions"/>.
     /// </param>
     /// <returns><c>true</c> if the episode was terminated; the caller must return immediately.</returns>
@@ -163,7 +163,7 @@ public abstract class DroneMLAgentBase : Agent
             return false;
         }
 
-        Vector3 targetPos = DroneRewardHelper.ResolveTargetPosition(target, startPosition);
+        Vector3 targetPos = DroneRewardMath.ResolveTargetPosition(target, startPosition);
 
         var result = rewardEvaluator.Evaluate(
             rewardProfile, targetPos, startPosition,

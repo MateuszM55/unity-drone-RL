@@ -13,7 +13,7 @@ using UnityEngine;
 /// </summary>
 [DisallowMultipleComponent]
 [RequireComponent(typeof(Rigidbody))]
-public class DroneRewardEvaluator : MonoBehaviour
+public class DroneRewardManager : MonoBehaviour
 {
     private Rigidbody rb;
     private float _previousDistance = -1f;
@@ -62,7 +62,7 @@ public class DroneRewardEvaluator : MonoBehaviour
     /// <param name="currentActions">Continuous actions issued this step (used for smoothness + energy fallback).</param>
     /// <param name="previousActions">Actions from the previous step.</param>
     /// <param name="energyValues">
-    /// Values forwarded to <see cref="DroneRewardHelper.EnergyPenalty"/>.
+    /// Values forwarded to <see cref="DroneRewardMath.EnergyPenalty"/>.
     /// Pass <c>null</c> to fall back to <paramref name="currentActions"/>.
     /// </param>
     public EvalResult Evaluate(
@@ -78,11 +78,11 @@ public class DroneRewardEvaluator : MonoBehaviour
         float distanceToTarget = Vector3.Distance(transform.localPosition, targetPosition);
 
         // --- Terminal conditions ---
-        var tilt = DroneRewardHelper.CheckExcessiveTilt(
+        var tilt = DroneRewardMath.CheckExcessiveTilt(
             transform.up, maxTiltDot, profile.excessiveTiltPenalty);
         if (tilt.IsTerminal) return MakeTerminal(tilt.Reward, EpisodeOutcome.Safety_ExcessiveTilt);
 
-        var tooFar = DroneRewardHelper.CheckTooFar(
+        var tooFar = DroneRewardMath.CheckTooFar(
             distanceToTarget, maxEpisodeDistance, profile.tooFarPenalty);
         if (tooFar.IsTerminal) return MakeTerminal(tooFar.Reward, EpisodeOutcome.Safety_BoundaryLeft);
 
@@ -91,11 +91,11 @@ public class DroneRewardEvaluator : MonoBehaviour
             _startDistance = distanceToTarget;
 
         float deltaReward = _previousDistance >= 0f
-            ? DroneRewardHelper.DeltaDistanceReward(
+            ? DroneRewardMath.DeltaDistanceReward(
                   _previousDistance, distanceToTarget, profile.deltaDistanceScale)
             : 0f;
         float normalizedDeltaReward = _previousDistance >= 0f
-            ? DroneRewardHelper.NormalizedDeltaDistanceReward(
+            ? DroneRewardMath.NormalizedDeltaDistanceReward(
                   _previousDistance, distanceToTarget, _startDistance,
                   profile.normalizedDeltaDistanceMaxProgressReward)
             : 0f;
@@ -104,17 +104,17 @@ public class DroneRewardEvaluator : MonoBehaviour
         var summary = new RewardStepSummary(
             deltaReward,
             normalizedDeltaReward,
-            DroneRewardHelper.ProximityReward(
+            DroneRewardMath.ProximityReward(
                 transform.localPosition, targetPosition, startPosition, profile.proximityRewardScale),
-            DroneRewardHelper.EnergyPenalty(energyValues ?? currentActions, profile.energyScale),
-            DroneRewardHelper.ActionSmoothnessPenalty(currentActions, previousActions, profile.smoothnessScale),
-            DroneRewardHelper.TiltPenalty(transform.up, profile.tiltPenaltyScale),
-            DroneRewardHelper.AngularVelocityPenalty(
+            DroneRewardMath.EnergyPenalty(energyValues ?? currentActions, profile.energyScale),
+            DroneRewardMath.ActionSmoothnessPenalty(currentActions, previousActions, profile.smoothnessScale),
+            DroneRewardMath.TiltPenalty(transform.up, profile.tiltPenaltyScale),
+            DroneRewardMath.AngularVelocityPenalty(
                 rb.angularVelocity.magnitude, profile.angularVelocityPenaltyScale),
-            DroneRewardHelper.VelocityAlignmentReward(
+            DroneRewardMath.VelocityAlignmentReward(
                 rb.linearVelocity, targetPosition - transform.localPosition, profile.velocityAlignmentScale),
-            DroneRewardHelper.TimePenalty(profile.timeScale),
-            DroneRewardHelper.FastApproachPenalty(
+            DroneRewardMath.TimePenalty(profile.timeScale),
+            DroneRewardMath.FastApproachPenalty(
                 rb.linearVelocity.magnitude, distanceToTarget, profile.landingRadius, profile.fastApproachScale)
         );
 

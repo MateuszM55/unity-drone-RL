@@ -6,7 +6,7 @@ using UnityEngine;
 /// condition without calling AddReward / SetReward / EndEpisode, so the agent
 /// retains full control over how rewards are applied.
 /// </summary>
-public static class DroneRewardHelper
+public static class DroneRewardMath
 {
     /// <summary>Penalty applied when the drone collides with an obstacle or the ground.</summary>
     public const float ObstaclePenalty = -5.0f;

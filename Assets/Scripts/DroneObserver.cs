@@ -38,7 +38,7 @@ public class DroneObserver : MonoBehaviour
     public void Collect(VectorSensor sensor, Vector3 targetPosition, float distanceNorm)
     {
         // Decompose target vector → local unit direction (3) + squashed distance (1)
-        DroneRewardHelper.DecomposeTargetVector(
+        DroneRewardMath.DecomposeTargetVector(
             transform, targetPosition - transform.localPosition,
             out Vector3 localDir, out float squashedDist, distanceNorm);
         sensor.AddObservation(localDir);
