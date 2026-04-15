@@ -7,7 +7,7 @@ using UnityEngine;
 ///
 /// Attach to the same GameObject as the drone agent.
 ///
-/// OBSERVATION VECTOR (21 floats — body-local frame where applicable):
+/// OBSERVATION VECTOR (17 floats — body-local frame where applicable):
 ///   - Local unit direction to target        (3)  direction only, always [-1,1]
 ///   - Horizontal progress meter             (1)  currentXZ / startXZ, counts 1→0
 ///   - Vertical error meter                  (1)  verticalDiff / verticalBasis
@@ -15,7 +15,6 @@ using UnityEngine;
 ///   - Drone angular velocity (local)        (3)
 ///   - Drone orientation (forward)           (3)  world-frame attitude
 ///   - Drone orientation (up)                (3)  world-frame attitude
-///   - Previous actions                      (4)  motor throttle commands t-1
 ///
 /// Call <see cref="StartEpisode"/> once at the beginning of each episode so the
 /// two meters are calibrated to that specific flight's start distances.
@@ -30,7 +29,6 @@ public class DroneObserver : MonoBehaviour
     private Rigidbody rb;
     private float startHorizontalDist;
     private float startVerticalDist;
-    private float[] previousActions = new float[4];
 
     /// <summary>
     /// Caches component references. Call once from the agent's <c>Initialize</c>.
@@ -56,26 +54,10 @@ public class DroneObserver : MonoBehaviour
 
         // Vertical distance — clamped to a minimum so division is always safe
         startVerticalDist = Mathf.Max(Mathf.Abs(toTarget.y), MinVerticalBasis);
-
-        // Clear motor memory so a crash at full throttle doesn't bleed into the next episode
-        for (int i = 0; i < previousActions.Length; i++)
-            previousActions[i] = 0f;
     }
 
     /// <summary>
-    /// Records the most recent action array so it can be included as observations
-    /// in the next <see cref="Collect"/> call.
-    /// </summary>
-    /// <param name="actions">Raw continuous action buffer (length 4).</param>
-    public void RecordActions(float[] actions)
-    {
-        int count = Mathf.Min(actions.Length, previousActions.Length);
-        for (int i = 0; i < count; i++)
-            previousActions[i] = actions[i];
-    }
-
-    /// <summary>
-    /// Writes the standard 21-float observation vector to <paramref name="sensor"/>.
+    /// Writes the standard 17-float observation vector to <paramref name="sensor"/>.
     /// </summary>
     /// <param name="sensor">ML-Agents vector sensor to write into.</param>
     /// <param name="targetPosition">Current target position (local space).</param>
@@ -110,9 +92,5 @@ public class DroneObserver : MonoBehaviour
         // (right omitted: right = cross(forward, up), linearly dependent)
         sensor.AddObservation(transform.forward);
         sensor.AddObservation(transform.up);
-
-        // Previous actions (4) — motor state memory
-        for (int i = 0; i < previousActions.Length; i++)
-            sensor.AddObservation(previousActions[i]);
     }
 }

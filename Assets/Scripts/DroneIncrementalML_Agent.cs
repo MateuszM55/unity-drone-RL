@@ -10,8 +10,8 @@ using UnityEngine;
 /// ACTION SPACE (4 Continuous Actions in [-1, 1]):
 ///   Action 0-3 → Rate of change for motors FL, FR, RL, RR
 /// 
-/// OBSERVATION SPACE (24 floats):
-///   - Base observations from DroneMLAgentBase (16)
+/// OBSERVATION SPACE (25 floats):
+///   - Base observations from DroneMLAgentBase (17)
 ///   - Current normalized thrust of each motor (4)
 ///   - Previous action commands (4)
 /// </summary>
@@ -47,7 +47,7 @@ public class DroneIncrementalML_Agent : DroneMLAgentBase
 
     public override void CollectObservations(VectorSensor sensor)
     {
-        base.CollectObservations(sensor); // 16 floats from base
+        base.CollectObservations(sensor); // 17 floats from base
 
         // Proprioception: The agent MUST know its current RPM/Thrust state
         for (int i = 0; i < 4; i++)
