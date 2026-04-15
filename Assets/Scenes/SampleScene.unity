@@ -1653,7 +1653,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SixAxisSensorComponent
   m_SensorName: SixAxisSensor
   m_RayLength: 20
-  m_SphereRadius: 0.2
+  m_SphereRadius: 0.5
   m_TanhScale: 3
   m_RayLayerMask:
     serializedVersion: 2
@@ -1679,7 +1679,7 @@ MonoBehaviour:
   m_SensorName: FrontalConeSensor
   m_ConeHalfAngle: 45
   m_RayLength: 20
-  m_SphereRadius: 0.2
+  m_SphereRadius: 0.5
   m_TanhScale: 3
   m_RayLayerMask:
     serializedVersion: 2

@@ -33,6 +33,10 @@ public sealed class FrontalConeSensor : ISensor, IDisposable
     // Reusable managed array for observation floats.
     readonly float[] m_Observations;
 
+    // Raw physical hit distances for Gizmo drawing (not sent to the network).
+    // Stores hit.distance on a hit, or m_RayLength on a miss.
+    readonly float[] m_GizmoDistances;
+
     Transform m_Transform;
 
     // Batched spherecast native arrays — allocated once, reused every frame.
@@ -59,6 +63,9 @@ public sealed class FrontalConeSensor : ISensor, IDisposable
     internal float RayLength => m_RayLength;
     internal float SphereRadius => m_SphereRadius;
     internal int FloatsPerRay => m_FloatsPerRay;
+
+    /// <summary>Raw physical hit distances per ray (for accurate Gizmo drawing).</summary>
+    internal float[] GizmoDistances => m_GizmoDistances;
 
     // ──────────────────────────────────────────────
     //  Construction
@@ -91,6 +98,11 @@ public sealed class FrontalConeSensor : ISensor, IDisposable
         m_ObservationSpec = ObservationSpec.Vector(m_ObservationSize);
 
         m_Observations = new float[m_ObservationSize];
+
+        m_GizmoDistances = new float[m_RayCount];
+        for (int i = 0; i < m_RayCount; i++)
+            m_GizmoDistances[i] = m_RayLength;
+
         // NativeArrays are allocated lazily on the first ScheduleCasts() call (Play mode only)
         // to prevent persistent-allocator leaks when the Editor validation path calls
         // CreateSensors() without a matching Dispose().
@@ -225,6 +237,9 @@ public sealed class FrontalConeSensor : ISensor, IDisposable
             int baseIdx = i * m_FloatsPerRay;
             var hit = m_CastHits[i];
             bool hasHit = hit.collider != null;
+
+            // Store raw distance for Gizmo drawing (not used by the network)
+            m_GizmoDistances[i] = hasHit ? hit.distance : m_RayLength;
 
             // Tanh inverse distance: 1.0 = touching, 0.0 = clear
             if (hasHit)

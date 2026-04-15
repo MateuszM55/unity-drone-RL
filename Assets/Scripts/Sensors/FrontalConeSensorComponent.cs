@@ -133,6 +133,7 @@ public class FrontalConeSensorComponent : SensorComponent, IDisposable
     {
         var dirs = m_Sensor.RayDirections;
         var obs = m_Sensor.Observations;
+        var gizmoDists = m_Sensor.GizmoDistances;
         int floatsPerRay = m_Sensor.FloatsPerRay;
         float rayLen = m_Sensor.RayLength;
         float radius = m_Sensor.SphereRadius;
@@ -142,22 +143,14 @@ public class FrontalConeSensorComponent : SensorComponent, IDisposable
         for (int i = 0; i < dirs.Length; i++)
         {
             Vector3 worldDir = rotation * dirs[i];
-            float tanhVal = obs[i * floatsPerRay]; // 0..1 tanh
-            bool hit = tanhVal > 0.001f;
+            bool hit = obs[i * floatsPerRay] > 0.001f;
+            // Use the stored raw physical distance — not derived from the tanh value.
+            float dist = gizmoDists[i];
 
             Gizmos.color = hit ? m_RayHitColor : m_RayMissColor;
-
-            if (hit)
-            {
-                // Approximate display distance from tanh value
-                float dist = rayLen * (1f - tanhVal);
-                Gizmos.DrawRay(origin, worldDir * dist);
-                Gizmos.DrawWireSphere(origin + worldDir * dist, radius);
-            }
-            else
-            {
-                Gizmos.DrawRay(origin, worldDir * rayLen);
-            }
+            Gizmos.DrawRay(origin, worldDir * dist);
+            // Always draw the endpoint sphere so the sensor "reach" is visible on a miss too.
+            Gizmos.DrawWireSphere(origin + worldDir * dist, radius);
         }
     }
 
