@@ -1511,7 +1511,7 @@ PrefabInstance:
     - target: {fileID: 1405414569429997631, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
       propertyPath: rewardProfile
       value: 
-      objectReference: {fileID: 11400000, guid: 66b216d7f570ab94d9617f7738f35d7b, type: 2}
+      objectReference: {fileID: 11400000, guid: 61236945302d7cd46a92d0043b482b28, type: 2}
     - target: {fileID: 1463199317328062149, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 

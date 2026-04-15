@@ -12,14 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f51384c82e81c4a4f9e7aedc2395a6a0, type: 3}
   m_Name: Test
   m_EditorClassIdentifier: Assembly-CSharp::DroneRewardProfile
-  landingSuccess: -5
+  landingSuccess: 5
   obstacleCollision: -5
-  deltaDistanceScale: 0.1
+  deltaDistanceScale: 0
+  normalizedDeltaDistanceMaxProgressReward: 3
   energyScale: 0
   smoothnessScale: 0
   timeScale: 0.001
   fastApproachScale: 0
-  landingRadius: 5
+  landingRadius: 0
   maxTiltAngle: 75
   targetReachedThreshold: 0
   targetReachedReward: 0
