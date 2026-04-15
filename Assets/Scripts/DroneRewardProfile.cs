@@ -60,9 +60,4 @@ public class DroneRewardProfile : ScriptableObject
     public float angularVelocityPenaltyScale = 0.001f;
     [Tooltip("Scale for the velocity-alignment reward (VelocityAlignmentReward).")]
     public float velocityAlignmentScale = 0.01f;
-
-    [Header("Observation Parameters")]
-    [Tooltip("Normalisation constant for the tanh-compressed distance observation. " +
-             "Distance at which the observation value reaches ~0.76 (DecomposeTargetVector).")]
-    public float distanceNorm = 10f;
 }
