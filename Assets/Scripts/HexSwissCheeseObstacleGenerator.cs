@@ -268,7 +268,8 @@ public class HexSwissCheeseObstacleGenerator : MonoBehaviour
         int cols = Mathf.CeilToInt(2f * spawnRadius / hexSpacing) + 1;
         int rows = Mathf.CeilToInt(2f * spawnRadius / rowHeight)  + 1;
 
-        Vector3 center = transform.position;
+        Vector3 center = spawnParent != null ? spawnParent.position : transform.position;
+        float midHeight = (minHeight + maxHeight) * 0.5f;
         Gizmos.color = gizmoColor;
 
         for (int row = 0; row < rows; row++)
@@ -285,7 +286,7 @@ public class HexSwissCheeseObstacleGenerator : MonoBehaviour
                 if (distSqr < innerRSqr || distSqr > outerRSqr)
                     continue;
 
-                Gizmos.DrawSphere(center + new Vector3(x, 0f, z), gizmoRadius);
+                Gizmos.DrawSphere(center + new Vector3(x, midHeight, z), gizmoRadius);
             }
         }
     }
