@@ -56,6 +56,10 @@ public class DroneObserver : MonoBehaviour
 
         // Vertical distance — clamped to a minimum so division is always safe
         startVerticalDist = Mathf.Max(Mathf.Abs(toTarget.y), MinVerticalBasis);
+
+        // Clear motor memory so a crash at full throttle doesn't bleed into the next episode
+        for (int i = 0; i < previousActions.Length; i++)
+            previousActions[i] = 0f;
     }
 
     /// <summary>
