@@ -17,6 +17,7 @@ public class DroneRewardEvaluator : MonoBehaviour
 {
     private Rigidbody rb;
     private float _previousDistance = -1f;
+    private float _startDistance = -1f;
 
     /// <summary>Result returned by <see cref="Evaluate"/>.</summary>
     public struct EvalResult
@@ -46,6 +47,7 @@ public class DroneRewardEvaluator : MonoBehaviour
     public void ResetEpisode()
     {
         _previousDistance = -1f;
+        _startDistance = -1f;
     }
 
     /// <summary>
@@ -85,14 +87,23 @@ public class DroneRewardEvaluator : MonoBehaviour
         if (tooFar.IsTerminal) return MakeTerminal(tooFar.Reward, EpisodeOutcome.Safety_BoundaryLeft);
 
         // --- Per-step rewards ---
+        if (_previousDistance < 0f)
+            _startDistance = distanceToTarget;
+
         float deltaReward = _previousDistance >= 0f
             ? DroneRewardHelper.DeltaDistanceReward(
                   _previousDistance, distanceToTarget, profile.deltaDistanceScale)
+            : 0f;
+        float normalizedDeltaReward = _previousDistance >= 0f
+            ? DroneRewardHelper.NormalizedDeltaDistanceReward(
+                  _previousDistance, distanceToTarget, _startDistance,
+                  profile.normalizedDeltaDistanceMaxProgressReward)
             : 0f;
         _previousDistance = distanceToTarget;
 
         var summary = new RewardStepSummary(
             deltaReward,
+            normalizedDeltaReward,
             DroneRewardHelper.ProximityReward(
                 transform.localPosition, targetPosition, startPosition, profile.proximityRewardScale),
             DroneRewardHelper.EnergyPenalty(energyValues ?? currentActions, profile.energyScale),

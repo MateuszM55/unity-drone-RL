@@ -6,6 +6,7 @@
 public struct RewardStepSummary
 {
     public float DeltaDistance;
+    public float NormalizedDeltaDistance;
     public float Proximity;
     public float Energy;
     public float Smoothness;
@@ -15,15 +16,16 @@ public struct RewardStepSummary
     public float Time;
     public float FastApproach;
 
-    public float Total => DeltaDistance + Proximity + Energy + Smoothness
+    public float Total => DeltaDistance + NormalizedDeltaDistance + Proximity + Energy + Smoothness
                         + Tilt + AngularVelocity + VelocityAlignment + Time
                         + FastApproach;
 
-    public RewardStepSummary(float deltaDistance, float proximity, float energy,
+    public RewardStepSummary(float deltaDistance, float normalizedDeltaDistance, float proximity, float energy,
         float smoothness, float tilt, float angularVelocity,
         float velocityAlignment, float time, float fastApproach = 0f)
     {
         DeltaDistance = deltaDistance;
+        NormalizedDeltaDistance = normalizedDeltaDistance;
         Proximity = proximity;
         Energy = energy;
         Smoothness = smoothness;
