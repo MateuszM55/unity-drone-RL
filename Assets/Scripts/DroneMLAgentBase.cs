@@ -86,7 +86,13 @@ public abstract class DroneMLAgentBase : Agent
         telemetry.OnNewEpisode(curriculumManager.CurrentLessonIndex);
 
         if (target == null)
+        {
             Debug.LogWarning($"[{name}] No target is set.", this);
+            return;
+        }
+
+        // Calibrate the observer's two-dial meters to this episode's start distances
+        observer.StartEpisode(transform.localPosition, target.localPosition);
     }
 
     /// <summary>
@@ -105,8 +111,7 @@ public abstract class DroneMLAgentBase : Agent
     public override void CollectObservations(VectorSensor sensor)
     {
         Vector3 targetPos = target != null ? target.localPosition : startPosition;
-        float distNorm = rewardProfile != null ? rewardProfile.distanceNorm : 10f;
-        observer.Collect(sensor, targetPos, distNorm);
+        observer.Collect(sensor, targetPos);
     }
 
     protected virtual void FixedUpdate()
