@@ -1595,12 +1595,19 @@ PrefabInstance:
     m_RemovedComponents:
     - {fileID: 2445584907222576922, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
     - {fileID: 7509962756357790996, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
+    - {fileID: 5110642379680053202, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 7373009167866404446, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1337642052320451510}
+    - targetCorrespondingSourceObject: {fileID: 7373009167866404446, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1337642052320451524}
+    - targetCorrespondingSourceObject: {fileID: 7373009167866404446, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1337642052320451523}
   m_SourcePrefab: {fileID: 100100000, guid: 7f44aa378b9f4e44f8716c672f9b2280, type: 3}
 --- !u!1 &1337642052320451509 stripped
 GameObject:
@@ -1632,6 +1639,57 @@ MonoBehaviour:
   showGizmos: 1
   gizmoRadius: 0.15
   gizmoColor: {r: 1, g: 0, b: 0, a: 1}
+--- !u!114 &1337642052320451523
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1337642052320451509}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f6cb39003031df04b81475ed4a9b4627, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SixAxisSensorComponent
+  m_SensorName: SixAxisSensor
+  m_RayLength: 20
+  m_SphereRadius: 0.2
+  m_TanhScale: 3
+  m_RayLayerMask:
+    serializedVersion: 2
+    m_Bits: 448
+  m_DetectableLayers:
+  - Obstacle
+  - Ground
+  - Target
+  m_RayHitColor: {r: 1, g: 0, b: 0, a: 1}
+  m_RayMissColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+--- !u!114 &1337642052320451524
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1337642052320451509}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f50f98220d7a464caba573d184d6949, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FrontalConeSensorComponent
+  m_SensorName: FrontalConeSensor
+  m_ConeHalfAngle: 45
+  m_RayLength: 20
+  m_SphereRadius: 0.2
+  m_TanhScale: 3
+  m_RayLayerMask:
+    serializedVersion: 2
+    m_Bits: 448
+  m_DetectableLayers:
+  - Obstacle
+  - Ground
+  - Target
+  m_RayHitColor: {r: 1, g: 0, b: 0, a: 1}
+  m_RayMissColor: {r: 0, g: 1, b: 1, a: 1}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
