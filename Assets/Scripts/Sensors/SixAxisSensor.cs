@@ -10,10 +10,10 @@ using UnityEngine;
 /// Forward is intentionally omitted — the <see cref="FrontalConeSensor"/> covers that axis.
 ///
 /// Uses batched <see cref="SpherecastCommand"/> for high-performance sensing.
-/// Each ray produces: 1 tanh-normalised inverse distance + one-hot encoding for detectable layers.
+/// Each ray produces: 1 linear inverse distance + one-hot encoding for detectable layers.
 /// Observation size = 5 * (1 + DetectableLayerCount).
 ///
-/// Tanh inverse distance: 1.0 = object touching the drone, 0.0 = path clear.
+/// Linear inverse distance: 1.0 = object touching the drone, 0.0 = path clear (max range).
 /// Mimics the ultrasonic / infrared proximity sensors on commercial drones.
 /// </summary>
 public sealed class SixAxisSensor : ISensor, IDisposable
@@ -23,7 +23,6 @@ public sealed class SixAxisSensor : ISensor, IDisposable
     readonly string m_Name;
     readonly float m_RayLength;
     readonly float m_SphereRadius;
-    readonly float m_TanhScale;
     readonly int[] m_DetectableLayers;
     readonly int m_FloatsPerRay;
     readonly int m_ObservationSize;
@@ -41,10 +40,6 @@ public sealed class SixAxisSensor : ISensor, IDisposable
     };
 
     readonly float[] m_Observations;
-
-    // Raw physical hit distances for Gizmo drawing (not sent to the network).
-    // Stores hit.distance on a hit, or m_RayLength on a miss.
-    readonly float[] m_GizmoDistances;
 
     Transform m_Transform;
 
@@ -70,9 +65,6 @@ public sealed class SixAxisSensor : ISensor, IDisposable
     internal float SphereRadius => m_SphereRadius;
     internal int FloatsPerRay => m_FloatsPerRay;
 
-    /// <summary>Raw physical hit distances per ray (for accurate Gizmo drawing).</summary>
-    internal float[] GizmoDistances => m_GizmoDistances;
-
     // ──────────────────────────────────────────────
     //  Construction
     // ──────────────────────────────────────────────
@@ -81,7 +73,6 @@ public sealed class SixAxisSensor : ISensor, IDisposable
         string name,
         float rayLength,
         float sphereRadius,
-        float tanhScale,
         int[] detectableLayers,
         LayerMask layerMask,
         Transform transform)
@@ -89,7 +80,6 @@ public sealed class SixAxisSensor : ISensor, IDisposable
         m_Name = name;
         m_RayLength = rayLength;
         m_SphereRadius = sphereRadius;
-        m_TanhScale = tanhScale;
         m_DetectableLayers = detectableLayers ?? Array.Empty<int>();
         m_LayerMask = layerMask;
         m_Transform = transform;
@@ -100,11 +90,7 @@ public sealed class SixAxisSensor : ISensor, IDisposable
 
         m_Observations = new float[m_ObservationSize];
 
-        m_GizmoDistances = new float[RayCount];
-        for (int i = 0; i < RayCount; i++)
-            m_GizmoDistances[i] = m_RayLength;
-
-        // NativeArrays are allocated lazily on the first ScheduleCasts() call (Play mode only)
+        // NativeArrays are allocated lazily
         // to prevent persistent-allocator leaks when the Editor validation path calls
         // CreateSensors() without a matching Dispose().
     }
@@ -190,20 +176,8 @@ public sealed class SixAxisSensor : ISensor, IDisposable
             var hit = m_CastHits[i];
             bool hasHit = hit.collider != null;
 
-            // Store raw distance for Gizmo drawing (not used by the network)
-            m_GizmoDistances[i] = hasHit ? hit.distance : m_RayLength;
-
-            // Tanh inverse distance: 1.0 = touching, 0.0 = clear
-            if (hasHit)
-            {
-                float normalised = hit.distance / m_RayLength;
-                float proximity = 1f - normalised;
-                m_Observations[baseIdx] = Tanh(proximity * m_TanhScale);
-            }
-            else
-            {
-                m_Observations[baseIdx] = 0f;
-            }
+            // Linear inverse distance: 1.0 = touching, 0.0 = clear (max range)
+            m_Observations[baseIdx] = hasHit ? 1f - (hit.distance / m_RayLength) : 0f;
 
             // One-hot layer encoding
             for (int t = 0; t < m_DetectableLayers.Length; t++)
@@ -222,12 +196,6 @@ public sealed class SixAxisSensor : ISensor, IDisposable
                 }
             }
         }
-    }
-
-    static float Tanh(float x)
-    {
-        float e2x = Mathf.Exp(2f * x);
-        return (e2x - 1f) / (e2x + 1f);
     }
 
     // ──────────────────────────────────────────────

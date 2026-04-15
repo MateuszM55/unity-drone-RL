@@ -6,7 +6,7 @@ using UnityEngine;
 /// <summary>
 /// A <see cref="SensorComponent"/> that creates a <see cref="FrontalConeSensor"/>.
 /// Provides a 13-ray concentric cone (1-4-8 pattern) aimed along local forward,
-/// using volumetric SphereCasts and tanh-normalised inverse distances.
+/// using volumetric SphereCasts and linear inverse-distance observations.
 ///
 /// Attach to the same GameObject as the drone agent.
 /// </summary>
@@ -34,10 +34,6 @@ public class FrontalConeSensorComponent : SensorComponent, IDisposable
     [Tooltip("Radius of the SphereCast (≈ drone half-width). Prevents thin objects slipping between rays.")]
     float m_SphereRadius = 0.2f;
 
-    [SerializeField, Range(0.5f, 10f)]
-    [Tooltip("Scale factor for tanh normalisation. Higher = sharper danger signal near the drone.")]
-    float m_TanhScale = 3f;
-
     [SerializeField]
     [Tooltip("Physics layers the rays can hit.")]
     LayerMask m_RayLayerMask = -5;
@@ -62,7 +58,6 @@ public class FrontalConeSensorComponent : SensorComponent, IDisposable
     public float ConeHalfAngle { get => m_ConeHalfAngle; set => m_ConeHalfAngle = value; }
     public float RayLength { get => m_RayLength; set => m_RayLength = value; }
     public float SphereRadius { get => m_SphereRadius; set => m_SphereRadius = value; }
-    public float TanhScale { get => m_TanhScale; set => m_TanhScale = value; }
     public LayerMask RayLayerMask { get => m_RayLayerMask; set => m_RayLayerMask = value; }
     public List<string> DetectableLayers { get => m_DetectableLayers; set => m_DetectableLayers = value; }
 
@@ -90,7 +85,6 @@ public class FrontalConeSensorComponent : SensorComponent, IDisposable
             m_ConeHalfAngle,
             m_RayLength,
             m_SphereRadius,
-            m_TanhScale,
             layerIndices,
             m_RayLayerMask,
             transform
@@ -133,7 +127,6 @@ public class FrontalConeSensorComponent : SensorComponent, IDisposable
     {
         var dirs = m_Sensor.RayDirections;
         var obs = m_Sensor.Observations;
-        var gizmoDists = m_Sensor.GizmoDistances;
         int floatsPerRay = m_Sensor.FloatsPerRay;
         float rayLen = m_Sensor.RayLength;
         float radius = m_Sensor.SphereRadius;
@@ -143,13 +136,13 @@ public class FrontalConeSensorComponent : SensorComponent, IDisposable
         for (int i = 0; i < dirs.Length; i++)
         {
             Vector3 worldDir = rotation * dirs[i];
-            bool hit = obs[i * floatsPerRay] > 0.001f;
-            // Use the stored raw physical distance — not derived from the tanh value.
-            float dist = gizmoDists[i];
+            float val = obs[i * floatsPerRay];
+            bool hit = val > 0.001f;
+            // Recover physical distance from the linear observation: dist = (1 - val) * rayLen
+            float dist = rayLen * (1f - val);
 
             Gizmos.color = hit ? m_RayHitColor : m_RayMissColor;
             Gizmos.DrawRay(origin, worldDir * dist);
-            // Always draw the endpoint sphere so the sensor "reach" is visible on a miss too.
             Gizmos.DrawWireSphere(origin + worldDir * dist, radius);
         }
     }
