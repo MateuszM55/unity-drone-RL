@@ -11,7 +11,7 @@ using UnityEngine;
 ///   Action 0-3 → Rate of change for motors FL, FR, RL, RR
 /// 
 /// OBSERVATION SPACE (25 floats):
-///   - Base observations from DroneMLAgentBase (17)
+///   - Environmental Observations via DroneObserver (17)
 ///   - Current normalized thrust of each motor (4)
 ///   - Previous action commands (4)
 /// </summary>
