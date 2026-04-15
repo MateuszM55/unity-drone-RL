@@ -14,8 +14,9 @@ using UnityEngine;
 ///
 /// All internal buffers are pre-allocated — zero GC during generation.
 ///
-/// Attach to the training-area parent (or the drone itself) and call
-/// <see cref="Initialise"/> once, then <see cref="Generate"/> / <see cref="Clear"/>
+/// Attach to the Obstacle Spawn Point GameObject and assign the reference
+/// on <see cref="DroneCurriculumManager"/> via the Inspector.
+/// Call <see cref="Initialise"/> once, then <see cref="Generate"/> / <see cref="Clear"/>
 /// each episode.
 /// </summary>
 [DisallowMultipleComponent]

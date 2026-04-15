@@ -8,7 +8,9 @@ using UnityEngine;
 /// the drone, and manages per-episode obstacle generation via
 /// <see cref="HexSwissCheeseObstacleGenerator"/>.
 ///
-/// Attach to the same GameObject as the drone agent.
+/// Attach to the same GameObject as the drone agent.  Assign the
+/// <see cref="HexSwissCheeseObstacleGenerator"/> reference in the Inspector
+/// (typically lives on a separate Obstacle Spawn Point GameObject).
 /// Call <see cref="Initialise"/> once, then <see cref="SetupEpisode"/>
 /// at the start of every episode.
 /// </summary>
@@ -22,13 +24,15 @@ public class DroneCurriculumManager : MonoBehaviour
     [Tooltip("Ordered list of lesson profiles. The curriculum parameter 'lesson_index' selects which profile to use.")]
     [SerializeField] private List<LessonProfile> curriculumPlan = new List<LessonProfile>();
 
+    [Header("Environment")]
+    [Tooltip("Reference to the obstacle generator (lives on the Obstacle Spawn Point GameObject).")]
+    [SerializeField] private HexSwissCheeseObstacleGenerator hexGenerator;
+
     [Header("Editor Preview")]
     [Tooltip("When enabled, ignores the ML-Agents Academy and uses Manual Lesson Index instead. For in-Editor testing only.")]
     [SerializeField] private bool useManualLessonPreview;
     [Tooltip("Lesson to preview when Use Manual Lesson Preview is checked.")]
     [SerializeField, Min(0)] private int manualLessonIndex;
-
-    private HexSwissCheeseObstacleGenerator hexGenerator;
 
     /// <summary>The target transform assigned in the Inspector.</summary>
     public Transform Target => target;
@@ -42,9 +46,9 @@ public class DroneCurriculumManager : MonoBehaviour
     /// </summary>
     public void Initialise()
     {
-        hexGenerator = GetComponent<HexSwissCheeseObstacleGenerator>();
         Debug.Assert(hexGenerator != null,
-            "[DroneCurriculumManager] No HexSwissCheeseObstacleGenerator component was found.");
+            "[DroneCurriculumManager] HexSwissCheeseObstacleGenerator is not assigned. " +
+            "Drag the Obstacle Spawn Point's generator into the Inspector slot.");
         hexGenerator.Initialise();
     }
 

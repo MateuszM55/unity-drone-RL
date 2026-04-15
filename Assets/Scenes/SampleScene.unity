@@ -1329,6 +1329,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1960055845}
+  - component: {fileID: 1960055846}
   m_Layer: 0
   m_Name: ObstacleSpawnPoint
   m_TagString: Untagged
@@ -1345,12 +1346,37 @@ Transform:
   m_GameObject: {fileID: 1960055844}
   serializedVersion: 2
   m_LocalRotation: {x: 0.7071068, y: -0, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: 0, y: -0.35, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1960055846
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1960055844}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cc9390ed07647384da7105de351b898b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HexSwissCheeseObstacleGenerator
+  obstaclePrefab: {fileID: 1717360175}
+  maxObstacleCount: 20
+  spawnRadius: 50
+  minSpawnRadius: 5
+  hexSpacing: 10
+  minDistance: 5
+  density: 0.35
+  minHeight: 3
+  maxHeight: 3
+  spawnParent: {fileID: 1960055845}
+  showGizmos: 1
+  gizmoRadius: 0.15
+  gizmoColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!21 &2078106086
 Material:
   serializedVersion: 8
@@ -1741,31 +1767,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 2, z: 1.0000001}
   m_Center: {x: 0.00000005960464, y: 0, z: -0.00000008940696}
---- !u!114 &1337642052320451510
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8413413060660643306}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cc9390ed07647384da7105de351b898b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::HexSwissCheeseObstacleGenerator
-  obstaclePrefab: {fileID: 1717360175}
-  maxObstacleCount: 20
-  spawnRadius: 50
-  minSpawnRadius: 5
-  hexSpacing: 10
-  minDistance: 5
-  density: 0.35
-  minHeight: 3
-  maxHeight: 3
-  spawnParent: {fileID: 1960055845}
-  showGizmos: 1
-  gizmoRadius: 0.15
-  gizmoColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!114 &1337642052320451523
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2258,6 +2259,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: c04ad385e0076ef488b7819244b9411f, type: 2}
   - {fileID: 11400000, guid: c1793bc1d5f8bee458e4653cf7316176, type: 2}
   - {fileID: 11400000, guid: ecdb0edce06502e41b9ac22e1640c52e, type: 2}
+  hexGenerator: {fileID: 1960055846}
   useManualLessonPreview: 0
   manualLessonIndex: 6
 --- !u!114 &7423970808862677754
@@ -2357,7 +2359,6 @@ GameObject:
   - component: {fileID: 4437124464787091504}
   - component: {fileID: 8233768026161448283}
   - component: {fileID: 5843758990707979056}
-  - component: {fileID: 1337642052320451510}
   - component: {fileID: 1337642052320451524}
   - component: {fileID: 1337642052320451523}
   m_Layer: 2
