@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: Default
   m_EditorClassIdentifier: Assembly-CSharp::CurriculumPlan
   lessons:
+  - {fileID: 11400000, guid: b3a203b4041f36342b288cffa865e67b, type: 2}
   - {fileID: 11400000, guid: 49080aa6fc651b1418ecffabe50a3982, type: 2}
   - {fileID: 11400000, guid: 953f4d5597b45b34fb14fbd51dbd553c, type: 2}
   - {fileID: 11400000, guid: fa5f6d0c1b55922438e77ad4ade629a1, type: 2}
