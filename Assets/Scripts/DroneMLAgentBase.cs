@@ -10,19 +10,22 @@ using UnityEngine.InputSystem;
 ///
 /// Companion components handle specialised concerns:
 ///   • <see cref="DroneAerodynamics"/>         — mass, gravity, quadratic drag
-///   • <see cref="DroneCurriculumManager"/>    — curriculum, spawn placement, obstacles
+///   • <see cref="TrainingArena"/>             — arena identity, curriculum, spawn placement, obstacles
 ///   • <see cref="DroneObserver"/>             — observation collection
-///   • <see cref="DroneRewardManager"/>      — terminal checks, per-step reward math
+///   • <see cref="DroneRewardManager"/>        — terminal checks, per-step reward math
 ///   • <see cref="DroneTelemetry"/>            — TensorBoard stats, Inspector debug strings
 ///
 /// Subclasses implement <see cref="Agent.OnActionReceived"/> and
 /// <see cref="Agent.Heuristic"/> for their specific control schemes.
 ///
 /// The drone model is generated via <see cref="DroneGenerator"/>.
+///
+/// <b>Arena Architecture:</b>
+/// The drone discovers its <see cref="TrainingArena"/> via parent hierarchy lookup,
+/// enabling multiple arena instances with isolated curriculum management.
 /// </summary>
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(DroneAerodynamics))]
-[RequireComponent(typeof(DroneCurriculumManager))]
 [RequireComponent(typeof(DroneObserver))]
 [RequireComponent(typeof(DroneRewardManager))]
 [RequireComponent(typeof(DroneTelemetry))]
@@ -44,13 +47,13 @@ public abstract class DroneMLAgentBase : Agent
     protected float maxEpisodeDistance;
     protected bool hasLanded;
     protected float touchdownTimer;
-    protected DroneCurriculumManager curriculumManager;
+    protected TrainingArena arena;
     protected DroneObserver observer;
     protected DroneRewardManager rewardEvaluator;
     protected DroneTelemetry telemetry;
 
-    /// <summary>Convenience accessor — delegates to <see cref="DroneCurriculumManager.Target"/>.</summary>
-    protected Transform target => curriculumManager.Target;
+    /// <summary>Convenience accessor — delegates to <see cref="TrainingArena.Target"/>.</summary>
+    protected Transform target => arena?.Target;
 
     public override void Initialize()
     {
@@ -66,8 +69,18 @@ public abstract class DroneMLAgentBase : Agent
             ? Mathf.Cos(rewardProfile.maxTiltAngle * Mathf.Deg2Rad)
             : Mathf.Cos(60f * Mathf.Deg2Rad);
 
-        curriculumManager = GetComponent<DroneCurriculumManager>();
-        curriculumManager.Initialise();
+        // Discover training arena in parent hierarchy (arena-centric architecture)
+        // This allows the drone to work in multi-arena setups where each arena has its own controller
+        arena = GetComponentInParent<TrainingArena>();
+        if (arena == null)
+        {
+            Debug.LogError($"[{name}] No TrainingArena found in parent hierarchy. " +
+                "Add TrainingArena to the Arena Root GameObject.", this);
+        }
+        else
+        {
+            arena.Initialise();
+        }
 
         observer = GetComponent<DroneObserver>();
         observer.Initialise();
@@ -82,8 +95,20 @@ public abstract class DroneMLAgentBase : Agent
     {
         ResetPhysics();
         rewardEvaluator.ResetEpisode();
-        maxEpisodeDistance = curriculumManager.SetupEpisode(transform, startPosition, startRotation);
-        telemetry.OnNewEpisode(curriculumManager.CurrentLessonIndex);
+
+        if (arena != null)
+        {
+            maxEpisodeDistance = arena.SetupEpisode(transform, startPosition, startRotation);
+            telemetry.OnNewEpisode(arena.CurrentLessonIndex);
+        }
+        else
+        {
+            // Fallback for missing arena
+            maxEpisodeDistance = 10f;
+            transform.localPosition = startPosition;
+            transform.localRotation = startRotation;
+            telemetry.OnNewEpisode(0);
+        }
 
         if (target == null)
         {
@@ -97,7 +122,7 @@ public abstract class DroneMLAgentBase : Agent
 
     /// <summary>
     /// Zeroes velocity / angular velocity and resets the touchdown state.
-    /// Called at the start of every episode before the curriculum manager
+    /// Called at the start of every episode before the arena
     /// repositions the drone.
     /// </summary>
     protected void ResetPhysics()
