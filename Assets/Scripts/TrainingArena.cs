@@ -234,7 +234,17 @@ public class TrainingArena : MonoBehaviour
             drone.localPosition = targetPos + Vector3.up * profile.spawnHeight;
         }
 
-        drone.localRotation = defaultRotation;
+        // Rotate drone to face the target (yaw only, keep level)
+        Vector3 toTarget = targetPos - drone.localPosition;
+        toTarget.y = 0f;
+        if (toTarget.sqrMagnitude > 0.001f)
+        {
+            drone.localRotation = Quaternion.LookRotation(toTarget, Vector3.up);
+        }
+        else
+        {
+            drone.localRotation = defaultRotation;
+        }
 
         // Spawn obstacles if configured
         if (obstacleGenerator != null && profile.maxObstacleCount > 0)
