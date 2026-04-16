@@ -37,7 +37,7 @@ public class ArenaManager : MonoBehaviour
     [Tooltip("Maximum arenas per row before starting a new row.")]
     [SerializeField, Min(1)] private int arenasPerRow = 5;
 
-    [Header("Runtime spawned & Editor Placeholder Arenas")]
+    [Header("Runtime Spawned & Editor Placeholder Arenas")]
     [Tooltip("Tracks spawned instances at runtime. In the Editor, you can assign a manually placed 'Template' arena here to have it automatically cleaned up and replaced when Play is pressed.")]
     [SerializeField] private TrainingArena[] spawnedArenas;
 
