@@ -218,7 +218,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TrainingArena
   arenaId: -1
-  curriculumPlan: {fileID: 11400000, guid: 4e868a95436a8204ebe6479531d8a781, type: 2}
+  curriculumPlan: {fileID: 11400000, guid: 0fecb61859f84c34598e77c12fbfb7e3, type: 2}
   agent: {fileID: 5499850950520007278}
   target: {fileID: 999457839937370585}
   obstacleGenerator: {fileID: 4705270586151036291}
