@@ -12,7 +12,6 @@ using UnityEngine;
 ///   ├── Target (Landing Pad)
 ///   ├── Floor
 ///   ├── Obstacle Spawn Point (HexSwissCheeseObstacleGenerator)
-///   └── Walls (optional)
 /// </code>
 ///
 /// <b>Key Responsibilities:</b>
@@ -266,27 +265,6 @@ public class TrainingArena : MonoBehaviour
         {
             agent.EndEpisode();
         }
-    }
-
-    // ═══════════════════════════════════════════════════════════════════════
-    // COORDINATE CONVERSION
-    // ═══════════════════════════════════════════════════════════════════════
-
-    /// <summary>
-    /// Gets the local position of a world point relative to this arena's root.
-    /// Useful for converting between world and arena-local coordinates.
-    /// </summary>
-    public Vector3 WorldToArenaLocal(Vector3 worldPosition)
-    {
-        return transform.InverseTransformPoint(worldPosition);
-    }
-
-    /// <summary>
-    /// Gets the world position of an arena-local point.
-    /// </summary>
-    public Vector3 ArenaLocalToWorld(Vector3 localPosition)
-    {
-        return transform.TransformPoint(localPosition);
     }
 
     // ═══════════════════════════════════════════════════════════════════════
