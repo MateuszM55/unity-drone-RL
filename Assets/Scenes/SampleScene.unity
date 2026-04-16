@@ -573,7 +573,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ArenaManager
   arenaPrefab: {fileID: 899460278114708894, guid: 2ca0815db1b9b304d8f500aae1126727, type: 3}
-  numberOfArenas: 6
+  numberOfArenas: 100
   arenaSpacing: 200
   arenasPerRow: 5
   spawnedArenas:
