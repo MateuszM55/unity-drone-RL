@@ -1020,10 +1020,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 12388391612644267, guid: 2ca0815db1b9b304d8f500aae1126727, type: 3}
-      propertyPath: useManualLessonPreview
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 899460278114708894, guid: 2ca0815db1b9b304d8f500aae1126727, type: 3}
       propertyPath: m_Name
       value: ArenaInstance
