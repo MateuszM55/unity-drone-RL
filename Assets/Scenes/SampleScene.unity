@@ -573,10 +573,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ArenaManager
   arenaPrefab: {fileID: 899460278114708894, guid: 2ca0815db1b9b304d8f500aae1126727, type: 3}
-  numberOfArenas: 2
-  arenaSpacing: 20
+  numberOfArenas: 6
+  arenaSpacing: 200
   arenasPerRow: 5
-  spawnedArenas: []
+  spawnedArenas:
+  - {fileID: 1885036992}
 --- !u!21 &1360055435
 Material:
   serializedVersion: 8
@@ -859,6 +860,17 @@ Material:
     - _SpecColor: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
+--- !u!114 &1885036992 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 12388391612644267, guid: 2ca0815db1b9b304d8f500aae1126727, type: 3}
+  m_PrefabInstance: {fileID: 5064648421417086529}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6150504caefcab648a2074eeffd42c46, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TrainingArena
 --- !u!21 &2078106086
 Material:
   serializedVersion: 8

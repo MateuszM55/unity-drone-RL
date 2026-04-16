@@ -240,7 +240,6 @@ public class TrainingArena : MonoBehaviour
         if (obstacleGenerator != null && profile.maxObstacleCount > 0)
         {
             obstacleGenerator.Generate(
-                targetPos,
                 profile.maxObstacleCount,
                 profile.obstacleSpawnRadius,
                 profile.minObstacleSpawnRadius,

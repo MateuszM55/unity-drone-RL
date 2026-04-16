@@ -14,8 +14,8 @@ using UnityEngine;
 ///
 /// All internal buffers are pre-allocated — zero GC during generation.
 ///
-/// Attach to the Obstacle Spawn Point GameObject and assign the reference
-/// on <see cref="DroneCurriculumManager"/> via the Inspector.
+/// Attach to the Obstacle Spawn Point GameObject inside the Arena Prefab.
+/// Obstacles are always spawned around this GameObject's position.
 /// Call <see cref="Initialise"/> once, then <see cref="Generate"/> / <see cref="Clear"/>
 /// each episode.
 /// </summary>
@@ -50,10 +50,6 @@ public class HexSwissCheeseObstacleGenerator : MonoBehaviour
     [Tooltip("Maximum height for obstacle placement.")]
     [SerializeField] private float maxHeight = 3f;
 
-    [Header("Spawn Location")]
-    [Tooltip("Parent transform under which pooled obstacles are instantiated. Defaults to this GameObject's transform.")]
-    [SerializeField] private Transform spawnParent;
-
     [Header("Gizmos")]
     [Tooltip("Draw hex grid centre points in the Scene view.")]
     [SerializeField] private bool showGizmos = true;
@@ -78,9 +74,6 @@ public class HexSwissCheeseObstacleGenerator : MonoBehaviour
     /// </summary>
     public void Initialise()
     {
-        if (spawnParent == null)
-            spawnParent = transform;
-
         Debug.Assert(minSpawnRadius < spawnRadius,
             $"[HexSwissCheese] minSpawnRadius ({minSpawnRadius}) must be < spawnRadius ({spawnRadius}).");
         Debug.Assert(minDistance < hexSpacing,
@@ -90,23 +83,23 @@ public class HexSwissCheeseObstacleGenerator : MonoBehaviour
     }
 
     /// <summary>
-    /// Generates obstacles around <paramref name="center"/> using the serialised defaults.
+    /// Generates obstacles around this GameObject's position using the serialised defaults.
     /// </summary>
-    public void Generate(Vector3 center)
+    public void Generate()
     {
-        GenerateInternal(center, maxObstacleCount, spawnRadius, minSpawnRadius,
+        GenerateInternal(maxObstacleCount, spawnRadius, minSpawnRadius,
                          hexSpacing, minDistance, density, minHeight, maxHeight);
     }
 
     /// <summary>
-    /// Generates obstacles around <paramref name="center"/> using fully overridden parameters.
+    /// Generates obstacles around this GameObject's position using fully overridden parameters.
     /// Call this from a curriculum manager to apply per-lesson settings.
     /// </summary>
-    public void Generate(Vector3 center, int count, float outerR, float innerR,
+    public void Generate(int count, float outerR, float innerR,
                          float spacing, float minDist, float fillDensity,
                          float minH, float maxH)
     {
-        GenerateInternal(center, count, outerR, innerR, spacing, minDist, fillDensity, minH, maxH);
+        GenerateInternal(count, outerR, innerR, spacing, minDist, fillDensity, minH, maxH);
     }
 
     /// <summary>Deactivates all obstacles spawned during the current episode.</summary>
@@ -122,7 +115,7 @@ public class HexSwissCheeseObstacleGenerator : MonoBehaviour
 
     // ── Core algorithm ───────────────────────────────────────────────────
 
-    private void GenerateInternal(Vector3 center, int count, float outerR, float innerR,
+    private void GenerateInternal(int count, float outerR, float innerR,
                                   float spacing, float minDist, float fillDensity,
                                   float minH, float maxH)
     {
@@ -194,7 +187,7 @@ public class HexSwissCheeseObstacleGenerator : MonoBehaviour
             float jx = Mathf.Cos(angle) * jitterDist;
             float jz = Mathf.Sin(angle) * jitterDist;
 
-            Vector3 pos = center + new Vector3(
+            Vector3 pos = transform.position + new Vector3(
                 pt.x + jx,
                 Random.Range(minH, maxH),
                 pt.y + jz);
@@ -222,19 +215,19 @@ public class HexSwissCheeseObstacleGenerator : MonoBehaviour
 
         for (int i = 0; i < maxObstacleCount; i++)
         {
-            GameObject obj = Instantiate(obstaclePrefab, Vector3.zero, Quaternion.identity, spawnParent);
-            obj.SetActive(false);
-            pool.Add(obj);
-        }
-    }
+                GameObject obj = Instantiate(obstaclePrefab, Vector3.zero, Quaternion.identity, transform);
+                    obj.SetActive(false);
+                    pool.Add(obj);
+                }
+            }
 
-    private void EnsurePoolCapacity(int required)
-    {
-        if (obstaclePrefab == null) return;
+            private void EnsurePoolCapacity(int required)
+            {
+                if (obstaclePrefab == null) return;
 
-        while (pool.Count < required)
-        {
-            GameObject obj = Instantiate(obstaclePrefab, Vector3.zero, Quaternion.identity, spawnParent);
+                while (pool.Count < required)
+                {
+                    GameObject obj = Instantiate(obstaclePrefab, Vector3.zero, Quaternion.identity, transform);
             obj.SetActive(false);
             pool.Add(obj);
         }
@@ -269,7 +262,7 @@ public class HexSwissCheeseObstacleGenerator : MonoBehaviour
         int cols = Mathf.CeilToInt(2f * spawnRadius / hexSpacing) + 1;
         int rows = Mathf.CeilToInt(2f * spawnRadius / rowHeight)  + 1;
 
-        Vector3 center = spawnParent != null ? spawnParent.position : transform.position;
+        Vector3 center = transform.position;
         float midHeight = (minHeight + maxHeight) * 0.5f;
         Gizmos.color = gizmoColor;
 
