@@ -24,6 +24,7 @@ public sealed class FrontalConeSensor : ISensor, IDisposable
     readonly int m_FloatsPerRay;          // 1 (distance) + layer count
     readonly int m_ObservationSize;
     readonly LayerMask m_LayerMask;
+    readonly float m_TiltAngle;
     readonly ObservationSpec m_ObservationSpec;
 
     // Pre-computed local-space ray directions (unit vectors).
@@ -58,6 +59,7 @@ public sealed class FrontalConeSensor : ISensor, IDisposable
     internal float RayLength => m_RayLength;
     internal float SphereRadius => m_SphereRadius;
     internal int FloatsPerRay => m_FloatsPerRay;
+    internal float TiltAngle => m_TiltAngle;
 
     // ──────────────────────────────────────────────
     //  Construction
@@ -70,7 +72,8 @@ public sealed class FrontalConeSensor : ISensor, IDisposable
         float sphereRadius,
         int[] detectableLayers,
         LayerMask layerMask,
-        Transform transform)
+        Transform transform,
+        float tiltAngle = 0f)
     {
         m_Name = name;
         m_RayLength = rayLength;
@@ -78,6 +81,7 @@ public sealed class FrontalConeSensor : ISensor, IDisposable
         m_DetectableLayers = detectableLayers ?? Array.Empty<int>();
         m_LayerMask = layerMask;
         m_Transform = transform;
+        m_TiltAngle = tiltAngle;
 
         // --- Generate concentric cone directions (1-4-8) ---
         m_RayDirections = GenerateConcentricConeDirections(coneHalfAngle);
@@ -201,7 +205,8 @@ public sealed class FrontalConeSensor : ISensor, IDisposable
         }
 
         Vector3 origin = m_Transform.position;
-        Quaternion rotation = m_Transform.rotation;
+        // Apply tilt: positive angle pitches the cone upward (rotates around local right axis).
+        Quaternion rotation = m_Transform.rotation * Quaternion.AngleAxis(-m_TiltAngle, Vector3.right);
         PhysicsScene physicsScene = m_Transform.gameObject.scene.GetPhysicsScene();
         var queryParams = new QueryParameters(m_LayerMask);
 

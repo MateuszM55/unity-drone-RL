@@ -26,6 +26,10 @@ public class FrontalConeSensorComponent : SensorComponent, IDisposable
     [Tooltip("Half-angle of the cone in degrees (total FOV = 2× this value). 45° gives a 90° FOV.")]
     float m_ConeHalfAngle = 45f;
 
+    [SerializeField, Range(-90f, 90f)]
+    [Tooltip("Tilt of the entire cone around the local right axis in degrees. Positive = up, negative = down.")]
+    float m_TiltAngle = 0f;
+
     [SerializeField, Range(1f, 1000f)]
     [Tooltip("Maximum length of each sphere-cast ray.")]
     float m_RayLength = 20f;
@@ -56,6 +60,7 @@ public class FrontalConeSensorComponent : SensorComponent, IDisposable
 
     public string SensorName { get => m_SensorName; set => m_SensorName = value; }
     public float ConeHalfAngle { get => m_ConeHalfAngle; set => m_ConeHalfAngle = value; }
+    public float TiltAngle { get => m_TiltAngle; set => m_TiltAngle = value; }
     public float RayLength { get => m_RayLength; set => m_RayLength = value; }
     public float SphereRadius { get => m_SphereRadius; set => m_SphereRadius = value; }
     public LayerMask RayLayerMask { get => m_RayLayerMask; set => m_RayLayerMask = value; }
@@ -87,7 +92,8 @@ public class FrontalConeSensorComponent : SensorComponent, IDisposable
             m_SphereRadius,
             layerIndices,
             m_RayLayerMask,
-            transform
+            transform,
+            m_TiltAngle
         );
 
         return new ISensor[] { m_Sensor };
@@ -131,7 +137,7 @@ public class FrontalConeSensorComponent : SensorComponent, IDisposable
         float rayLen = m_Sensor.RayLength;
         float radius = m_Sensor.SphereRadius;
         Vector3 origin = transform.position;
-        Quaternion rotation = transform.rotation;
+        Quaternion rotation = transform.rotation * Quaternion.AngleAxis(-m_Sensor.TiltAngle, Vector3.right);
 
         for (int i = 0; i < dirs.Length; i++)
         {
@@ -150,7 +156,7 @@ public class FrontalConeSensorComponent : SensorComponent, IDisposable
     void DrawEditorPreviewGizmos()
     {
         Vector3 origin = transform.position;
-        Quaternion rotation = transform.rotation;
+        Quaternion rotation = transform.rotation * Quaternion.AngleAxis(-m_TiltAngle, Vector3.right);
 
         // Reconstruct the 13 directions for preview
         float halfAngle = m_ConeHalfAngle;
