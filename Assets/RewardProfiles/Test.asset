@@ -13,15 +13,15 @@ MonoBehaviour:
   m_Name: Test
   m_EditorClassIdentifier: Assembly-CSharp::DroneRewardProfile
   landingSuccess: 5
-  obstacleCollision: -5
+  obstacleCollision: -10
   deltaDistanceScale: 0
   normalizedDeltaDistanceMaxProgressReward: 3
   energyScale: 0
   smoothnessScale: 0
   timeScale: 0.001
-  fastApproachScale: 0
-  landingRadius: 0
-  maxTiltAngle: 75
+  fastApproachScale: 0.001
+  landingRadius: 3
+  maxTiltAngle: 60
   targetReachedThreshold: 0
   targetReachedReward: 0
   tooFarPenalty: -1
@@ -29,7 +29,6 @@ MonoBehaviour:
   fallenPenalty: -1
   excessiveTiltPenalty: -5
   proximityRewardScale: 0
-  tiltPenaltyScale: 0
+  tiltPenaltyScale: 0.001
   angularVelocityPenaltyScale: 0
   velocityAlignmentScale: 0
-  distanceNorm: 20

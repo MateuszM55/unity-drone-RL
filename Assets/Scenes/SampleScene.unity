@@ -575,7 +575,7 @@ MonoBehaviour:
   arenaPrefab: {fileID: 899460278114708894, guid: 2ca0815db1b9b304d8f500aae1126727, type: 3}
   numberOfArenas: 32
   arenaSpacing: 200
-  arenasPerRow: 5
+  arenasPerRow: 4
   spawnedArenas:
   - {fileID: 1885036992}
 --- !u!21 &1360055435

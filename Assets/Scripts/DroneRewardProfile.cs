@@ -12,52 +12,50 @@ using UnityEngine;
 public class DroneRewardProfile : ScriptableObject
 {
     [Header("Main Rewards")]
-    [Tooltip("Flat reward given when the drone lands on the target.")]
+    [Tooltip("One-time reward added when the drone successfully lands on the target pad. This is the single biggest positive signal in an episode — keep it larger than the sum of all per-step rewards so landing is always the most attractive outcome. Typical range: 3 – 20.")]
     public float landingSuccess = 5f;
-    [Tooltip("Terminal penalty applied when the drone collides with an obstacle or the ground.")]
+    [Tooltip("One-time penalty added when the drone hits an obstacle or the ground (episode ends). Should be large enough to strongly discourage crashes. Make it at least as large as landingSuccess in magnitude. Typical range: -5 to -20.")]
     public float obstacleCollision = -10f;
 
     [Header("Step Penalty Scales")]
-    [Tooltip("Scale for the delta-distance (potential-based progress) reward per step.")]
+    [Tooltip("Added every step: scale × (distance_last_step − distance_this_step). Positive when the drone moves closer, negative when it moves away. Larger values speed up early learning but can cause jittery flight. Typical per-step range: -0.05 to +0.05. Recommended scale: 0.005 – 0.05.")]
     public float deltaDistanceScale = 0.01f;
-    [Tooltip("Scale for the normalised delta-distance reward. The delta is divided by the " +
-             "episode start distance so equal fractional progress always yields the same reward " +
-             "regardless of how far the drone started from the target.")]
+    [Tooltip("Sets the maximum total reward the drone can earn over a full episode from normalised progress (each step's progress is expressed as a fraction of the starting distance). Raise this to make steady approach more important relative to the landing bonus. Typical episode total: 0 – 8. Recommended: 2 – 15.")]
     public float normalizedDeltaDistanceMaxProgressReward = 8f;
-    [Tooltip("Scale for the motor energy penalty per step.")]
+    [Tooltip("Subtracted every step proportional to total motor thrust output. Discourages wasting energy hovering at full power. Typical per-step penalty: -0.001 to -0.01. Recommended scale: 0.0005 – 0.005.")]
     public float energyScale = 0.001f;
-    [Tooltip("Scale for the action-smoothness penalty per step.")]
+    [Tooltip("Subtracted every step proportional to how abruptly the drone changes its motor commands (sum of squared action deltas). Encourages smooth, stable flight. Typical per-step penalty: -0.0005 to -0.005. Recommended scale: 0.0001 – 0.002.")]
     public float smoothnessScale = 0.0005f;
-    [Tooltip("Constant time penalty per step to encourage faster task completion.")]
+    [Tooltip("Fixed penalty subtracted every step to push the drone to complete the task quickly. Over a 1000-step episode the total cost is scale × 1000. Typical episode total: -0.5 to -2. Recommended scale: 0.0005 – 0.003.")]
     public float timeScale = 0.001f;
-    [Tooltip("Scale for the fast-approach penalty inside the landing radius.")]
+    [Tooltip("Subtracted every step when the drone is inside landingRadius and moving toward the pad too fast. Encourages a gentle final descent. Typical per-step penalty: -0.002 to -0.02. Recommended scale: 0.001 – 0.01.")]
     public float fastApproachScale = 0.002f;
-    [Tooltip("Radius (metres) within which the fast-approach penalty is active.")]
+    [Tooltip("How close (metres) the drone must be before the fast-approach penalty kicks in. Should be larger than targetReachedThreshold. Typical value: 2 – 10 m.")]
     public float landingRadius = 5f;
 
     [Header("Terminal Condition Rewards")]
-    [Tooltip("Maximum tilt angle (degrees) from world up before the episode is terminated.")]
+    [Tooltip("If the drone tilts beyond this many degrees from vertical the episode ends with an excessive-tilt penalty. Lower values demand more stable flight. Typical value: 45 – 75 degrees.")]
     public float maxTiltAngle = 60f;
-    [Tooltip("Distance threshold (metres) at which the drone is considered to have reached the target.")]
+    [Tooltip("The drone must come within this distance (metres) of the target centre to trigger a successful landing. Smaller values require more precision. Typical value: 0.3 – 1.5 m.")]
     public float targetReachedThreshold = 0.5f;
-    [Tooltip("Reward given when the drone reaches the target (CheckTargetReached).")]
+    [Tooltip("One-time reward added when the drone reaches the target (in addition to landingSuccess if both are used). Can be set to 0 if landingSuccess already covers this. Typical range: 0.5 – 5.")]
     public float targetReachedReward = 1.0f;
-    [Tooltip("Penalty applied when the drone flies too far from the target (CheckTooFar).")]
+    [Tooltip("One-time penalty applied when the drone wanders beyond the allowed area and the episode ends. Should discourage exploration in the wrong direction. Typical range: -0.5 to -3.")]
     public float tooFarPenalty = -1.0f;
-    [Tooltip("Minimum Y position (world space) before the drone is considered fallen (CheckFallen).")]
+    [Tooltip("World-space Y coordinate below which the drone is considered to have fallen (e.g. dropped off the edge of the map). Set this just below your lowest valid flight altitude. Typical value: -0.5 to -2.")]
     public float fallenMinY = -0.5f;
-    [Tooltip("Penalty applied when the drone falls below fallenMinY (CheckFallen).")]
+    [Tooltip("One-time penalty when the drone falls below fallenMinY and the episode ends. Typical range: -0.5 to -3.")]
     public float fallenPenalty = -1.0f;
-    [Tooltip("Penalty applied when the drone tilts beyond maxTiltAngle (CheckExcessiveTilt).")]
+    [Tooltip("One-time penalty when the drone tilts beyond maxTiltAngle and the episode ends. Typical range: -0.5 to -3.")]
     public float excessiveTiltPenalty = -1.0f;
 
     [Header("Continuous Shaping Scales")]
-    [Tooltip("Scale for the fraction-of-distance proximity reward (ProximityReward).")]
+    [Tooltip("Added every step as scale × (1 − distance/startDistance). Reward is highest when the drone is close to the target and zero at the starting distance. Complements deltaDistanceScale by rewarding absolute proximity rather than change. Typical per-step range: 0 – 0.01. Recommended scale: 0.005 – 0.05.")]
     public float proximityRewardScale = 0.01f;
-    [Tooltip("Scale for the tilt-deviation penalty (TiltPenalty).")]
+    [Tooltip("Subtracted every step proportional to how far the drone is tilted from level (tilt_degrees / maxTiltAngle). Encourages stable, upright hovering. Typical per-step penalty: -0.001 to -0.01. Recommended scale: 0.001 – 0.01.")]
     public float tiltPenaltyScale = 0.005f;
-    [Tooltip("Scale for the angular-velocity penalty (AngularVelocityPenalty).")]
+    [Tooltip("Subtracted every step proportional to the drone's angular velocity magnitude. Penalises spinning and wobbling even when tilt is low. Typical per-step penalty: -0.0005 to -0.005. Recommended scale: 0.0005 – 0.005.")]
     public float angularVelocityPenaltyScale = 0.001f;
-    [Tooltip("Scale for the velocity-alignment reward (VelocityAlignmentReward).")]
+    [Tooltip("Added every step proportional to how directly the drone is flying toward the target (dot product of velocity and target direction, clamped 0–1). Encourages efficient straight-line approach. Typical per-step range: 0 – 0.01. Recommended scale: 0.005 – 0.05.")]
     public float velocityAlignmentScale = 0.01f;
 }
