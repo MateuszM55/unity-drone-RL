@@ -27,7 +27,7 @@ MonoBehaviour:
   tooFarPenalty: -1
   fallenMinY: -0.5
   fallenPenalty: -1
-  excessiveTiltPenalty: -5
+  excessiveTiltPenalty: -10
   proximityRewardScale: 0
   tiltPenaltyScale: 0.001
   angularVelocityPenaltyScale: 0
