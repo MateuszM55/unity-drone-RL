@@ -921,7 +921,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FrontalConeSensorComponent
   m_SensorName: FrontalConeSensor
   m_ConeHalfAngle: 45
-  m_TiltAngle: 30
+  m_TiltAngle: 45
   m_RayLength: 20
   m_SphereRadius: 0.5
   m_RayLayerMask:
@@ -955,6 +955,7 @@ MonoBehaviour:
   - Obstacle
   - Ground
   - Target
+  m_RayEnabled: 000101010101
   m_RayHitColor: {r: 1, g: 0, b: 0, a: 1}
   m_RayMissColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
 --- !u!1 &7119482862147867878

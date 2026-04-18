@@ -40,6 +40,11 @@ public class SixAxisSensorComponent : SensorComponent, IDisposable
     [Tooltip("Layer names to detect via one-hot encoding. Order maps to observation indices.")]
     List<string> m_DetectableLayers = new List<string>();
 
+    [Header("Ray Toggles")]
+    [SerializeField]
+    [Tooltip("Enable or disable each individual ray. Order: Up, Down, Left, Right, Back.")]
+    bool[] m_RayEnabled = { true, true, true, true, true, true };
+
     [Header("Debug Gizmos")]
     [SerializeField]
     Color m_RayHitColor = Color.red;
@@ -56,6 +61,7 @@ public class SixAxisSensorComponent : SensorComponent, IDisposable
     public float SphereRadius { get => m_SphereRadius; set => m_SphereRadius = value; }
     public LayerMask RayLayerMask { get => m_RayLayerMask; set => m_RayLayerMask = value; }
     public List<string> DetectableLayers { get => m_DetectableLayers; set => m_DetectableLayers = value; }
+    public bool[] RayEnabled { get => m_RayEnabled; set => m_RayEnabled = value; }
 
     // ──────────────────────────────────────────────
     //  Internal State
@@ -76,13 +82,23 @@ public class SixAxisSensorComponent : SensorComponent, IDisposable
         for (int i = 0; i < m_DetectableLayers.Count; i++)
             layerIndices[i] = LayerMask.NameToLayer(m_DetectableLayers[i]);
 
+        // Ensure the toggle array is always exactly 5 elements
+        if (m_RayEnabled == null || m_RayEnabled.Length != 6)
+        {
+            var fixed6 = new bool[6];
+            for (int i = 0; i < 6; i++)
+                fixed6[i] = m_RayEnabled != null && i < m_RayEnabled.Length ? m_RayEnabled[i] : true;
+            m_RayEnabled = fixed6;
+        }
+
         m_Sensor = new SixAxisSensor(
             m_SensorName,
             m_RayLength,
             m_SphereRadius,
             layerIndices,
             m_RayLayerMask,
-            transform
+            transform,
+            m_RayEnabled
         );
 
         return new ISensor[] { m_Sensor };
@@ -116,12 +132,13 @@ public class SixAxisSensorComponent : SensorComponent, IDisposable
         Vector3.down,
         Vector3.left,
         Vector3.right,
-        Vector3.back
+        Vector3.back,
+        Vector3.forward
     };
 
     static readonly string[] s_DirectionLabels =
     {
-        "Up", "Down", "Left", "Right", "Back"
+        "Up", "Down", "Left", "Right", "Back", "Forward"
     };
 
     void OnDrawGizmosSelected()
@@ -161,9 +178,12 @@ public class SixAxisSensorComponent : SensorComponent, IDisposable
         Vector3 origin = transform.position;
         Quaternion rotation = transform.rotation;
 
-        Gizmos.color = m_RayMissColor;
         for (int i = 0; i < s_PreviewDirections.Length; i++)
         {
+            bool enabled = m_RayEnabled == null || i >= m_RayEnabled.Length || m_RayEnabled[i];
+            if (!enabled) continue;
+
+            Gizmos.color = m_RayMissColor;
             Vector3 worldDir = rotation * s_PreviewDirections[i];
             Gizmos.DrawRay(origin, worldDir * m_RayLength);
             Gizmos.DrawWireSphere(origin + worldDir * m_RayLength, m_SphereRadius);

@@ -5,20 +5,20 @@ using Unity.MLAgents.Sensors;
 using UnityEngine;
 
 /// <summary>
-/// ISensor that casts 5 sphere-rays in an orthogonal cross pattern
-/// (Up, Down, Left, Right, Back) for proximity safety around the drone.
-/// Forward is intentionally omitted — the <see cref="FrontalConeSensor"/> covers that axis.
+/// ISensor that casts 6 sphere-rays in a full orthogonal pattern
+/// (Up, Down, Left, Right, Back, Forward) for proximity safety around the drone.
 ///
 /// Uses batched <see cref="SpherecastCommand"/> for high-performance sensing.
 /// Each ray produces: 1 linear inverse distance + one-hot encoding for detectable layers.
-/// Observation size = 5 * (1 + DetectableLayerCount).
+/// Observation size = ActiveRayCount * (1 + DetectableLayerCount).
+/// Individual rays can be disabled via the <see cref="SixAxisSensorComponent"/> toggle array.
 ///
 /// Linear inverse distance: 1.0 = object touching the drone, 0.0 = path clear (max range).
 /// Mimics the ultrasonic / infrared proximity sensors on commercial drones.
 /// </summary>
 public sealed class SixAxisSensor : ISensor, IDisposable
 {
-    const int RayCount = 5;
+    const int RayCount = 6;
 
     readonly string m_Name;
     readonly float m_RayLength;
@@ -30,14 +30,18 @@ public sealed class SixAxisSensor : ISensor, IDisposable
     readonly ObservationSpec m_ObservationSpec;
 
     // Fixed orthogonal directions (local space, no forward).
-    static readonly Vector3[] s_Directions =
+    static readonly Vector3[] s_AllDirections =
     {
         Vector3.up,       // 0
         Vector3.down,     // 1
         Vector3.left,     // 2
         Vector3.right,    // 3
-        Vector3.back      // 4
+        Vector3.back,     // 4
+        Vector3.forward   // 5
     };
+
+    readonly Vector3[] m_ActiveDirections;
+    readonly int m_ActiveRayCount;
 
     readonly float[] m_Observations;
 
@@ -50,7 +54,7 @@ public sealed class SixAxisSensor : ISensor, IDisposable
     bool m_HasPendingJob;
 
     /// <summary>Local-space ray directions (for Gizmo drawing).</summary>
-    internal Vector3[] RayDirections => s_Directions;
+    internal Vector3[] RayDirections => m_ActiveDirections;
 
     /// <summary>Most recent observation floats (for Gizmo drawing).</summary>
     internal float[] Observations => m_Observations;
@@ -75,7 +79,8 @@ public sealed class SixAxisSensor : ISensor, IDisposable
         float sphereRadius,
         int[] detectableLayers,
         LayerMask layerMask,
-        Transform transform)
+        Transform transform,
+        bool[] rayEnabled = null)
     {
         m_Name = name;
         m_RayLength = rayLength;
@@ -84,8 +89,19 @@ public sealed class SixAxisSensor : ISensor, IDisposable
         m_LayerMask = layerMask;
         m_Transform = transform;
 
+        // Build active directions from the enabled mask
+        var activeDirs = new System.Collections.Generic.List<Vector3>(RayCount);
+        for (int i = 0; i < s_AllDirections.Length; i++)
+        {
+            bool enabled = rayEnabled == null || i >= rayEnabled.Length || rayEnabled[i];
+            if (enabled)
+                activeDirs.Add(s_AllDirections[i]);
+        }
+        m_ActiveDirections = activeDirs.ToArray();
+        m_ActiveRayCount = m_ActiveDirections.Length;
+
         m_FloatsPerRay = 1 + m_DetectableLayers.Length;
-        m_ObservationSize = RayCount * m_FloatsPerRay;
+        m_ObservationSize = m_ActiveRayCount * m_FloatsPerRay;
         m_ObservationSpec = ObservationSpec.Vector(m_ObservationSize);
 
         m_Observations = new float[m_ObservationSize];
@@ -148,8 +164,8 @@ public sealed class SixAxisSensor : ISensor, IDisposable
         // Lazy allocation: only reaches here during Play mode, never during editor validation.
         if (!m_CastCommands.IsCreated)
         {
-            m_CastCommands = new NativeArray<SpherecastCommand>(RayCount, Allocator.Persistent);
-            m_CastHits = new NativeArray<RaycastHit>(RayCount, Allocator.Persistent);
+            m_CastCommands = new NativeArray<SpherecastCommand>(m_ActiveRayCount, Allocator.Persistent);
+            m_CastHits = new NativeArray<RaycastHit>(m_ActiveRayCount, Allocator.Persistent);
         }
 
         Vector3 origin = m_Transform.position;
@@ -157,9 +173,9 @@ public sealed class SixAxisSensor : ISensor, IDisposable
         PhysicsScene physicsScene = m_Transform.gameObject.scene.GetPhysicsScene();
         var queryParams = new QueryParameters(m_LayerMask);
 
-        for (int i = 0; i < RayCount; i++)
+        for (int i = 0; i < m_ActiveRayCount; i++)
         {
-            Vector3 worldDir = rotation * s_Directions[i];
+            Vector3 worldDir = rotation * m_ActiveDirections[i];
             m_CastCommands[i] = new SpherecastCommand(
                 physicsScene, origin, m_SphereRadius, worldDir, queryParams, m_RayLength);
         }
@@ -170,7 +186,7 @@ public sealed class SixAxisSensor : ISensor, IDisposable
 
     void ProcessHits()
     {
-        for (int i = 0; i < RayCount; i++)
+        for (int i = 0; i < m_ActiveRayCount; i++)
         {
             int baseIdx = i * m_FloatsPerRay;
             var hit = m_CastHits[i];
