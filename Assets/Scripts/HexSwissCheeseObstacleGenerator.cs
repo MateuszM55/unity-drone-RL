@@ -249,7 +249,7 @@ public class HexSwissCheeseObstacleGenerator : MonoBehaviour
 
     // ── Editor visualisation ─────────────────────────────────────────────
 
-    private void OnDrawGizmos()
+    private void OnDrawGizmosSelected()
     {
         if (!showGizmos) return;
 
