@@ -2,15 +2,15 @@ behaviors:
   FlyToTarget:
     trainer_type: ppo
     hyperparameters:
-      batch_size: 4096         
-      buffer_size: 40960        
-      learning_rate: 0.0005     
+      batch_size: 13312         
+      buffer_size: 133120         
+      learning_rate: 0.0003     
       learning_rate_schedule: linear
       beta: 0.005                
       beta_schedule: linear  
       epsilon: 0.2
       lambd: 0.95
-      num_epoch: 5              
+      num_epoch: 3              
     network_settings:
       normalize: True           
       hidden_units: 512         
@@ -20,9 +20,9 @@ behaviors:
         gamma: 0.99             
         strength: 1.0
     keep_checkpoints: 3
-    max_steps: 100000000         
+    max_steps: 20000000         
     time_horizon: 256           
-    summary_freq: 50000
+    summary_freq: 100000
 
 environment_parameters:
   lesson:
