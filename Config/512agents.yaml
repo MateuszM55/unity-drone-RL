@@ -1,0 +1,52 @@
+behaviors:
+  FlyToTarget:
+    trainer_type: ppo
+    hyperparameters:
+      batch_size: 2048         
+      buffer_size: 133120         
+      learning_rate: 0.001     
+      learning_rate_schedule: linear
+      beta: 0.005                
+      beta_schedule: linear  
+      epsilon: 0.2
+      lambd: 0.95
+      num_epoch: 3              
+    network_settings:
+      normalize: True           
+      hidden_units: 512         
+      num_layers: 3            
+    reward_signals:
+      extrinsic:
+        gamma: 0.99             
+        strength: 1.0
+    keep_checkpoints: 3
+    max_steps: 70000000         
+    time_horizon: 256           
+    summary_freq: 100000
+
+environment_parameters:
+  lesson:
+    curriculum:
+      - name: Lesson0_Obstacles_Difficulty5
+        completion_criteria:
+          measure: reward
+          behavior: FlyToTarget
+          threshold: 4  
+          min_lesson_length: 10000
+        value: 0.0
+      - name: Lesson1_Obstacles_Difficulty6
+        completion_criteria:
+          measure: reward
+          behavior: FlyToTarget
+          threshold: 3.5
+          min_lesson_length: 10000
+        value: 1.0
+      - name: Lesson2_Obstacles_Difficulty7
+        completion_criteria:
+          measure: reward
+          behavior: FlyToTarget
+          threshold: 3
+          min_lesson_length: 10000
+        value: 2.0
+      - name: Lesson3_Obstacles_Difficulty8
+        value: 3.0
