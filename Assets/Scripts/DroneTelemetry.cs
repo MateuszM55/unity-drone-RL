@@ -12,26 +12,26 @@ using UnityEngine;
 public class DroneTelemetry : MonoBehaviour
 {
     [Header("Debug - Live Rewards")]
-    public string debugDeltaDist;
-    public string debugNormalizedDeltaDist;
-    public string debugProximity;
-    public string debugEnergy;
-    public string debugSmoothness;
-    public string debugTilt;
-    public string debugAngularVelocity;
-    public string debugVelAlignment;
-    public string debugTime;
-    public string debugFastApproach;
-    public string debugTotalStepReward;
+    [SerializeField] private string debugDeltaDist;
+    [SerializeField] private string debugNormalizedDeltaDist;
+    [SerializeField] private string debugProximity;
+    [SerializeField] private string debugEnergy;
+    [SerializeField] private string debugSmoothness;
+    [SerializeField] private string debugTilt;
+    [SerializeField] private string debugAngularVelocity;
+    [SerializeField] private string debugVelAlignment;
+    [SerializeField] private string debugTime;
+    [SerializeField] private string debugFastApproach;
+    [SerializeField] private string debugTotalStepReward;
 
     [Header("Debug - Episode Outcomes (rolling 100-episode window)")]
-    public string debugCurrentLesson;
-    public string debugWindowEpisodes;
-    public string debugSuccessRate;
-    public string debugCrashRate;
-    public string debugExcessiveTiltRate;
-    public string debugBoundaryLeftRate;
-    public string debugTimeoutRate;
+    [SerializeField] private string debugCurrentLesson;
+    [SerializeField] private string debugWindowEpisodes;
+    [SerializeField] private string debugSuccessRate;
+    [SerializeField] private string debugCrashRate;
+    [SerializeField] private string debugExcessiveTiltRate;
+    [SerializeField] private string debugBoundaryLeftRate;
+    [SerializeField] private string debugTimeoutRate;
 
     // --- Per-episode reward accumulators ---
     private float _totalDeltaDistance;

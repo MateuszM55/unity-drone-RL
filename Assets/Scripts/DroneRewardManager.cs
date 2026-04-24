@@ -18,6 +18,18 @@ public class DroneRewardManager : MonoBehaviour
     private Rigidbody rb;
     private float _previousDistance = -1f;
     private float _startDistance = -1f;
+    private float _maxTiltDot = 0.5f; // cos(60°) — overwritten by Configure()
+
+    /// <summary>
+    /// Pre-computes and caches the maximum-tilt dot-product threshold from the reward profile.
+    /// Call once from the agent's <c>Initialize</c> after the profile is available.
+    /// </summary>
+    /// <param name="profile">Reward profile that owns <c>maxTiltAngle</c>.</param>
+    public void Configure(DroneRewardProfile profile)
+    {
+        if (profile != null)
+            _maxTiltDot = Mathf.Cos(profile.maxTiltAngle * Mathf.Deg2Rad);
+    }
 
     /// <summary>Result returned by <see cref="Evaluate"/>.</summary>
     public struct EvalResult
@@ -57,7 +69,6 @@ public class DroneRewardManager : MonoBehaviour
     /// <param name="profile">Reward magnitudes and thresholds.</param>
     /// <param name="targetPosition">Current target position (local space).</param>
     /// <param name="startPosition">Drone start position (for proximity baseline).</param>
-    /// <param name="maxTiltDot">Pre-computed cosine of the maximum safe tilt angle.</param>
     /// <param name="maxEpisodeDistance">Max allowed distance before episode termination.</param>
     /// <param name="currentActions">Continuous actions issued this step (used for smoothness + energy fallback).</param>
     /// <param name="previousActions">Actions from the previous step.</param>
@@ -69,7 +80,6 @@ public class DroneRewardManager : MonoBehaviour
         DroneRewardProfile profile,
         Vector3 targetPosition,
         Vector3 startPosition,
-        float maxTiltDot,
         float maxEpisodeDistance,
         float[] currentActions,
         float[] previousActions,
@@ -79,7 +89,7 @@ public class DroneRewardManager : MonoBehaviour
 
         // --- Terminal conditions ---
         var tilt = DroneRewardMath.CheckExcessiveTilt(
-            transform.up, maxTiltDot, profile.excessiveTiltPenalty);
+            transform.up, _maxTiltDot, profile.excessiveTiltPenalty);
         if (tilt.IsTerminal) return MakeTerminal(tilt.Reward, EpisodeOutcome.Safety_ExcessiveTilt);
 
         var tooFar = DroneRewardMath.CheckTooFar(
@@ -124,5 +134,43 @@ public class DroneRewardManager : MonoBehaviour
     private static EvalResult MakeTerminal(float reward, EpisodeOutcome outcome)
     {
         return new EvalResult { IsTerminal = true, TerminalReward = reward, Outcome = outcome };
+    }
+
+    /// <summary>
+    /// Evaluates a collision event and returns the appropriate terminal result.
+    /// Returns a non-terminal result when the collision is not meaningful (e.g. already landed).
+    /// The caller is responsible for calling <c>AddReward / SetReward / EndEpisode</c>.
+    /// </summary>
+    /// <param name="profile">Reward magnitudes and thresholds.</param>
+    /// <param name="collidedTransform">The transform the drone collided with.</param>
+    /// <param name="targetTransform">The arena's target/landing-pad transform.</param>
+    /// <param name="alreadyLanded"><c>true</c> if the drone has already registered a landing this episode.</param>
+    public CollisionResult EvaluateCollision(
+        DroneRewardProfile profile,
+        Transform collidedTransform,
+        Transform targetTransform,
+        bool alreadyLanded)
+    {
+        if (targetTransform != null && collidedTransform == targetTransform)
+        {
+            if (alreadyLanded)
+                return new CollisionResult { Kind = CollisionKind.None };
+
+            float reward = profile != null ? profile.landingSuccess : 1f;
+            return new CollisionResult { Kind = CollisionKind.Landing, Reward = reward };
+        }
+
+        float crashReward = profile != null ? profile.obstacleCollision : DroneRewardMath.ObstaclePenalty;
+        return new CollisionResult { Kind = CollisionKind.Crash, Reward = crashReward };
+    }
+
+    /// <summary>Type of collision detected by <see cref="EvaluateCollision"/>.</summary>
+    public enum CollisionKind { None, Landing, Crash }
+
+    /// <summary>Result of <see cref="EvaluateCollision"/>.</summary>
+    public struct CollisionResult
+    {
+        public CollisionKind Kind;
+        public float Reward;
     }
 }

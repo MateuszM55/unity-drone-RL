@@ -39,11 +39,17 @@ public abstract class DroneMLAgentBase : Agent
     [Tooltip("Scriptable object that controls all reward magnitudes and thresholds.")]
     [SerializeField] protected DroneRewardProfile rewardProfile;
 
+    [Header("Motor Setup")]
+    [Tooltip("Rotor transforms assigned automatically by DroneGenerator. Order: FL(0), FR(1), RL(2), RR(3).")]
+    [SerializeField] protected Transform[] rotorTransforms;
+
+    [Tooltip("Absolute maximum thrust a single motor can produce in Newtons.")]
+    [SerializeField] protected float maxThrustPerMotor = 5f;
+
     protected Rigidbody rb;
     protected Vector3 startPosition;
     protected Quaternion startRotation;
     protected Keyboard keyboard;
-    protected float maxTiltDot;
     protected float maxEpisodeDistance;
     protected bool hasLanded;
     protected float touchdownTimer;
@@ -52,8 +58,20 @@ public abstract class DroneMLAgentBase : Agent
     protected DroneRewardManager rewardEvaluator;
     protected DroneTelemetry telemetry;
 
+    protected readonly float[] _previousActions     = new float[4];
+    protected readonly float[] _currentActionsBuffer = new float[4];
+
     /// <summary>Convenience accessor — delegates to <see cref="TrainingArena.Target"/>.</summary>
     protected Transform target => arena?.Target;
+
+    /// <summary>
+    /// Clears the shared action buffers. Call at the start of every episode in subclasses.
+    /// </summary>
+    protected void ClearActionBuffers()
+    {
+        System.Array.Clear(_previousActions,      0, _previousActions.Length);
+        System.Array.Clear(_currentActionsBuffer, 0, _currentActionsBuffer.Length);
+    }
 
     public override void Initialize()
     {
@@ -65,9 +83,6 @@ public abstract class DroneMLAgentBase : Agent
         startPosition = transform.localPosition;
         startRotation = transform.localRotation;
         keyboard = Keyboard.current;
-        maxTiltDot = rewardProfile != null
-            ? Mathf.Cos(rewardProfile.maxTiltAngle * Mathf.Deg2Rad)
-            : Mathf.Cos(60f * Mathf.Deg2Rad);
 
         // Discover training arena in parent hierarchy (arena-centric architecture).
         // GetComponentInParent does not support interfaces, so we retrieve the concrete
@@ -89,6 +104,7 @@ public abstract class DroneMLAgentBase : Agent
 
         rewardEvaluator = GetComponent<DroneRewardManager>();
         rewardEvaluator.Initialise();
+        rewardEvaluator.Configure(rewardProfile);
 
         telemetry = GetComponent<DroneTelemetry>();
     }
@@ -157,22 +173,24 @@ public abstract class DroneMLAgentBase : Agent
 
     protected virtual void OnCollisionEnter(Collision collision)
     {
-        // Landing on the target: flat touchdown reward
-        if (target != null && collision.transform == target)
+        var result = rewardEvaluator.EvaluateCollision(rewardProfile, collision.transform, target, hasLanded);
+
+        switch (result.Kind)
         {
-            if (!hasLanded)
-            {
+            case DroneRewardManager.CollisionKind.Landing:
                 hasLanded = true;
                 touchdownTimer = touchdownDelay;
-                AddReward(DroneRewardMath.TouchdownReward(rewardProfile != null ? rewardProfile.landingSuccess : 1f));
-            }
-            return;
-        }
+                AddReward(result.Reward);
+                break;
 
-        // Collision with obstacle or ground
-        SetReward(rewardProfile != null ? rewardProfile.obstacleCollision : DroneRewardMath.ObstaclePenalty);
-        telemetry.FlushEpisode(EpisodeOutcome.Crash);
-        EndEpisode();
+            case DroneRewardManager.CollisionKind.Crash:
+                SetReward(result.Reward);
+                telemetry.FlushEpisode(EpisodeOutcome.Crash);
+                EndEpisode();
+                break;
+
+            // CollisionKind.None: already landed, ignore
+        }
     }
 
     /// <summary>
@@ -199,7 +217,7 @@ public abstract class DroneMLAgentBase : Agent
 
         var result = rewardEvaluator.Evaluate(
             rewardProfile, targetPos, startPosition,
-            maxTiltDot, maxEpisodeDistance,
+            maxEpisodeDistance,
             currentActions, previousActions, energyValues);
 
         if (result.IsTerminal)

@@ -34,8 +34,7 @@ using UnityEngine;
 ///
 /// <b>Lesson-Index Strategy:</b>
 /// By default the arena reads the lesson parameter from the ML-Agents Academy (AcademyLessonIndexProvider).
-/// Call SetLessonIndexProvider to swap in a ManualLessonIndexProvider for Editor preview or unit tests,
-/// replacing the old boolean useManualLessonPreview pattern.
+/// Call SetLessonIndexProvider to swap in a ManualLessonIndexProvider for Editor preview or unit tests.
 /// </summary>
 [DisallowMultipleComponent]
 public class TrainingArena : MonoBehaviour, ITrainingArena
@@ -63,11 +62,8 @@ public class TrainingArena : MonoBehaviour, ITrainingArena
     [SerializeField] private HexSwissCheeseObstacleGenerator obstacleGenerator;
 
     [Header("Editor Preview")]
-    [Tooltip("When enabled, overrides the lesson index from the ML-Agents Academy with the value below. For in-Editor testing only -- has no effect during training.")]
-    [SerializeField] private bool useManualLessonPreview;
-
-    [Tooltip("Lesson index to use when Use Manual Lesson Preview is enabled.")]
-    [SerializeField, Min(0)] private int manualLessonIndex;
+    [Tooltip("Lesson index visualised by the Scene-view gizmo (spawn-radius ring). Does not affect training. Call SetLessonIndexProvider(new ManualLessonIndexProvider(n)) to preview a lesson at runtime.")]
+    [SerializeField, Min(0)] private int gizmoPreviewLessonIndex;
 
     // ========================================================================
     // PRIVATE STATE
@@ -77,8 +73,8 @@ public class TrainingArena : MonoBehaviour, ITrainingArena
 
     /// <summary>
     /// Determines how the current lesson index is resolved at the start of each episode.
-    /// Defaults to AcademyLessonIndexProvider (or ManualLessonIndexProvider when
-    /// useManualLessonPreview is set). Override via SetLessonIndexProvider for preview or unit tests.
+    /// Defaults to <see cref="AcademyLessonIndexProvider"/>.
+    /// Override via <see cref="SetLessonIndexProvider"/> for Editor preview or unit tests.
     /// </summary>
     private ILessonIndexProvider _lessonIndexProvider;
 
@@ -137,14 +133,9 @@ public class TrainingArena : MonoBehaviour, ITrainingArena
         if (_isInitialised) return;
         _isInitialised = true;
 
-        // Honour any externally-supplied provider first; then respect the inspector toggle;
-        // finally fall back to the live Academy provider.
+        // Honour any externally-supplied provider first; fall back to the live Academy provider.
         if (_lessonIndexProvider == null)
-        {
-            _lessonIndexProvider = useManualLessonPreview
-                ? (ILessonIndexProvider)new ManualLessonIndexProvider(manualLessonIndex)
-                : new AcademyLessonIndexProvider();
-        }
+            _lessonIndexProvider = new AcademyLessonIndexProvider();
 
         DiscoverComponents();
 
@@ -159,7 +150,7 @@ public class TrainingArena : MonoBehaviour, ITrainingArena
             curriculumPlan.ValidateAndWarn();
         }
 
-        obstacleGenerator?.Initialise();
+        obstacleGenerator?.Initialise(MaxObstacleCapacityAcrossLessons());
     }
 
     // ========================================================================
@@ -191,6 +182,26 @@ public class TrainingArena : MonoBehaviour, ITrainingArena
 
         if (obstacleGenerator == null)
             obstacleGenerator = GetComponentInChildren<HexSwissCheeseObstacleGenerator>(true);
+    }
+
+    /// <summary>
+    /// Returns the highest <see cref="LessonProfile.MaxObstacleCount"/> across all lessons
+    /// in the curriculum, so the obstacle pool is pre-sized to handle any lesson without
+    /// runtime allocations. Returns 0 when no curriculum is assigned.
+    /// </summary>
+    private int MaxObstacleCapacityAcrossLessons()
+    {
+        if (curriculumPlan == null || curriculumPlan.LessonCount == 0)
+            return 0;
+
+        int max = 0;
+        for (int i = 0; i < curriculumPlan.LessonCount; i++)
+        {
+            LessonProfile profile = curriculumPlan.GetLesson(i);
+            if (profile != null && profile.MaxObstacleCount > max)
+                max = profile.MaxObstacleCount;
+        }
+        return max;
     }
 
     /// <summary>
@@ -290,8 +301,7 @@ public class TrainingArena : MonoBehaviour, ITrainingArena
         // Spawn-radius ring for the previewed lesson
         if (target != null && curriculumPlan != null && curriculumPlan.LessonCount > 0)
         {
-            int previewIndex = useManualLessonPreview ? manualLessonIndex : 0;
-            LessonProfile profile = curriculumPlan.GetLessonClamped(previewIndex, out _);
+            LessonProfile profile = curriculumPlan.GetLessonClamped(gizmoPreviewLessonIndex, out _);
 
             // Use public properties (SpawnRadius, SpawnHeight) -- the private backing
             // fields are inaccessible from outside LessonProfile.

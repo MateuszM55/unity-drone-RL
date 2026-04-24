@@ -17,20 +17,12 @@ using UnityEngine;
 /// </summary>
 public class DroneIncrementalML_Agent : DroneMLAgentBase
 {
-    [Header("Motor Setup")]
-    [Tooltip("Assigned automatically by DroneGenerator.\nOrder: FL(0), FR(1), RL(2), RR(3)")]
-    [SerializeField] private Transform[] rotorTransforms;
-
     [Header("Realistic Motor Physics")]
-    [Tooltip("Absolute maximum thrust a single motor can produce in Newtons.")]
-    [SerializeField] private float maxThrustPerMotor = 5.0f;
-
     [Tooltip("Time in seconds for a motor to spool up from 0 to 100% thrust.")]
     [SerializeField] private float timeToMaxThrust = 0.1f;
+    // rotorTransforms, maxThrustPerMotor, _previousActions, _currentActionsBuffer are inherited from DroneMLAgentBase.
 
-    private readonly float[] _currentThrusts = new float[4];
-    private readonly float[] _previousActions = new float[4];
-    private readonly float[] _currentActionsBuffer = new float[4];
+    private readonly float[] _currentThrusts    = new float[4];
     private readonly float[] _normalizedThrusts = new float[4];
 
     private float _maxThrustChangePerStep;
@@ -61,7 +53,7 @@ public class DroneIncrementalML_Agent : DroneMLAgentBase
     {
         base.OnEpisodeBegin();
         System.Array.Clear(_currentThrusts, 0, _currentThrusts.Length);
-        System.Array.Clear(_previousActions, 0, _previousActions.Length);
+        ClearActionBuffers();
     }
 
     public override void OnActionReceived(ActionBuffers actions)

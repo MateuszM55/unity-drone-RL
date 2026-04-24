@@ -80,13 +80,20 @@ public class HexSwissCheeseObstacleGenerator : MonoBehaviour
     // ─────────────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Pre-allocates the object pool up to <see cref="maxObstacleCount"/> instances.
+    /// Pre-allocates the object pool.
     /// Call once during setup (e.g. from an Agent's <c>Initialize</c>).
     /// </summary>
-    public void Initialise()
+    /// <param name="capacityOverride">
+    /// Optional pool capacity. When provided (e.g. the maximum <c>MaxObstacleCount</c>
+    /// across all curriculum lessons) it supersedes the Inspector <see cref="maxObstacleCount"/>
+    /// field, ensuring the pool is large enough for every lesson without runtime allocations.
+    /// Pass 0 (default) to use the Inspector value.
+    /// </param>
+    public void Initialise(int capacityOverride = 0)
     {
         ValidateSpacingConstraint(minSpawnRadius, spawnRadius, minDistance, hexSpacing);
-        InitPool(maxObstacleCount);
+        int capacity = capacityOverride > 0 ? capacityOverride : maxObstacleCount;
+        InitPool(capacity);
     }
 
     /// <summary>

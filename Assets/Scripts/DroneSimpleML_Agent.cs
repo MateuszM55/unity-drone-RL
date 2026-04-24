@@ -20,16 +20,8 @@ using UnityEngine;
 /// </summary>
 public class DroneSimpleML_Agent : DroneMLAgentBase
 {
-    [Header("Motor Setup")]
-    [Tooltip("Assigned automatically by DroneGenerator.\n" +
-             "Order: FL(0), FR(1), RL(2), RR(3)")]
-    [SerializeField] private Transform[] rotorTransforms;
-
-    [Header("Motor Settings")]
-    [SerializeField] private float maxThrustPerMotor = 5f;
-
-    private readonly float[] _previousActions = new float[4];
-    private readonly float[] _currentActionsBuffer = new float[4];
+    // rotorTransforms, maxThrustPerMotor, _previousActions, and _currentActionsBuffer
+    // are declared in DroneMLAgentBase and assigned by DroneGenerator.
 
     /// <summary>
     /// Extends base observations with the 4 previous motor actions so the
@@ -46,7 +38,7 @@ public class DroneSimpleML_Agent : DroneMLAgentBase
     public override void OnEpisodeBegin()
     {
         base.OnEpisodeBegin();
-        System.Array.Clear(_previousActions, 0, _previousActions.Length);
+        ClearActionBuffers();
     }
 
     public override void OnActionReceived(ActionBuffers actions)
