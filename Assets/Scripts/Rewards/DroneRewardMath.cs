@@ -15,7 +15,8 @@ public static class DroneRewardMath
     public struct TerminalCheck
     {
         public bool IsTerminal;
-        public float Reward;
+        /// <summary>The reward to apply. Valid only when <see cref="IsTerminal"/> is <c>true</c>.</summary>
+        public float TerminalReward;
     }
 
     // ───────────────────────── Terminal Conditions ─────────────────────────
@@ -26,7 +27,7 @@ public static class DroneRewardMath
         return new TerminalCheck
         {
             IsTerminal = distanceToTarget > maxDistance,
-            Reward = penalty
+            TerminalReward = penalty
         };
     }
 
@@ -37,7 +38,7 @@ public static class DroneRewardMath
         return new TerminalCheck
         {
             IsTerminal = tiltDot < maxTiltDot,
-            Reward = penalty
+            TerminalReward = penalty
         };
     }
 
@@ -132,7 +133,9 @@ public static class DroneRewardMath
 
     /// <summary>
     /// Reward proportional to how well the drone's velocity aligns with the direction to target.
-    /// Both vectors must be expressed in the same coordinate frame (world or local).
+    /// Both vectors <b>must</b> be expressed in the same coordinate frame (both world or both local).
+    /// When <paramref name="toTarget"/> is a local-space vector (e.g. <c>targetLocalPos - transform.localPosition</c>),
+    /// convert the velocity to local space first: <c>transform.InverseTransformDirection(rb.linearVelocity)</c>.
     /// </summary>
     public static float VelocityAlignmentReward(Vector3 velocity, Vector3 toTarget, float scale = 0.01f)
     {
@@ -174,7 +177,7 @@ public static class DroneRewardMath
     }
 
     /// <summary>
-    /// Penalty that discourages fast approaches inside a landing radius.
+    /// Penalty that discourages fast movement inside a landing radius (any direction, not just approach).
     /// Zero outside <paramref name="landingRadius"/>; scales linearly with both
     /// proximity and speed: <c>penalty = −scale × speed × (1 − distance / radius)</c>.
     /// </summary>

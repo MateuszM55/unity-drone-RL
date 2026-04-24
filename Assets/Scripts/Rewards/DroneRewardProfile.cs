@@ -22,13 +22,13 @@ public class DroneRewardProfile : ScriptableObject
     public float deltaDistanceScale = 0.01f;
     [Tooltip("Sets the maximum total reward the drone can earn over a full episode from normalised progress (each step's progress is expressed as a fraction of the starting distance). Raise this to make steady approach more important relative to the landing bonus. Typical episode total: 0 – 8. Recommended: 2 – 15.")]
     public float normalizedDeltaDistanceMaxProgressReward = 8f;
-    [Tooltip("Subtracted every step proportional to total motor thrust output. Discourages wasting energy hovering at full power. Typical per-step penalty: -0.001 to -0.01. Recommended scale: 0.0005 – 0.005.")]
+    [Tooltip("Subtracted every step proportional to the mean squared normalised thrust across all motors (actions mapped from [−1,1] to [0,1] before squaring). Discourages wasting energy hovering at full power. Typical per-step penalty: -0.001 to -0.01. Recommended scale: 0.0005 – 0.005.")]
     public float energyScale = 0.001f;
-    [Tooltip("Subtracted every step proportional to how abruptly the drone changes its motor commands (sum of squared action deltas). Encourages smooth, stable flight. Typical per-step penalty: -0.0005 to -0.005. Recommended scale: 0.0001 – 0.002.")]
+    [Tooltip("Subtracted every step proportional to the mean absolute change in motor commands between steps. Encourages smooth, stable flight. Typical per-step penalty: -0.0005 to -0.005. Recommended scale: 0.0001 – 0.002.")]
     public float smoothnessScale = 0.0005f;
     [Tooltip("Fixed penalty subtracted every step to push the drone to complete the task quickly. Over a 1000-step episode the total cost is scale × 1000. Typical episode total: -0.5 to -2. Recommended scale: 0.0005 – 0.003.")]
     public float timeScale = 0.001f;
-    [Tooltip("Subtracted every step when the drone is inside landingRadius and moving toward the pad too fast. Encourages a gentle final descent. Typical per-step penalty: -0.002 to -0.02. Recommended scale: 0.001 – 0.01.")]
+    [Tooltip("Subtracted every step when the drone is inside landingRadius and moving fast (any direction). Encourages a gentle final descent. penalty = −scale × speed × (1 − distance/radius). Typical per-step penalty: -0.002 to -0.02. Recommended scale: 0.001 – 0.01.")]
     public float fastApproachScale = 0.002f;
     [Tooltip("How close (metres) the drone must be before the fast-approach penalty kicks in. Should be larger than targetReachedThreshold. Typical value: 2 – 10 m.")]
     public float landingRadius = 5f;

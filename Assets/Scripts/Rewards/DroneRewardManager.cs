@@ -24,11 +24,20 @@ public class DroneRewardManager : MonoBehaviour
 
     /// <summary>
     /// Pre-computes and caches the maximum-tilt dot-product threshold from the reward profile.
-    /// Call once from the agent's <c>Initialize</c> after the profile is available.
+    /// Call once from the agent's <c>Initialize</c>, before the first <see cref="Evaluate"/> call.
+    /// Calling mid-episode (after the first step) is a no-op and will log a warning.
     /// </summary>
     /// <param name="profile">Reward profile that owns <c>maxTiltAngle</c>.</param>
     public void Configure(DroneRewardProfile profile)
     {
+        if (_previousDistance >= 0f)
+        {
+            Debug.LogWarning($"[{nameof(DroneRewardManager)}] Configure() called mid-episode " +
+                "(previousDistance is already set). The new profile will be ignored. " +
+                "Call Configure() only from Initialize(), before the first Evaluate().", this);
+            return;
+        }
+
         if (profile != null)
             _maxTiltDot = Mathf.Cos(profile.maxTiltAngle * Mathf.Deg2Rad);
     }
@@ -46,10 +55,7 @@ public class DroneRewardManager : MonoBehaviour
         public RewardStepSummary StepRewards;
     }
 
-    /// <summary>
-    /// Caches component references. Call once from the agent's <c>Initialize</c>.
-    /// </summary>
-    public void Initialise()
+    private void Awake()
     {
         rb = GetComponent<Rigidbody>();
     }
@@ -87,16 +93,20 @@ public class DroneRewardManager : MonoBehaviour
         float[] previousActions,
         float[] energyValues = null)
     {
+        if (profile == null)
+            throw new System.ArgumentNullException(nameof(profile),
+                $"[{nameof(DroneRewardManager)}] A {nameof(DroneRewardProfile)} must be assigned before calling Evaluate.");
+
         float distanceToTarget = Vector3.Distance(transform.localPosition, targetPosition);
 
         // ── Terminal conditions ──────────────────────────────────────────
         var tilt = DroneRewardMath.CheckExcessiveTilt(
             transform.up, _maxTiltDot, profile.excessiveTiltPenalty);
-        if (tilt.IsTerminal) return MakeTerminal(tilt.Reward, EpisodeOutcome.Safety_ExcessiveTilt);
+        if (tilt.IsTerminal) return MakeTerminal(tilt.TerminalReward, EpisodeOutcome.Safety_ExcessiveTilt);
 
         var tooFar = DroneRewardMath.CheckTooFar(
             distanceToTarget, maxEpisodeDistance, profile.tooFarPenalty);
-        if (tooFar.IsTerminal) return MakeTerminal(tooFar.Reward, EpisodeOutcome.Safety_BoundaryLeft);
+        if (tooFar.IsTerminal) return MakeTerminal(tooFar.TerminalReward, EpisodeOutcome.Safety_BoundaryLeft);
 
         // ── Per-step rewards ─────────────────────────────────────────────
         if (_previousDistance < 0f)
@@ -124,7 +134,9 @@ public class DroneRewardManager : MonoBehaviour
             DroneRewardMath.AngularVelocityPenalty(
                 rb.angularVelocity.magnitude, profile.angularVelocityPenaltyScale),
             DroneRewardMath.VelocityAlignmentReward(
-                rb.linearVelocity, targetPosition - transform.localPosition, profile.velocityAlignmentScale),
+                // Convert world-space velocity to local space so both vectors share the same frame as targetPosition.
+                transform.InverseTransformDirection(rb.linearVelocity),
+                targetPosition - transform.localPosition, profile.velocityAlignmentScale),
             DroneRewardMath.TimePenalty(profile.timeScale),
             DroneRewardMath.FastApproachPenalty(
                 rb.linearVelocity.magnitude, distanceToTarget, profile.landingRadius, profile.fastApproachScale)

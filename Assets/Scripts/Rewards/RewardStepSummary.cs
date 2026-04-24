@@ -22,7 +22,7 @@ public struct RewardStepSummary
 
     public RewardStepSummary(float deltaDistance, float normalizedDeltaDistance, float proximity, float energy,
         float smoothness, float tilt, float angularVelocity,
-        float velocityAlignment, float time, float fastApproach = 0f)
+        float velocityAlignment, float time, float fastApproach)
     {
         DeltaDistance = deltaDistance;
         NormalizedDeltaDistance = normalizedDeltaDistance;

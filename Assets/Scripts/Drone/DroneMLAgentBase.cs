@@ -112,7 +112,6 @@ public abstract class DroneMLAgentBase : Agent
         _observer.Initialise();
 
         _rewardEvaluator = GetComponent<DroneRewardManager>();
-        _rewardEvaluator.Initialise();
         _rewardEvaluator.Configure(rewardProfile);
 
         _telemetry = GetComponent<DroneTelemetry>();
