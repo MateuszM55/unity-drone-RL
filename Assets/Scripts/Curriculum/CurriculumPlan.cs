@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -7,7 +7,7 @@ using UnityEngine;
 /// and enabling real-time updates across all training environments.
 ///
 /// <b>Usage:</b>
-/// 1. Create via Assets → Create → Drone → Curriculum Plan
+/// 1. Create via Assets -> Create -> Drone -> Curriculum Plan
 /// 2. Add <see cref="LessonProfile"/> assets to the <see cref="lessons"/> list in order
 /// 3. Assign to the <see cref="TrainingArena"/> component on the arena prefab
 ///
@@ -57,11 +57,15 @@ public class CurriculumPlan : ScriptableObject
     }
 
     /// <summary>
-    /// Returns <c>true</c> if every lesson entry is non-null; <c>false</c> otherwise.
-    /// Pure predicate — no side effects, safe to call from any context.
+    /// Returns <c>true</c> if the plan has at least one lesson and every entry is non-null;
+    /// <c>false</c> if the list is empty or contains any null entries.
+    /// Pure predicate -- no side effects, safe to call from any context.
     /// </summary>
     public bool IsValid()
     {
+        if (lessons.Count == 0)
+            return false;
+
         for (int i = 0; i < lessons.Count; i++)
         {
             if (lessons[i] == null)
@@ -71,13 +75,25 @@ public class CurriculumPlan : ScriptableObject
     }
 
     /// <summary>
-    /// Logs a warning for every null lesson entry and returns <c>false</c> if any are found.
+    /// Logs a warning for every problem found and returns <c>false</c> if the plan is unusable.
+    /// Problems reported:
+    /// <list type="bullet">
+    ///   <item>Empty lesson list.</item>
+    ///   <item>Any null lesson entry.</item>
+    ///   <item>Any lesson whose own <see cref="LessonProfile.ValidateAndWarn"/> reports issues.</item>
+    /// </list>
     /// Use this during initialisation where user-visible feedback is appropriate.
     /// For silent checks prefer <see cref="IsValid"/>.
     /// </summary>
-    /// <returns>True if all lessons are valid; false if any are null.</returns>
+    /// <returns><c>true</c> if all lessons are present and individually valid; <c>false</c> otherwise.</returns>
     public bool ValidateAndWarn()
     {
+        if (lessons.Count == 0)
+        {
+            Debug.LogWarning("[CurriculumPlan] Lesson list is empty -- arena will fall back to default drone position.", this);
+            return false;
+        }
+
         bool valid = true;
         for (int i = 0; i < lessons.Count; i++)
         {
@@ -85,6 +101,11 @@ public class CurriculumPlan : ScriptableObject
             {
                 Debug.LogWarning($"[CurriculumPlan] Lesson at index {i} is null.", this);
                 valid = false;
+            }
+            else
+            {
+                if (!lessons[i].ValidateAndWarn())
+                    valid = false;
             }
         }
         return valid;
