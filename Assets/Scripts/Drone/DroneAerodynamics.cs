@@ -43,7 +43,6 @@ public class DroneAerodynamics : MonoBehaviour
     /// </summary>
     public void InitialisePhysics()
     {
-        if (rb == null) rb = GetComponent<Rigidbody>();
         rb.mass = mass;
         rb.useGravity = true;
         rb.centerOfMass = Vector3.zero;

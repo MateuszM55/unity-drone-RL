@@ -131,6 +131,9 @@ public class TrainingArena : MonoBehaviour, ITrainingArena
     /// <inheritdoc/>
     public void Initialise(int id)
     {
+        // Always update the arena ID, even if already initialized.
+        // This handles the case where the agent's Initialize() runs first (calling
+        // the no-arg Initialise()) and the manager's Awake() runs second (calling this overload).
         arenaId = id;
         Initialise();
     }

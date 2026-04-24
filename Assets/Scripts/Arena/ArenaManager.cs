@@ -119,7 +119,7 @@ public class ArenaManager : MonoBehaviour
         {
             ClearArenas();
 
-            spawnedArenas = new TrainingArena[numberOfArenas];
+            var validArenas = new System.Collections.Generic.List<TrainingArena>(numberOfArenas);
 
             for (int i = 0; i < numberOfArenas; i++)
             {
@@ -129,13 +129,20 @@ public class ArenaManager : MonoBehaviour
 
                 TrainingArena arena = arenaGO.GetComponent<TrainingArena>();
                 if (arena == null)
-                    arena = arenaGO.AddComponent<TrainingArena>();
+                {
+                    Debug.LogError(
+                        $"[ArenaManager] Arena prefab is missing TrainingArena component! " +
+                        $"Arena_{i:D3} will not be spawned. Fix the prefab and call SpawnArenas again.", this);
+                    Destroy(arenaGO);
+                    continue;
+                }
 
                 arena.Initialise(i);
-                spawnedArenas[i] = arena;
+                validArenas.Add(arena);
             }
 
-            Debug.Log($"[ArenaManager] Spawned {numberOfArenas} arena(s) with {arenaSpacing}m spacing.", this);
+            spawnedArenas = validArenas.ToArray();
+            Debug.Log($"[ArenaManager] Spawned {spawnedArenas.Length} arena(s) with {arenaSpacing}m spacing.", this);
         }
         finally
         {

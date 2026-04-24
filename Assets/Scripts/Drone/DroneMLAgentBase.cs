@@ -48,6 +48,8 @@ public abstract class DroneMLAgentBase : Agent
     protected Rigidbody rb;
     protected Vector3 startPosition;
     protected Quaternion startRotation;
+    /// <summary>Actual spawn position of the drone at the start of the current episode (post-reposition). Used as the proximity reward baseline.</summary>
+    protected Vector3 episodeStartPosition;
     protected Keyboard keyboard;
     /// <summary>Max distance from the target allowed before the episode is terminated. Set by <see cref="ITrainingArena.SetupEpisode"/> each episode.</summary>
     protected float maxEpisodeDistance;
@@ -130,6 +132,9 @@ public abstract class DroneMLAgentBase : Agent
             telemetry.OnNewEpisode(0);
         }
 
+        // Capture the actual post-reposition spawn location for proximity reward baseline
+        episodeStartPosition = transform.localPosition;
+
         if (target == null)
         {
             Debug.LogWarning($"[{name}] No target is set.", this);
@@ -202,10 +207,8 @@ public abstract class DroneMLAgentBase : Agent
     /// </summary>
     /// <param name="currentActions">Continuous actions issued this step (smoothness + energy fallback).</param>
     /// <param name="previousActions">Actions from the previous step; updated in-place after smoothness is computed.</param>
-    /// <param name="energyValues">
-    /// Values forwarded to <see cref="DroneRewardMath.EnergyPenalty"/>.
-    /// Pass <c>null</c> to fall back to <paramref name="currentActions"/>.
     /// </param>
+
     /// <returns><c>true</c> if the episode was terminated; the caller must return immediately.</returns>
     protected bool ApplyStandardRewards(float[] currentActions, float[] previousActions, float[] energyValues = null)
     {
@@ -215,10 +218,10 @@ public abstract class DroneMLAgentBase : Agent
             return false;
         }
 
-        Vector3 targetPos = DroneRewardMath.ResolveTargetPosition(target, startPosition);
+        Vector3 targetPos = DroneRewardMath.ResolveTargetPosition(target, episodeStartPosition);
 
         var result = rewardEvaluator.Evaluate(
-            rewardProfile, targetPos, startPosition,
+            rewardProfile, targetPos, episodeStartPosition,
             maxEpisodeDistance,
             currentActions, previousActions, energyValues);
 

@@ -91,8 +91,12 @@ public class HexSwissCheeseObstacleGenerator : MonoBehaviour
     /// </param>
     public void Initialise(int capacityOverride = 0)
     {
-        ValidateSpacingConstraint(minSpawnRadius, spawnRadius, minDistance, hexSpacing);
         int capacity = capacityOverride > 0 ? capacityOverride : maxObstacleCount;
+        if (!ValidateSpacingConstraint(minSpawnRadius, spawnRadius, minDistance, hexSpacing))
+        {
+            Debug.LogWarning("[HexSwissCheese] Initialise aborted due to invalid spacing constraints.", this);
+            return;
+        }
         InitPool(capacity);
     }
 
@@ -263,17 +267,31 @@ public class HexSwissCheeseObstacleGenerator : MonoBehaviour
 
     // ── Validation ────────────────────────────────────────────────────────
 
-    private void ValidateSpacingConstraint(float innerR, float outerR, float minDist, float spacing)
+    /// <summary>
+    /// Validates that spawn radii and spacing constraints are physically viable.
+    /// Returns <c>false</c> if the configuration is invalid (caller should abort generation).
+    /// </summary>
+    private bool ValidateSpacingConstraint(float minRadius, float maxRadius, float minDist, float spacing)
     {
-        if (innerR >= outerR)
+        bool valid = true;
+
+        if (minRadius >= maxRadius)
+        {
             Debug.LogError(
-                $"[HexSwissCheese] minSpawnRadius ({innerR}) >= spawnRadius ({outerR}). " +
+                $"[HexSwissCheese] minSpawnRadius ({minRadius}) >= spawnRadius ({maxRadius}). " +
                 "No candidates will be generated.", this);
+            valid = false;
+        }
 
         if (minDist >= spacing)
+        {
             Debug.LogError(
                 $"[HexSwissCheese] minDistance ({minDist}) >= hexSpacing ({spacing}). " +
                 "Jitter would be zero or negative — fix Inspector or LessonProfile values.", this);
+            valid = false;
+        }
+
+        return valid;
     }
 
     // ── Utility ───────────────────────────────────────────────────────────
@@ -323,6 +341,7 @@ public class HexSwissCheeseObstacleGenerator : MonoBehaviour
                 if (distSqr < innerRSqr || distSqr > outerRSqr)
                     continue;
 
+                // Use transform.position.y + midHeight for consistency with actual obstacle spawning
                 Gizmos.DrawSphere(center + new Vector3(x, midHeight, z), gizmoRadius);
             }
         }

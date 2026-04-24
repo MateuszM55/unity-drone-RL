@@ -200,11 +200,11 @@ public class DroneTelemetry : MonoBehaviour
     {
         switch (outcome)
         {
-            case EpisodeOutcome.Success_TargetReached: _successCount--;       break;
-            case EpisodeOutcome.Crash:                 _crashCount--;         break;
-            case EpisodeOutcome.Safety_ExcessiveTilt:   _excessiveTiltCount--; break;
-            case EpisodeOutcome.Safety_BoundaryLeft:    _boundaryLeftCount--;  break;
-            case EpisodeOutcome.Timeout:               _timeoutCount--;       break;
+            case EpisodeOutcome.Success_TargetReached: _successCount       = Mathf.Max(0, _successCount - 1);       break;
+            case EpisodeOutcome.Crash:                 _crashCount         = Mathf.Max(0, _crashCount - 1);         break;
+            case EpisodeOutcome.Safety_ExcessiveTilt:   _excessiveTiltCount = Mathf.Max(0, _excessiveTiltCount - 1); break;
+            case EpisodeOutcome.Safety_BoundaryLeft:    _boundaryLeftCount  = Mathf.Max(0, _boundaryLeftCount - 1);  break;
+            case EpisodeOutcome.Timeout:               _timeoutCount       = Mathf.Max(0, _timeoutCount - 1);       break;
         }
     }
 
