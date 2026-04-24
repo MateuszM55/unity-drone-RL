@@ -10,9 +10,10 @@ using UnityEngine;
 /// without changing the agent code.
 ///
 /// <b>Discovery:</b>
-/// Unity's <c>GetComponentInParent</c> does not support interface type parameters,
-/// so agents retrieve the concrete <see cref="TrainingArena"/> from the parent hierarchy
-/// and store it through this interface for loose coupling.
+/// Agents retrieve the concrete <see cref="TrainingArena"/> via
+/// <c>GetComponentInParent&lt;TrainingArena&gt;</c> and then store it through this
+/// interface for loose coupling. Casting through the interface at the call site keeps
+/// consumers independent of the concrete type.
 /// </summary>
 public interface ITrainingArena
 {

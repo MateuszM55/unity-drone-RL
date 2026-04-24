@@ -1,5 +1,3 @@
-using Unity.MLAgents;
-
 /// <summary>
 /// Strategy interface that resolves the current curriculum lesson index.
 ///
@@ -18,42 +16,4 @@ public interface ILessonIndexProvider
 {
     /// <summary>Returns the lesson index to use for the current episode.</summary>
     int GetLessonIndex();
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-
-/// <summary>
-/// Live implementation: reads the <c>lesson</c> parameter from the ML-Agents
-/// <see cref="Academy"/> environment parameters.
-/// Used during all normal training and inference runs.
-/// </summary>
-public sealed class AcademyLessonIndexProvider : ILessonIndexProvider
-{
-    /// <summary>
-    /// Name of the ML-Agents curriculum parameter that carries the lesson index.
-    /// Must match the key used in the trainer YAML (e.g. <c>lesson: 0</c>).
-    /// </summary>
-    public const string ParameterKey = "lesson";
-
-    /// <inheritdoc/>
-    public int GetLessonIndex()
-        => (int)Academy.Instance.EnvironmentParameters.GetWithDefault(ParameterKey, 0f);
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-
-/// <summary>
-/// Editor-preview / test implementation: always returns the index supplied at construction.
-/// Assign to <see cref="TrainingArena"/> via <see cref="TrainingArena.SetLessonIndexProvider"/>
-/// to preview a specific lesson without starting an ML-Agents training session.
-/// </summary>
-public sealed class ManualLessonIndexProvider : ILessonIndexProvider
-{
-    private readonly int _index;
-
-    /// <param name="index">The fixed lesson index to return from every call.</param>
-    public ManualLessonIndexProvider(int index) => _index = index;
-
-    /// <inheritdoc/>
-    public int GetLessonIndex() => _index;
 }

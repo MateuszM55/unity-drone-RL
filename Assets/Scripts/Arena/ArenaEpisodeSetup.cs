@@ -147,6 +147,12 @@ public static class ArenaEpisodeSetup
     /// <summary>
     /// Spawns obstacles via <paramref name="generator"/> when the profile requires them.
     /// Does nothing if the generator is null or the profile requests zero obstacles.
+    /// <para>
+    /// <see cref="LessonProfile.MaxObstacleCount"/> is passed directly to
+    /// <see cref="HexSwissCheeseObstacleGenerator.Generate"/> as the upper-bound count.
+    /// The generator is responsible for the actual placement; it may produce fewer
+    /// obstacles if the available area cannot accommodate the full count.
+    /// </para>
     /// </summary>
     private static void SpawnObstacles(
         HexSwissCheeseObstacleGenerator generator,

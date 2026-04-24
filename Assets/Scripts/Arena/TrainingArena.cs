@@ -11,7 +11,7 @@ using UnityEngine;
 /// <code>
 /// Arena_000 (TrainingArena)
 ///   * Drone (DroneMLAgentBase, Rigidbody, ...)
-///   * Target (Landing Pad)  -- tag or name must contain "Target"
+///   * Target (Landing Pad)  -- tagged "Target", or name contains "Target", "LandingPad", or "Pad"
 ///   * Floor
 ///   * Obstacle Spawn Point (HexSwissCheeseObstacleGenerator)
 /// </code>
@@ -132,8 +132,9 @@ public class TrainingArena : MonoBehaviour, ITrainingArena
     public void Initialise(int id)
     {
         // Always update the arena ID, even if already initialized.
-        // This handles the case where the agent's Initialize() runs first (calling
-        // the no-arg Initialise()) and the manager's Awake() runs second (calling this overload).
+        // This handles the case where the ML-Agents Agent.Initialize() (Unity callback,
+        // capital-I) runs first and triggers the no-arg arena Initialise(), and then
+        // ArenaManager.Awake() runs second and calls this int-overload to stamp the ID.
         arenaId = id;
         Initialise();
     }
@@ -236,13 +237,18 @@ public class TrainingArena : MonoBehaviour, ITrainingArena
                 return child;
         }
 
-        // Fallback pass: name-based (legacy prefab support)
+        // Fallback pass: name-based (legacy prefab support — tag objects with "Target" to remove this scan)
         foreach (Transform child in GetComponentsInChildren<Transform>(true))
         {
             if (child == transform) continue;
             string n = child.name;
-            if (n.Contains("Target") || n.Contains("LandingPad") || n.Contains("Pad"))
+            if (n.Contains("Target") || n.Contains("LandingPad") || n.Contains("Landing Pad"))
+            {
+                Debug.LogWarning(
+                    $"[TrainingArena {arenaId}] Found target by name (\"{child.name}\") instead of tag. " +
+                    "Tag the GameObject with \"Target\" to silence this warning.", this);
                 return child;
+            }
         }
 
         return null;
