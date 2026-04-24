@@ -1,27 +1,28 @@
-using Unity.MLAgents;
+﻿using Unity.MLAgents;
 using Unity.MLAgents.Sensors;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 /// <summary>
 /// Abstract base class for drone ML-Agents. Acts as the "glue" that
 /// orchestrates companion components and manages the episode lifecycle.
 ///
 /// Companion components handle specialised concerns:
-///   • <see cref="DroneAerodynamics"/>         — mass, gravity, quadratic drag
-///   • <see cref="TrainingArena"/>             — arena identity, curriculum, spawn placement, obstacles
-///   • <see cref="DroneObserver"/>             — observation collection
-///   • <see cref="DroneRewardManager"/>        — terminal checks, per-step reward math
-///   • <see cref="DroneTelemetry"/>            — TensorBoard stats, Inspector debug strings
+///   - DroneAerodynamics   -- mass, gravity, quadratic drag
+///   - TrainingArena       -- arena identity, curriculum, spawn placement, obstacles
+///   - DroneObserver       -- observation collection
+///   - DroneRewardManager  -- terminal checks, per-step reward math
+///   - DroneTelemetry      -- TensorBoard stats, Inspector debug strings
 ///
-/// Subclasses implement <see cref="Agent.OnActionReceived"/> and
-/// <see cref="Agent.Heuristic"/> for their specific control schemes.
+/// Subclasses implement Agent.OnActionReceived and Agent.Heuristic for their
+/// specific control schemes.  They MUST populate _currentActionsBuffer with
+/// the raw action values for each motor before calling ApplyStandardRewards,
+/// so that smoothness and energy rewards are computed correctly.
 ///
-/// The drone model is generated via <see cref="DroneGenerator"/>.
+/// The drone model is generated via DroneGenerator.
 ///
-/// <b>Arena Architecture:</b>
-/// The drone discovers its <see cref="TrainingArena"/> via parent hierarchy lookup,
-/// enabling multiple arena instances with isolated curriculum management.
+/// Arena Architecture:
+/// The drone discovers its TrainingArena via GetComponentInParent, enabling
+/// multiple arena instances with isolated curriculum management.
 /// </summary>
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(DroneAerodynamics))]
@@ -45,31 +46,37 @@ public abstract class DroneMLAgentBase : Agent
     [Tooltip("Absolute maximum thrust a single motor can produce in Newtons.")]
     [SerializeField] protected float maxThrustPerMotor = 5f;
 
+    // Rigidbody -- used by subclasses to apply forces.
     protected Rigidbody rb;
-    protected Vector3 startPosition;
-    protected Quaternion startRotation;
-    /// <summary>Actual spawn position of the drone at the start of the current episode (post-reposition). Used as the proximity reward baseline.</summary>
-    protected Vector3 episodeStartPosition;
-    protected Keyboard keyboard;
-    /// <summary>Max distance from the target allowed before the episode is terminated. Set by <see cref="ITrainingArena.SetupEpisode"/> each episode.</summary>
-    protected float maxEpisodeDistance;
-    /// <summary><c>true</c> once the drone has touched down on the target pad; gates the touchdown countdown.</summary>
-    protected bool hasLanded;
-    /// <summary>Countdown (seconds) remaining after landing before the episode is ended as a success. Starts at <see cref="touchdownDelay"/>.</summary>
-    protected float touchdownTimer;
-    protected ITrainingArena arena;
-    protected DroneObserver observer;
-    protected DroneRewardManager rewardEvaluator;
-    protected DroneTelemetry telemetry;
 
-    protected readonly float[] _previousActions     = new float[4];
+    // Action buffers -- subclasses MUST write _currentActionsBuffer before calling
+    // ApplyStandardRewards so smoothness / energy rewards are computed correctly.
+    protected readonly float[] _previousActions      = new float[4];
     protected readonly float[] _currentActionsBuffer = new float[4];
 
-    /// <summary>Convenience accessor — delegates to <see cref="TrainingArena.Target"/>.</summary>
-    protected Transform target => arena?.Target;
+    // Private state -- not exposed to subclasses; access via protected helpers only.
+    private Vector3            _startPosition;
+    private Quaternion         _startRotation;
+    private Vector3            _episodeStartPosition;
+    private float              _maxEpisodeDistance;
+    private bool               _hasLanded;
+    private float              _touchdownTimer;
+    private ITrainingArena     _arena;
+    private DroneObserver      _observer;
+    private DroneRewardManager _rewardEvaluator;
+    private DroneTelemetry     _telemetry;
 
     /// <summary>
-    /// Clears the shared action buffers. Call at the start of every episode in subclasses.
+    /// Convenience accessor for the target transform in this arena.
+    /// All positional math uses local-space coordinates: always pass
+    /// <c>target.localPosition</c>, never <c>target.position</c>, to
+    /// observers or reward helpers.
+    /// </summary>
+    protected Transform target => _arena?.Target;
+
+    /// <summary>
+    /// Clears the shared action buffers. Call at the start of every episode
+    /// to prevent stale values bleeding into the first-step reward computation.
     /// </summary>
     protected void ClearActionBuffers()
     {
@@ -81,16 +88,14 @@ public abstract class DroneMLAgentBase : Agent
     {
         rb = GetComponent<Rigidbody>();
 
-        // Physics configuration (mass, gravity, damping) is owned by DroneAerodynamics
+        // Physics configuration (mass, gravity, damping) is owned by DroneAerodynamics.
         GetComponent<DroneAerodynamics>().InitialisePhysics();
 
-        startPosition = transform.localPosition;
-        startRotation = transform.localRotation;
-        keyboard = Keyboard.current;
+        _startPosition = transform.localPosition;
+        _startRotation = transform.localRotation;
 
-        // Discover training arena in parent hierarchy (arena-centric architecture).
-        // GetComponentInParent does not support interfaces, so we retrieve the concrete
-        // TrainingArena and store it via the ITrainingArena interface for loose coupling.
+        // Discover the training arena via parent hierarchy.
+        // Retrieve the concrete TrainingArena, then store via ITrainingArena for loose coupling.
         TrainingArena concreteArena = GetComponentInParent<TrainingArena>();
         if (concreteArena == null)
         {
@@ -100,40 +105,40 @@ public abstract class DroneMLAgentBase : Agent
         else
         {
             concreteArena.Initialise();
-            arena = concreteArena;
+            _arena = concreteArena;
         }
 
-        observer = GetComponent<DroneObserver>();
-        observer.Initialise();
+        _observer = GetComponent<DroneObserver>();
+        _observer.Initialise();
 
-        rewardEvaluator = GetComponent<DroneRewardManager>();
-        rewardEvaluator.Initialise();
-        rewardEvaluator.Configure(rewardProfile);
+        _rewardEvaluator = GetComponent<DroneRewardManager>();
+        _rewardEvaluator.Initialise();
+        _rewardEvaluator.Configure(rewardProfile);
 
-        telemetry = GetComponent<DroneTelemetry>();
+        _telemetry = GetComponent<DroneTelemetry>();
     }
 
     public override void OnEpisodeBegin()
     {
         ResetPhysics();
-        rewardEvaluator.ResetEpisode();
+        _rewardEvaluator.ResetEpisode();
 
-        if (arena != null)
+        if (_arena != null)
         {
-            maxEpisodeDistance = arena.SetupEpisode(transform, startPosition, startRotation);
-            telemetry.OnNewEpisode(arena.CurrentLessonIndex);
+            _maxEpisodeDistance = _arena.SetupEpisode(transform, _startPosition, _startRotation);
+            _telemetry.OnNewEpisode(_arena.CurrentLessonIndex);
         }
         else
         {
-            // Fallback for missing arena
-            maxEpisodeDistance = 10f;
-            transform.localPosition = startPosition;
-            transform.localRotation = startRotation;
-            telemetry.OnNewEpisode(0);
+            // Fallback: keeps the agent functional when no arena is wired up (quick scene tests).
+            _maxEpisodeDistance = 10f;
+            transform.localPosition = _startPosition;
+            transform.localRotation = _startRotation;
+            _telemetry.OnNewEpisode(0);
         }
 
-        // Capture the actual post-reposition spawn location for proximity reward baseline
-        episodeStartPosition = transform.localPosition;
+        // Capture the actual post-reposition spawn location for the proximity reward baseline.
+        _episodeStartPosition = transform.localPosition;
 
         if (target == null)
         {
@@ -141,37 +146,37 @@ public abstract class DroneMLAgentBase : Agent
             return;
         }
 
-        // Calibrate the observer's two-dial meters to this episode's start distances
-        observer.StartEpisode(transform.localPosition, target.localPosition);
+        // Calibrate the observer progress meters to this episode start distances.
+        _observer.StartEpisode(transform.localPosition, target.localPosition);
     }
 
     /// <summary>
-    /// Zeroes velocity / angular velocity and resets the touchdown state.
-    /// Called at the start of every episode before the arena
-    /// repositions the drone.
+    /// Zeroes velocity / angular velocity and resets touchdown state.
+    /// Called at the start of every episode before the arena repositions the drone.
     /// </summary>
     protected void ResetPhysics()
     {
-        rb.linearVelocity = Vector3.zero;
+        rb.linearVelocity  = Vector3.zero;
         rb.angularVelocity = Vector3.zero;
-        hasLanded = false;
-        touchdownTimer = 0f;
+        _hasLanded      = false;
+        _touchdownTimer = 0f;
     }
 
     public override void CollectObservations(VectorSensor sensor)
     {
-        Vector3 targetPos = target != null ? target.localPosition : startPosition;
-        observer.Collect(sensor, targetPos);
+        // Use local-space target position -- all arena coordinates are local.
+        Vector3 targetPos = target != null ? target.localPosition : _startPosition;
+        _observer.Collect(sensor, targetPos);
     }
 
     protected virtual void FixedUpdate()
     {
-        if (hasLanded)
+        if (_hasLanded)
         {
-            touchdownTimer -= Time.fixedDeltaTime;
-            if (touchdownTimer <= 0f)
+            _touchdownTimer -= Time.fixedDeltaTime;
+            if (_touchdownTimer <= 0f)
             {
-                telemetry.FlushEpisode(EpisodeOutcome.Success_TargetReached);
+                _telemetry.FlushEpisode(EpisodeOutcome.Success_TargetReached);
                 EndEpisode();
                 return;
             }
@@ -180,55 +185,60 @@ public abstract class DroneMLAgentBase : Agent
 
     protected virtual void OnCollisionEnter(Collision collision)
     {
-        var result = rewardEvaluator.EvaluateCollision(rewardProfile, collision.transform, target, hasLanded);
+        var result = _rewardEvaluator.EvaluateCollision(rewardProfile, collision.transform, target, _hasLanded);
 
         switch (result.Kind)
         {
             case DroneRewardManager.CollisionKind.Landing:
-                hasLanded = true;
-                touchdownTimer = touchdownDelay;
+                _hasLanded      = true;
+                _touchdownTimer = touchdownDelay;
                 AddReward(result.Reward);
                 break;
 
             case DroneRewardManager.CollisionKind.Crash:
                 SetReward(result.Reward);
-                telemetry.FlushEpisode(EpisodeOutcome.Crash);
+                _telemetry.FlushEpisode(EpisodeOutcome.Crash);
                 EndEpisode();
                 break;
 
-            // CollisionKind.None: already landed, ignore
+            // CollisionKind.None: already landed -- ignore subsequent collisions.
         }
     }
 
     /// <summary>
-    /// Delegates to <see cref="DroneRewardManager"/> for terminal checks and
-    /// per-step reward computation, then forwards results to <see cref="DroneTelemetry"/>.
-    /// Call this at the end of <see cref="Agent.OnActionReceived"/> after applying forces.
+    /// Delegates to DroneRewardManager for terminal checks and per-step rewards,
+    /// then forwards results to DroneTelemetry.
+    /// Call at the end of OnActionReceived after all forces have been applied.
     /// </summary>
-    /// <param name="currentActions">Continuous actions issued this step (smoothness + energy fallback).</param>
-    /// <param name="previousActions">Actions from the previous step; updated in-place after smoothness is computed.</param>
-    /// </param>
-
-    /// <returns><c>true</c> if the episode was terminated; the caller must return immediately.</returns>
+    /// <remarks>
+    /// Contract for subclasses: populate <see cref="_currentActionsBuffer"/> with
+    /// the raw action value for each motor before calling this method.  The base
+    /// class uses it to compute smoothness (difference from previous step) and,
+    /// as a fallback when <paramref name="energyValues"/> is null, energy penalty.
+    /// </remarks>
+    /// <param name="currentActions">Continuous actions issued this step.</param>
+    /// <param name="previousActions">Actions from the previous step; updated in-place.</param>
+    /// <param name="energyValues">Per-motor normalised thrust for energy penalty. Falls back to currentActions when null.</param>
+    /// <returns><c>true</c> if the episode was terminated; caller must return immediately.</returns>
     protected bool ApplyStandardRewards(float[] currentActions, float[] previousActions, float[] energyValues = null)
     {
         if (rewardProfile == null)
         {
-            Debug.LogWarning($"[{name}] rewardProfile is not assigned — skipping standard rewards.", this);
+            Debug.LogWarning($"[{name}] rewardProfile is not assigned -- skipping standard rewards.", this);
             return false;
         }
 
-        Vector3 targetPos = DroneRewardMath.ResolveTargetPosition(target, episodeStartPosition);
+        Vector3 targetPos = DroneRewardMath.ResolveTargetPosition(target, _episodeStartPosition);
 
-        var result = rewardEvaluator.Evaluate(
-            rewardProfile, targetPos, episodeStartPosition,
-            maxEpisodeDistance,
+        var result = _rewardEvaluator.Evaluate(
+            rewardProfile, targetPos, _episodeStartPosition,
+            _maxEpisodeDistance,
             currentActions, previousActions, energyValues);
 
         if (result.IsTerminal)
         {
             SetReward(result.TerminalReward);
-            telemetry.FlushEpisode(result.Outcome);
+            _telemetry.FlushEpisode(result.Outcome);
             EndEpisode();
             return true;
         }
@@ -237,8 +247,7 @@ public abstract class DroneMLAgentBase : Agent
             Mathf.Min(currentActions.Length, previousActions.Length));
 
         AddReward(result.StepRewards.Total);
-        telemetry.Record(result.StepRewards);
-
+        _telemetry.Record(result.StepRewards);
         return false;
     }
 }

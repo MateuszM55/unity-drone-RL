@@ -1,51 +1,58 @@
-using Unity.MLAgents;
-using Unity.MLAgents.Actuators;
+﻿using Unity.MLAgents.Actuators;
 using Unity.MLAgents.Sensors;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 /// <summary>
 /// Incremental drone ML-Agent that models ESC and motor spool-up inertia.
-/// Instead of setting absolute thrust, the network outputs the *rate of change* (acceleration) of the rotors.
-/// 
+/// Instead of setting absolute thrust, the network outputs the rate of change
+/// (delta) of each rotor thrust per physics step.
+///
 /// ACTION SPACE (4 Continuous Actions in [-1, 1]):
-///   Action 0-3 → Rate of change for motors FL, FR, RL, RR
-/// 
+///   Action 0-3 -- delta thrust rate for motors FL, FR, RL, RR
+///
 /// OBSERVATION SPACE (25 floats):
-///   - Environmental Observations via DroneObserver (17)
-///   - Current normalized thrust of each motor (4)
-///   - Previous action commands (4)
+///   From DroneObserver base (17 floats):
+///     [0-2]  Local unit direction to target (body frame)
+///     [3]    Signed horizontal progress  (0 at spawn, ~+1 at target, negative when drifting away)
+///     [4]    Vertical error meter
+///     [5-7]  Linear velocity (body frame)
+///     [8-10] Angular velocity (body frame)
+///     [11-13] Orientation forward (world frame)
+///     [14-16] Orientation up (world frame)
+///   Proprioception -- interleaved per motor (8 floats):
+///     [17] Motor 0 normalised thrust, [18] Motor 0 previous delta
+///     [19] Motor 1 normalised thrust, [20] Motor 1 previous delta
+///     [21] Motor 2 normalised thrust, [22] Motor 2 previous delta
+///     [23] Motor 3 normalised thrust, [24] Motor 3 previous delta
 /// </summary>
-public class DroneIncrementalML_Agent : DroneMLAgentBase
+public class DroneIncrementalMLAgent : DroneMLAgentBase
 {
     [Header("Realistic Motor Physics")]
     [Tooltip("Time in seconds for a motor to spool up from 0 to 100% thrust.")]
     [SerializeField] private float timeToMaxThrust = 0.1f;
-    // rotorTransforms, maxThrustPerMotor, _previousActions, _currentActionsBuffer are inherited from DroneMLAgentBase.
 
     private readonly float[] _currentThrusts    = new float[4];
     private readonly float[] _normalizedThrusts = new float[4];
 
-    private float _maxThrustChangePerStep;
+    private Keyboard _keyboard;
 
     public override void Initialize()
     {
         base.Initialize();
-
-        // Calculate how much the thrust can physically change in a single FixedUpdate step
-        // e.g., if maxThrust is 5, timeToMax is 0.1s, and fixedDeltaTime is 0.02s:
-        // maxChange = 5 * (0.02 / 0.1) = 1.0 Newton per step.
-        _maxThrustChangePerStep = maxThrustPerMotor * (Time.fixedDeltaTime / timeToMaxThrust);
+        _keyboard = Keyboard.current;
     }
 
     public override void CollectObservations(VectorSensor sensor)
     {
-        base.CollectObservations(sensor); // 17 floats from base
+        base.CollectObservations(sensor); // 17 floats from DroneObserver
 
-        // Proprioception: The agent MUST know its current RPM/Thrust state
+        // Proprioception: interleaved normalised thrust + previous delta per motor (8 floats).
+        // Layout: [normalizedThrust_i, previousDelta_i] for i in 0..3
         for (int i = 0; i < 4; i++)
         {
-            sensor.AddObservation(_currentThrusts[i] / maxThrustPerMotor); // Normalized current thrust [0, 1] (4 floats)
-            sensor.AddObservation(_previousActions[i]);                    // Previous delta commands [-1, 1] (4 floats)
+            sensor.AddObservation(_currentThrusts[i] / maxThrustPerMotor); // [0, 1]
+            sensor.AddObservation(_previousActions[i]);                    // [-1, 1]
         }
     }
 
@@ -60,35 +67,41 @@ public class DroneIncrementalML_Agent : DroneMLAgentBase
     {
         if (rotorTransforms == null || rotorTransforms.Length != 4) return;
 
-        // Integrate delta commands into physical thrust, apply forces, and populate reward buffers
+        // Compute per-step max thrust change from the spool-up model.
+        // Computed here (not cached) so it stays correct if fixedDeltaTime changes.
+        float maxThrustChangePerStep = maxThrustPerMotor * (Time.fixedDeltaTime / timeToMaxThrust);
+
         for (int i = 0; i < 4; i++)
         {
-            float requestedChange = actions.ContinuousActions[i] * _maxThrustChangePerStep;
+            if (rotorTransforms[i] == null)
+            {
+                Debug.LogWarning($"[{name}] rotorTransforms[{i}] is null -- run DroneGenerator to rebuild the model.", this);
+                return;
+            }
 
-            // Integrate and clamp to physical limits [0, maxThrust]
+            float requestedChange = actions.ContinuousActions[i] * maxThrustChangePerStep;
+
+            // Integrate delta and clamp to physical limits [0, maxThrust].
             _currentThrusts[i] = Mathf.Clamp(_currentThrusts[i] + requestedChange, 0f, maxThrustPerMotor);
 
-            // Apply force
             rb.AddForceAtPosition(transform.up * _currentThrusts[i], rotorTransforms[i].position);
 
-            // Populate reward buffers: raw delta commands (smoothness) and normalised thrusts (energy)
             _currentActionsBuffer[i] = actions.ContinuousActions[i];
             _normalizedThrusts[i]    = _currentThrusts[i] / maxThrustPerMotor;
         }
 
-        // Terminal checks, shaping, TensorBoard, debug strings
         ApplyStandardRewards(_currentActionsBuffer, _previousActions, _normalizedThrusts);
     }
 
     public override void Heuristic(in ActionBuffers actionsOut)
     {
-        var ca = actionsOut.ContinuousActions;
-        if (keyboard == null) return;
+        if (_keyboard == null) return;
 
-        // Positive pushes thrust up, negative pushes thrust down. Zero holds current thrust.
-        ca[0] = keyboard.digit1Key.isPressed ? 1f : (keyboard.qKey.isPressed ? -1f : 0f);
-        ca[1] = keyboard.digit2Key.isPressed ? 1f : (keyboard.wKey.isPressed ? -1f : 0f);
-        ca[2] = keyboard.digit3Key.isPressed ? 1f : (keyboard.eKey.isPressed ? -1f : 0f);
-        ca[3] = keyboard.digit4Key.isPressed ? 1f : (keyboard.rKey.isPressed ? -1f : 0f);
+        var ca = actionsOut.ContinuousActions;
+        // Positive = spool up, negative = spool down, zero = hold current thrust.
+        ca[0] = _keyboard.digit1Key.isPressed ? 1f : (_keyboard.qKey.isPressed ? -1f : 0f);
+        ca[1] = _keyboard.digit2Key.isPressed ? 1f : (_keyboard.wKey.isPressed ? -1f : 0f);
+        ca[2] = _keyboard.digit3Key.isPressed ? 1f : (_keyboard.eKey.isPressed ? -1f : 0f);
+        ca[3] = _keyboard.digit4Key.isPressed ? 1f : (_keyboard.rKey.isPressed ? -1f : 0f);
     }
 }
