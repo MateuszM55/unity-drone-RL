@@ -212,13 +212,13 @@ public class ArenaManager : MonoBehaviour
     {
         if (arenaPrefab == null) return;
 
-        Gizmos.color = new Color(0f, 1f, 0.5f, 0.3f);
+        Gizmos.color = new Color(0f, 1f, 0.5f, 0.8f);
 
         for (int i = 0; i < numberOfArenas; i++)
         {
             Vector3 pos = CalculateGridPosition(i);
-            Gizmos.DrawWireCube(pos, new Vector3(arenaSpacing * 0.8f, 5f, arenaSpacing * 0.8f));
-            UnityEditor.Handles.Label(pos + Vector3.up * 3f, $"Arena {i}");
+            Gizmos.DrawSphere(pos, 1f);
+            UnityEditor.Handles.Label(pos + Vector3.up * 2f, $"Arena {i}");
         }
     }
 #endif
