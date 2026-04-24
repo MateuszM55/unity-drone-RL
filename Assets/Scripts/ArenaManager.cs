@@ -184,7 +184,7 @@ public class ArenaManager : MonoBehaviour
         // Number of columns in the last (possibly partial) row determines total width.
         int columnsInGrid = Mathf.Min(numberOfArenas, arenasPerRow);
 
-        // Cast to float before dividing to preserve fractional row count.
+        // Prevent integer division truncation: cast numerator to float before dividing.
         int totalRows = Mathf.CeilToInt((float)numberOfArenas / arenasPerRow);
 
         float totalWidth  = (columnsInGrid - 1) * arenaSpacing;

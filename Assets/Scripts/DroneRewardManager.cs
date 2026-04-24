@@ -16,7 +16,9 @@ using UnityEngine;
 public class DroneRewardManager : MonoBehaviour
 {
     private Rigidbody rb;
+    /// <summary>Distance to target recorded at the previous step. -1 signals "not yet set"; the first step is skipped to avoid a spurious delta.</summary>
     private float _previousDistance = -1f;
+    /// <summary>Distance to target at the start of the current episode. Used as the normaliser for <see cref="DroneRewardMath.NormalizedDeltaDistanceReward"/>. -1 before the first step.</summary>
     private float _startDistance = -1f;
     private float _maxTiltDot = 0.5f; // cos(60°) — overwritten by Configure()
 
@@ -87,7 +89,7 @@ public class DroneRewardManager : MonoBehaviour
     {
         float distanceToTarget = Vector3.Distance(transform.localPosition, targetPosition);
 
-        // --- Terminal conditions ---
+        // ── Terminal conditions ──────────────────────────────────────────
         var tilt = DroneRewardMath.CheckExcessiveTilt(
             transform.up, _maxTiltDot, profile.excessiveTiltPenalty);
         if (tilt.IsTerminal) return MakeTerminal(tilt.Reward, EpisodeOutcome.Safety_ExcessiveTilt);
@@ -96,7 +98,7 @@ public class DroneRewardManager : MonoBehaviour
             distanceToTarget, maxEpisodeDistance, profile.tooFarPenalty);
         if (tooFar.IsTerminal) return MakeTerminal(tooFar.Reward, EpisodeOutcome.Safety_BoundaryLeft);
 
-        // --- Per-step rewards ---
+        // ── Per-step rewards ─────────────────────────────────────────────
         if (_previousDistance < 0f)
             _startDistance = distanceToTarget;
 

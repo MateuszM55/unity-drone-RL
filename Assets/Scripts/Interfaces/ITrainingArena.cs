@@ -10,10 +10,9 @@ using UnityEngine;
 /// without changing the agent code.
 ///
 /// <b>Discovery:</b>
-/// Agents locate their arena via
-/// <c>GetComponentInParent&lt;ITrainingArena&gt;()</c> is not supported by Unity for
-/// interfaces, so the concrete type still participates in the hierarchy lookup;
-/// this interface is used purely as the typed reference held by the agent.
+/// Unity's <c>GetComponentInParent</c> does not support interface type parameters,
+/// so agents retrieve the concrete <see cref="TrainingArena"/> from the parent hierarchy
+/// and store it through this interface for loose coupling.
 /// </summary>
 public interface ITrainingArena
 {

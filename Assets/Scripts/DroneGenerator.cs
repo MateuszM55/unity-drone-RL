@@ -1,5 +1,19 @@
 using UnityEngine;
 
+/// <summary>
+/// Editor tool that procedurally builds the drone's visual mesh and physics colliders,
+/// then wires the generated rotor transforms back into any sibling
+/// <see cref="DroneSimpleML_Agent"/> or <see cref="DroneIncrementalML_Agent"/> component.
+///
+/// <b>Usage:</b> Right-click this component in the Inspector and choose
+/// <b>Generate Drone Model</b>. Existing child GameObjects are destroyed and rebuilt.
+///
+/// <b>Rotor order:</b> FL(0), FR(1), RL(2), RR(3) — matches the action-space convention
+/// used by all <see cref="DroneMLAgentBase"/> subclasses.
+///
+/// All generation and rotor-linking logic is Editor-only; the component has no runtime
+/// behaviour.
+/// </summary>
 public class DroneGenerator : MonoBehaviour
 {
     [Header("Dimensions")]
@@ -49,7 +63,9 @@ public class DroneGenerator : MonoBehaviour
         newRotors[2] = CreateRotor("Rotor_RL", new Vector3(-xDist, yPos, -zDist), rearRotorColor);
         newRotors[3] = CreateRotor("Rotor_RR", new Vector3(xDist, yPos, -zDist), rearRotorColor);
 
-        // Link rotor transforms to controllers via serialized properties
+        // Write the rotor transforms back into the sibling agent's serialised field.
+        // SerializedObject is required because the field is [SerializeField] private —
+        // direct assignment is not possible from an Editor context outside the class.
 #if UNITY_EDITOR
         LinkRotors<DroneSimpleML_Agent>(newRotors, "rotorTransforms");
         LinkRotors<DroneIncrementalML_Agent>(newRotors, "rotorTransforms");

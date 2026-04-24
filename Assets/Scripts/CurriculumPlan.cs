@@ -9,7 +9,7 @@ using UnityEngine;
 /// <b>Usage:</b>
 /// 1. Create via Assets → Create → Drone → Curriculum Plan
 /// 2. Add <see cref="LessonProfile"/> assets to the <see cref="lessons"/> list in order
-/// 3. Assign to all <see cref="ArenaCurriculumManager"/> components (or their prefab)
+/// 3. Assign to the <see cref="TrainingArena"/> component on the arena prefab
 ///
 /// <b>Benefits of Shared Data:</b>
 /// - 100 arenas share one curriculum definition (no memory duplication)

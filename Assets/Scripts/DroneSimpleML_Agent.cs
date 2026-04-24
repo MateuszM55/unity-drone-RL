@@ -7,14 +7,14 @@ using UnityEngine;
 /// Simple drone ML-Agent that controls 4 motors individually.
 /// Each motor applies an upward force at its rotor position (AddForceAtPosition).
 ///
-/// ACTION SPACE (4 Continuous Actions in [-1, 1]):
+/// ACTION SPACE (4 Continuous Actions):
 ///   Action 0 → Motor FL thrust
 ///   Action 1 → Motor FR thrust
 ///   Action 2 → Motor RL thrust
 ///   Action 3 → Motor RR thrust
 ///
-/// ACTION MAPPING — continuous [0, 1]:
-///   [-1, 1]  →  [0, 1] thrust  (linear, preserves gradients for PPO)
+///   Input range: [-1, 1] mapped linearly to [0, 1] normalised thrust,
+///   which preserves gradients for PPO.
 ///
 /// Rotor transforms are populated automatically by <see cref="DroneGenerator"/>.
 /// </summary>

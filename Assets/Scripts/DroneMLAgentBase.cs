@@ -49,8 +49,11 @@ public abstract class DroneMLAgentBase : Agent
     protected Vector3 startPosition;
     protected Quaternion startRotation;
     protected Keyboard keyboard;
+    /// <summary>Max distance from the target allowed before the episode is terminated. Set by <see cref="ITrainingArena.SetupEpisode"/> each episode.</summary>
     protected float maxEpisodeDistance;
+    /// <summary><c>true</c> once the drone has touched down on the target pad; gates the touchdown countdown.</summary>
     protected bool hasLanded;
+    /// <summary>Countdown (seconds) remaining after landing before the episode is ended as a success. Starts at <see cref="touchdownDelay"/>.</summary>
     protected float touchdownTimer;
     protected ITrainingArena arena;
     protected DroneObserver observer;

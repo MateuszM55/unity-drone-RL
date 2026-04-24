@@ -261,25 +261,6 @@ public class HexSwissCheeseObstacleGenerator : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Destroys pool entries beyond <paramref name="maxRequired"/> to prevent unbounded growth
-    /// when <paramref name="maxRequired"/> decreases between curriculum lessons.
-    /// </summary>
-    private void TrimPool(int maxRequired)
-    {
-        for (int i = pool.Count - 1; i >= maxRequired; i--)
-        {
-            if (pool[i] != null)
-            {
-                if (Application.isPlaying)
-                    Destroy(pool[i]);
-                else
-                    DestroyImmediate(pool[i]);
-            }
-            pool.RemoveAt(i);
-        }
-    }
-
     // ── Validation ────────────────────────────────────────────────────────
 
     private void ValidateSpacingConstraint(float innerR, float outerR, float minDist, float spacing)
