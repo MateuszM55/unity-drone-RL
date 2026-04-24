@@ -34,7 +34,9 @@ using UnityEngine;
 ///
 /// <b>Lesson-Index Strategy:</b>
 /// By default the arena reads the lesson parameter from the ML-Agents Academy (AcademyLessonIndexProvider).
-/// Call SetLessonIndexProvider to swap in a ManualLessonIndexProvider for Editor preview or unit tests.
+/// Enable <b>Use Manual Lesson Preview</b> in the Inspector to lock the arena to a specific lesson
+/// during Play mode — useful for testing obstacle layouts and reward shaping without a full training run.
+/// Call SetLessonIndexProvider to override programmatically from code or unit tests.
 /// </summary>
 [DisallowMultipleComponent]
 public class TrainingArena : MonoBehaviour, ITrainingArena
@@ -61,9 +63,14 @@ public class TrainingArena : MonoBehaviour, ITrainingArena
     [Tooltip("Obstacle generator for this arena (optional).")]
     [SerializeField] private HexSwissCheeseObstacleGenerator obstacleGenerator;
 
-    [Header("Editor Preview")]
-    [Tooltip("Lesson index visualised by the Scene-view gizmo (spawn-radius ring). Does not affect training. Call SetLessonIndexProvider(new ManualLessonIndexProvider(n)) to preview a lesson at runtime.")]
-    [SerializeField, Min(0)] private int gizmoPreviewLessonIndex;
+    [Header("Play-Mode Lesson Preview")]
+    [Tooltip("When enabled, ignores the ML-Agents Academy curriculum parameter and locks this arena " +
+             "to Manual Lesson Index for the entire Play session. Useful for testing obstacle layouts " +
+             "and reward shaping. Has no effect during headless training.")]
+    [SerializeField] private bool useManualLessonPreview;
+
+    [Tooltip("Lesson index used when Use Manual Lesson Preview is enabled.")]
+    [SerializeField, Min(0)] private int manualLessonIndex;
 
     // ========================================================================
     // PRIVATE STATE
@@ -74,7 +81,8 @@ public class TrainingArena : MonoBehaviour, ITrainingArena
     /// <summary>
     /// Determines how the current lesson index is resolved at the start of each episode.
     /// Defaults to <see cref="AcademyLessonIndexProvider"/>.
-    /// Override via <see cref="SetLessonIndexProvider"/> for Editor preview or unit tests.
+    /// Set to <see cref="ManualLessonIndexProvider"/> when <see cref="useManualLessonPreview"/> is enabled,
+    /// or override via <see cref="SetLessonIndexProvider"/> for programmatic control.
     /// </summary>
     private ILessonIndexProvider _lessonIndexProvider;
 
@@ -133,9 +141,16 @@ public class TrainingArena : MonoBehaviour, ITrainingArena
         if (_isInitialised) return;
         _isInitialised = true;
 
-        // Honour any externally-supplied provider first; fall back to the live Academy provider.
+        // Priority: externally-supplied provider > Inspector manual-preview toggle > live Academy.
         if (_lessonIndexProvider == null)
-            _lessonIndexProvider = new AcademyLessonIndexProvider();
+        {
+            _lessonIndexProvider = useManualLessonPreview
+                ? (ILessonIndexProvider)new ManualLessonIndexProvider(manualLessonIndex)
+                : new AcademyLessonIndexProvider();
+
+            if (useManualLessonPreview)
+                Debug.Log($"[TrainingArena {arenaId}] Manual lesson preview active — locked to lesson {manualLessonIndex}.", this);
+        }
 
         DiscoverComponents();
 
@@ -280,10 +295,6 @@ public class TrainingArena : MonoBehaviour, ITrainingArena
 
     private void OnDrawGizmosSelected()
     {
-        // Arena bounds
-        Gizmos.color = new Color(0f, 0.8f, 1f, 0.3f);
-        Gizmos.DrawWireCube(transform.position, new Vector3(40f, 10f, 40f));
-
         // Target marker
         if (target != null)
         {
@@ -298,13 +309,15 @@ public class TrainingArena : MonoBehaviour, ITrainingArena
             Gizmos.DrawWireSphere(agent.transform.position, 0.5f);
         }
 
-        // Spawn-radius ring for the previewed lesson
+        // Spawn-radius ring: manual index when preview is on,
+        // current lesson during Play, lesson 0 in Edit mode.
         if (target != null && curriculumPlan != null && curriculumPlan.LessonCount > 0)
         {
-            LessonProfile profile = curriculumPlan.GetLessonClamped(gizmoPreviewLessonIndex, out _);
+            int drawIndex = useManualLessonPreview
+                ? manualLessonIndex
+                : (Application.isPlaying ? CurrentLessonIndex : 0);
+            LessonProfile profile = curriculumPlan.GetLessonClamped(drawIndex, out _);
 
-            // Use public properties (SpawnRadius, SpawnHeight) -- the private backing
-            // fields are inaccessible from outside LessonProfile.
             if (profile != null && profile.SpawnRadius > 0f)
             {
                 Gizmos.color = new Color(0f, 1f, 1f, 0.3f);
