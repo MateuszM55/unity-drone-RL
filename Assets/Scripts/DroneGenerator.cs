@@ -67,7 +67,7 @@ public class DroneGenerator : MonoBehaviour
         // SerializedObject is required because the field is [SerializeField] private —
         // direct assignment is not possible from an Editor context outside the class.
 #if UNITY_EDITOR
-        LinkRotors<DroneSimpleML_Agent>(newRotors, "rotorTransforms");
+
         LinkRotors<DroneIncrementalML_Agent>(newRotors, "rotorTransforms");
 #endif
     }
