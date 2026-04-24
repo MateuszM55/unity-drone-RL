@@ -5,8 +5,9 @@ using UnityEngine;
 
 /// <summary>
 /// A <see cref="SensorComponent"/> that creates a <see cref="SixAxisSensor"/>.
-/// Provides 5 orthogonal proximity rays (Up, Down, Left, Right, Back) using
+/// Provides up to 6 orthogonal proximity rays (Up, Down, Left, Right, Back, Forward) using
 /// volumetric SphereCasts and linear inverse-distance observations.
+/// Individual rays can be toggled via the Inspector.
 ///
 /// Mimics ultrasonic / infrared proximity sensors on commercial drones.
 /// Attach to the same GameObject as the drone agent.
@@ -33,7 +34,7 @@ public class SixAxisSensorComponent : SensorComponent, IDisposable
 
     [SerializeField]
     [Tooltip("Physics layers the rays can hit.")]
-    LayerMask m_RayLayerMask = -5;
+    LayerMask m_RayLayerMask = -5; // -5 == Physics.DefaultRaycastLayers == ~(1 << 2), excludes IgnoreRaycast
 
     [Header("Layer Detection")]
     [SerializeField]
@@ -42,7 +43,7 @@ public class SixAxisSensorComponent : SensorComponent, IDisposable
 
     [Header("Ray Toggles")]
     [SerializeField]
-    [Tooltip("Enable or disable each individual ray. Order: Up, Down, Left, Right, Back.")]
+    [Tooltip("Enable or disable each individual ray. Order: Up, Down, Left, Right, Back, Forward.")]
     bool[] m_RayEnabled = { true, true, true, true, true, true };
 
     [Header("Debug Gizmos")]
@@ -76,13 +77,23 @@ public class SixAxisSensorComponent : SensorComponent, IDisposable
     /// <inheritdoc/>
     public override ISensor[] CreateSensors()
     {
+        // Dispose any previously created sensor first.
+        // The Editor validation path can call CreateSensors() repeatedly without ever
+        // calling Dispose(), which would leak NativeArray persistent allocations.
         Dispose();
 
         var layerIndices = new int[m_DetectableLayers.Count];
         for (int i = 0; i < m_DetectableLayers.Count; i++)
-            layerIndices[i] = LayerMask.NameToLayer(m_DetectableLayers[i]);
+        {
+            int idx = LayerMask.NameToLayer(m_DetectableLayers[i]);
+            if (idx < 0)
+                Debug.LogWarning(
+                    $"[{nameof(SixAxisSensorComponent)}] Detectable layer '{m_DetectableLayers[i]}' " +
+                    "was not found. One-hot encoding for this slot will always be 0.", this);
+            layerIndices[i] = idx;
+        }
 
-        // Ensure the toggle array is always exactly 5 elements
+        // Ensure the toggle array is always exactly 6 elements (one per axis direction).
         if (m_RayEnabled == null || m_RayEnabled.Length != 6)
         {
             var fixed6 = new bool[6];
@@ -114,6 +125,22 @@ public class SixAxisSensorComponent : SensorComponent, IDisposable
         {
             m_Sensor.Dispose();
             m_Sensor = null;
+        }
+    }
+
+    void OnValidate()
+    {
+        if (m_DetectableLayers == null) return;
+        var seen = new System.Collections.Generic.HashSet<string>();
+        foreach (string layerName in m_DetectableLayers)
+        {
+            if (string.IsNullOrEmpty(layerName)) continue;
+            if (LayerMask.NameToLayer(layerName) < 0)
+                Debug.LogWarning(
+                    $"[{nameof(SixAxisSensorComponent)}] Detectable layer '{layerName}' does not exist.", this);
+            if (!seen.Add(layerName))
+                Debug.LogWarning(
+                    $"[{nameof(SixAxisSensorComponent)}] Detectable layer '{layerName}' is listed more than once.", this);
         }
     }
 

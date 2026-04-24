@@ -4,6 +4,7 @@ using Unity.Jobs;
 using Unity.MLAgents.Sensors;
 using UnityEngine;
 
+
 /// <summary>
 /// ISensor that casts 6 sphere-rays in a full orthogonal pattern
 /// (Up, Down, Left, Right, Back, Forward) for proximity safety around the drone.
@@ -53,6 +54,11 @@ public sealed class SixAxisSensor : ISensor, IDisposable
     JobHandle m_PendingHandle;
     bool m_HasPendingJob;
 
+    // True once ProcessHits has run at least once this sensor lifetime.
+    // Prevents Write() returning a stale all-zero buffer on the very first
+    // call before Update() has had a chance to schedule a cast.
+    bool m_Initialized;
+
     /// <summary>Local-space ray directions (for Gizmo drawing).</summary>
     internal Vector3[] RayDirections => m_ActiveDirections;
 
@@ -89,16 +95,20 @@ public sealed class SixAxisSensor : ISensor, IDisposable
         m_LayerMask = layerMask;
         m_Transform = transform;
 
-        // Build active directions from the enabled mask
-        var activeDirs = new System.Collections.Generic.List<Vector3>(RayCount);
+        // Build active directions from the enabled mask using a fixed array + counter
+        // to avoid the List<T> + ToArray() double allocation.
+        var activeDirs = new Vector3[s_AllDirections.Length];
+        int activeCount = 0;
         for (int i = 0; i < s_AllDirections.Length; i++)
         {
             bool enabled = rayEnabled == null || i >= rayEnabled.Length || rayEnabled[i];
             if (enabled)
-                activeDirs.Add(s_AllDirections[i]);
+                activeDirs[activeCount++] = s_AllDirections[i];
         }
-        m_ActiveDirections = activeDirs.ToArray();
-        m_ActiveRayCount = m_ActiveDirections.Length;
+        // Trim to the exact count actually used.
+        m_ActiveDirections = new Vector3[activeCount];
+        Array.Copy(activeDirs, m_ActiveDirections, activeCount);
+        m_ActiveRayCount = activeCount;
 
         m_FloatsPerRay = 1 + m_DetectableLayers.Length;
         m_ObservationSize = m_ActiveRayCount * m_FloatsPerRay;
@@ -123,6 +133,16 @@ public sealed class SixAxisSensor : ISensor, IDisposable
     {
         if (m_HasPendingJob)
         {
+            m_PendingHandle.Complete();
+            m_HasPendingJob = false;
+            ProcessHits();
+        }
+        else if (!m_Initialized && m_Transform != null)
+        {
+            // ML-Agents may call Write() before the first Update() (e.g. at episode start).
+            // Schedule and immediately complete a synchronous cast so the buffer is not
+            // emitted as all-zeros, which would look identical to a fully clear scene.
+            ScheduleCasts();
             m_PendingHandle.Complete();
             m_HasPendingJob = false;
             ProcessHits();
@@ -186,32 +206,15 @@ public sealed class SixAxisSensor : ISensor, IDisposable
 
     void ProcessHits()
     {
-        for (int i = 0; i < m_ActiveRayCount; i++)
-        {
-            int baseIdx = i * m_FloatsPerRay;
-            var hit = m_CastHits[i];
-            bool hasHit = hit.collider != null;
+        SensorProcessing.ProcessHits(
+            m_CastHits,
+            m_ActiveRayCount,
+            m_FloatsPerRay,
+            m_DetectableLayers,
+            m_RayLength,
+            m_Observations);
 
-            // Linear inverse distance: 1.0 = touching, 0.0 = clear (max range)
-            m_Observations[baseIdx] = hasHit ? 1f - (hit.distance / m_RayLength) : 0f;
-
-            // One-hot layer encoding
-            for (int t = 0; t < m_DetectableLayers.Length; t++)
-                m_Observations[baseIdx + 1 + t] = 0f;
-
-            if (hasHit)
-            {
-                int hitLayer = hit.collider.gameObject.layer;
-                for (int t = 0; t < m_DetectableLayers.Length; t++)
-                {
-                    if (hitLayer == m_DetectableLayers[t])
-                    {
-                        m_Observations[baseIdx + 1 + t] = 1f;
-                        break;
-                    }
-                }
-            }
-        }
+        m_Initialized = true;
     }
 
     // ──────────────────────────────────────────────

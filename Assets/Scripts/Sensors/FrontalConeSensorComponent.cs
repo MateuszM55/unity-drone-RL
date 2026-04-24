@@ -40,7 +40,7 @@ public class FrontalConeSensorComponent : SensorComponent, IDisposable
 
     [SerializeField]
     [Tooltip("Physics layers the rays can hit.")]
-    LayerMask m_RayLayerMask = -5;
+    LayerMask m_RayLayerMask = -5; // -5 == Physics.DefaultRaycastLayers == ~(1 << 2), excludes IgnoreRaycast
 
     [Header("Layer Detection")]
     [SerializeField]
@@ -79,11 +79,21 @@ public class FrontalConeSensorComponent : SensorComponent, IDisposable
     /// <inheritdoc/>
     public override ISensor[] CreateSensors()
     {
+        // Dispose any previously created sensor first.
+        // The Editor validation path can call CreateSensors() repeatedly without ever
+        // calling Dispose(), which would leak NativeArray persistent allocations.
         Dispose();
 
         var layerIndices = new int[m_DetectableLayers.Count];
         for (int i = 0; i < m_DetectableLayers.Count; i++)
-            layerIndices[i] = LayerMask.NameToLayer(m_DetectableLayers[i]);
+        {
+            int idx = LayerMask.NameToLayer(m_DetectableLayers[i]);
+            if (idx < 0)
+                Debug.LogWarning(
+                    $"[{nameof(FrontalConeSensorComponent)}] Detectable layer '{m_DetectableLayers[i]}' " +
+                    "was not found. One-hot encoding for this slot will always be 0.", this);
+            layerIndices[i] = idx;
+        }
 
         m_Sensor = new FrontalConeSensor(
             m_SensorName,
@@ -109,6 +119,22 @@ public class FrontalConeSensorComponent : SensorComponent, IDisposable
         {
             m_Sensor.Dispose();
             m_Sensor = null;
+        }
+    }
+
+    void OnValidate()
+    {
+        if (m_DetectableLayers == null) return;
+        var seen = new System.Collections.Generic.HashSet<string>();
+        foreach (string layerName in m_DetectableLayers)
+        {
+            if (string.IsNullOrEmpty(layerName)) continue;
+            if (LayerMask.NameToLayer(layerName) < 0)
+                Debug.LogWarning(
+                    $"[{nameof(FrontalConeSensorComponent)}] Detectable layer '{layerName}' does not exist.", this);
+            if (!seen.Add(layerName))
+                Debug.LogWarning(
+                    $"[{nameof(FrontalConeSensorComponent)}] Detectable layer '{layerName}' is listed more than once.", this);
         }
     }
 
@@ -158,30 +184,9 @@ public class FrontalConeSensorComponent : SensorComponent, IDisposable
         Vector3 origin = transform.position;
         Quaternion rotation = transform.rotation * Quaternion.AngleAxis(-m_TiltAngle, Vector3.right);
 
-        // Reconstruct the 13 directions for preview
-        float halfAngle = m_ConeHalfAngle;
-
-        // Center
-        Vector3[] dirs = new Vector3[13];
-        dirs[0] = Vector3.forward;
-
-        float innerRad = (halfAngle / 3f) * Mathf.Deg2Rad;
-        float sinI = Mathf.Sin(innerRad);
-        float cosI = Mathf.Cos(innerRad);
-        for (int i = 0; i < 4; i++)
-        {
-            float az = i * Mathf.PI * 0.5f;
-            dirs[1 + i] = new Vector3(sinI * Mathf.Cos(az), sinI * Mathf.Sin(az), cosI).normalized;
-        }
-
-        float outerRad = halfAngle * Mathf.Deg2Rad;
-        float sinO = Mathf.Sin(outerRad);
-        float cosO = Mathf.Cos(outerRad);
-        for (int i = 0; i < 8; i++)
-        {
-            float az = i * Mathf.PI * 0.25f;
-            dirs[5 + i] = new Vector3(sinO * Mathf.Cos(az), sinO * Mathf.Sin(az), cosO).normalized;
-        }
+        // Re-use the sensor's own direction generator so the preview stays in sync
+        // if the cone layout ever changes (avoids the previous duplication bug).
+        Vector3[] dirs = FrontalConeSensor.GenerateConcentricConeDirections(m_ConeHalfAngle);
 
         Gizmos.color = m_RayMissColor;
         for (int i = 0; i < dirs.Length; i++)

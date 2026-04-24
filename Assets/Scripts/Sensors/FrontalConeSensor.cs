@@ -17,7 +17,6 @@ using UnityEngine;
 public sealed class FrontalConeSensor : ISensor, IDisposable
 {
     readonly string m_Name;
-    readonly int m_RayCount;
     readonly float m_RayLength;
     readonly float m_SphereRadius;
     readonly int[] m_DetectableLayers;
@@ -25,7 +24,13 @@ public sealed class FrontalConeSensor : ISensor, IDisposable
     readonly int m_ObservationSize;
     readonly LayerMask m_LayerMask;
     readonly float m_TiltAngle;
+    readonly float m_ConeHalfAngle;
     readonly ObservationSpec m_ObservationSpec;
+
+    // True once ProcessHits has run at least once this sensor lifetime.
+    // Prevents Write() returning a stale all-zero buffer on the very first
+    // call before Update() has had a chance to schedule a cast.
+    bool m_Initialized;
 
     // Pre-computed local-space ray directions (unit vectors).
     readonly Vector3[] m_RayDirections;
@@ -61,6 +66,13 @@ public sealed class FrontalConeSensor : ISensor, IDisposable
     internal int FloatsPerRay => m_FloatsPerRay;
     internal float TiltAngle => m_TiltAngle;
 
+    /// <summary>
+    /// The half-angle the cone was built with, in degrees.
+    /// Exposed so <see cref="FrontalConeSensorComponent"/> Gizmos always reflect
+    /// the value the sensor was actually constructed with.
+    /// </summary>
+    internal float ConeHalfAngle => m_ConeHalfAngle;
+
     // ──────────────────────────────────────────────
     //  Construction
     // ──────────────────────────────────────────────
@@ -76,6 +88,7 @@ public sealed class FrontalConeSensor : ISensor, IDisposable
         float tiltAngle = 0f)
     {
         m_Name = name;
+        m_ConeHalfAngle = coneHalfAngle;
         m_RayLength = rayLength;
         m_SphereRadius = sphereRadius;
         m_DetectableLayers = detectableLayers ?? Array.Empty<int>();
@@ -85,10 +98,9 @@ public sealed class FrontalConeSensor : ISensor, IDisposable
 
         // --- Generate concentric cone directions (1-4-8) ---
         m_RayDirections = GenerateConcentricConeDirections(coneHalfAngle);
-        m_RayCount = m_RayDirections.Length; // always 13
 
         m_FloatsPerRay = 1 + m_DetectableLayers.Length;
-        m_ObservationSize = m_RayCount * m_FloatsPerRay;
+        m_ObservationSize = m_RayDirections.Length * m_FloatsPerRay;
         m_ObservationSpec = ObservationSpec.Vector(m_ObservationSize);
 
         m_Observations = new float[m_ObservationSize];
@@ -107,8 +119,11 @@ public sealed class FrontalConeSensor : ISensor, IDisposable
     /// Ring 0: 1 ray dead-center (forward).
     /// Ring 1: 4 rays at 1/3 of <paramref name="halfAngle"/>.
     /// Ring 2: 8 rays at the full <paramref name="halfAngle"/>.
+    ///
+    /// Made <c>internal static</c> so <see cref="FrontalConeSensorComponent"/>
+    /// can call it from <c>DrawEditorPreviewGizmos</c> instead of duplicating the logic.
     /// </summary>
-    static Vector3[] GenerateConcentricConeDirections(float halfAngle)
+    internal static Vector3[] GenerateConcentricConeDirections(float halfAngle)
     {
         var dirs = new Vector3[13];
 
@@ -163,6 +178,16 @@ public sealed class FrontalConeSensor : ISensor, IDisposable
             m_HasPendingJob = false;
             ProcessHits();
         }
+        else if (!m_Initialized && m_Transform != null)
+        {
+            // ML-Agents may call Write() before the first Update() (e.g. at episode start).
+            // Schedule and immediately complete a synchronous cast so the buffer is not
+            // emitted as all-zeros, which would look identical to a fully clear scene.
+            ScheduleCasts();
+            m_PendingHandle.Complete();
+            m_HasPendingJob = false;
+            ProcessHits();
+        }
 
         for (int i = 0; i < m_ObservationSize; i++)
             writer[i] = m_Observations[i];
@@ -200,8 +225,8 @@ public sealed class FrontalConeSensor : ISensor, IDisposable
         // Lazy allocation: only reaches here during Play mode, never during editor validation.
         if (!m_CastCommands.IsCreated)
         {
-            m_CastCommands = new NativeArray<SpherecastCommand>(m_RayCount, Allocator.Persistent);
-            m_CastHits = new NativeArray<RaycastHit>(m_RayCount, Allocator.Persistent);
+            m_CastCommands = new NativeArray<SpherecastCommand>(m_RayDirections.Length, Allocator.Persistent);
+            m_CastHits = new NativeArray<RaycastHit>(m_RayDirections.Length, Allocator.Persistent);
         }
 
         Vector3 origin = m_Transform.position;
@@ -210,7 +235,7 @@ public sealed class FrontalConeSensor : ISensor, IDisposable
         PhysicsScene physicsScene = m_Transform.gameObject.scene.GetPhysicsScene();
         var queryParams = new QueryParameters(m_LayerMask);
 
-        for (int i = 0; i < m_RayCount; i++)
+        for (int i = 0; i < m_RayDirections.Length; i++)
         {
             Vector3 worldDir = rotation * m_RayDirections[i];
             m_CastCommands[i] = new SpherecastCommand(
@@ -223,32 +248,15 @@ public sealed class FrontalConeSensor : ISensor, IDisposable
 
     void ProcessHits()
     {
-        for (int i = 0; i < m_RayCount; i++)
-        {
-            int baseIdx = i * m_FloatsPerRay;
-            var hit = m_CastHits[i];
-            bool hasHit = hit.collider != null;
+        SensorProcessing.ProcessHits(
+            m_CastHits,
+            m_RayDirections.Length,
+            m_FloatsPerRay,
+            m_DetectableLayers,
+            m_RayLength,
+            m_Observations);
 
-            // Linear inverse distance: 1.0 = touching, 0.0 = clear (max range)
-            m_Observations[baseIdx] = hasHit ? 1f - (hit.distance / m_RayLength) : 0f;
-
-            // One-hot layer encoding
-            for (int t = 0; t < m_DetectableLayers.Length; t++)
-                m_Observations[baseIdx + 1 + t] = 0f;
-
-            if (hasHit)
-            {
-                int hitLayer = hit.collider.gameObject.layer;
-                for (int t = 0; t < m_DetectableLayers.Length; t++)
-                {
-                    if (hitLayer == m_DetectableLayers[t])
-                    {
-                        m_Observations[baseIdx + 1 + t] = 1f;
-                        break;
-                    }
-                }
-            }
-        }
+        m_Initialized = true;
     }
 
     // ──────────────────────────────────────────────
