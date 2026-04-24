@@ -18,6 +18,12 @@ using UnityEngine;
 /// Obstacles are always spawned around this GameObject's position.
 /// Call <see cref="Initialise"/> once, then <see cref="Generate"/> / <see cref="Clear"/>
 /// each episode.
+///
+/// <b>Note on Inspector fields:</b> During RL training, <see cref="TrainingArena"/> calls
+/// the full-parameter <see cref="Generate(int,float,float,float,float,float,float,float)"/>
+/// overload with per-lesson values from <see cref="LessonProfile"/>, bypassing the Inspector
+/// defaults entirely. The Inspector fields are only used by the no-argument
+/// <see cref="Generate()"/> overload, which is intended for manual in-Editor testing only.
 /// </summary>
 [DisallowMultipleComponent]
 public class HexSwissCheeseObstacleGenerator : MonoBehaviour
@@ -25,18 +31,21 @@ public class HexSwissCheeseObstacleGenerator : MonoBehaviour
     [Header("Obstacle Prefab & Counts")]
     [Tooltip("Prefab to spawn as an obstacle.")]
     [SerializeField] private GameObject obstaclePrefab;
-    [Tooltip("Maximum number of obstacles to place per episode.")]
+
+    [Tooltip("Maximum number of obstacles to place per episode (Inspector default — used by no-arg Generate() only).")]
     [SerializeField] private int maxObstacleCount = 20;
 
-    [Header("Spawn Ring")]
+    [Header("Spawn Ring (Inspector defaults — used by no-arg Generate() only)")]
     [Tooltip("Outer radius of the obstacle ring around the centre.")]
     [SerializeField] private float spawnRadius = 12f;
+
     [Tooltip("Inner radius — obstacles won't spawn closer than this to the centre.")]
     [SerializeField] private float minSpawnRadius = 5f;
 
     [Header("Hex Grid")]
     [Tooltip("Centre-to-centre distance between hex cells. Must be greater than Min Distance.")]
     [SerializeField] private float hexSpacing = 6f;
+
     [Tooltip("Absolute minimum distance between any two obstacles. Must be less than Hex Spacing.")]
     [SerializeField] private float minDistance = 4f;
 
@@ -47,43 +56,44 @@ public class HexSwissCheeseObstacleGenerator : MonoBehaviour
     [Header("Height")]
     [Tooltip("Minimum height for obstacle placement.")]
     [SerializeField] private float minHeight = 3f;
+
     [Tooltip("Maximum height for obstacle placement.")]
     [SerializeField] private float maxHeight = 3f;
 
     [Header("Gizmos")]
     [Tooltip("Draw hex grid centre points in the Scene view.")]
     [SerializeField] private bool showGizmos = true;
+
     [Tooltip("Radius of each gizmo sphere drawn at a grid centre.")]
     [SerializeField] private float gizmoRadius = 0.15f;
+
     [Tooltip("Colour used for the grid-centre spheres.")]
     [SerializeField] private Color gizmoColor = new Color(0f, 1f, 0.5f, 0.8f);
 
-    // ── Object pool ──
+    // ── Object pool ───────────────────────────────────────────────────────
     private readonly List<GameObject> pool = new List<GameObject>();
     private int activeCount;
 
-    // ── Pre-allocated candidate buffer ──
+    // ── Pre-allocated candidate buffer ────────────────────────────────────
     private readonly List<Vector2> candidates = new List<Vector2>();
-    private readonly List<Vector2> survivors = new List<Vector2>();
 
     // ─────────────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Pre-allocates the object pool.
+    /// Pre-allocates the object pool up to <see cref="maxObstacleCount"/> instances.
     /// Call once during setup (e.g. from an Agent's <c>Initialize</c>).
     /// </summary>
     public void Initialise()
     {
-        Debug.Assert(minSpawnRadius < spawnRadius,
-            $"[HexSwissCheese] minSpawnRadius ({minSpawnRadius}) must be < spawnRadius ({spawnRadius}).");
-        Debug.Assert(minDistance < hexSpacing,
-            $"[HexSwissCheese] minDistance ({minDistance}) must be < hexSpacing ({hexSpacing}).");
-
-        InitPool();
+        ValidateSpacingConstraint(minSpawnRadius, spawnRadius, minDistance, hexSpacing);
+        InitPool(maxObstacleCount);
     }
 
     /// <summary>
-    /// Generates obstacles around this GameObject's position using the serialised defaults.
+    /// Generates obstacles using the Inspector default fields.
+    /// <para><b>For manual in-Editor testing only.</b> During RL training, <see cref="TrainingArena"/>
+    /// calls the full-parameter overload with per-lesson values from <see cref="LessonProfile"/>
+    /// — the Inspector fields are not used.</para>
     /// </summary>
     public void Generate()
     {
@@ -92,8 +102,8 @@ public class HexSwissCheeseObstacleGenerator : MonoBehaviour
     }
 
     /// <summary>
-    /// Generates obstacles around this GameObject's position using fully overridden parameters.
-    /// Call this from a curriculum manager to apply per-lesson settings.
+    /// Generates obstacles using fully overridden parameters.
+    /// Called by <see cref="TrainingArena"/> each episode to apply per-lesson curriculum settings.
     /// </summary>
     public void Generate(int count, float outerR, float innerR,
                          float spacing, float minDist, float fillDensity,
@@ -113,7 +123,7 @@ public class HexSwissCheeseObstacleGenerator : MonoBehaviour
         activeCount = 0;
     }
 
-    // ── Core algorithm ───────────────────────────────────────────────────
+    // ── Core algorithm ────────────────────────────────────────────────────
 
     private void GenerateInternal(int count, float outerR, float innerR,
                                   float spacing, float minDist, float fillDensity,
@@ -121,19 +131,29 @@ public class HexSwissCheeseObstacleGenerator : MonoBehaviour
     {
         if (obstaclePrefab == null) return;
 
+        // Hard guard: minDist must be strictly less than spacing or the jitter buffer
+        // goes zero/negative, which breaks the minimum-separation guarantee.
+        if (minDist >= spacing)
+        {
+            Debug.LogError(
+                $"[HexSwissCheese] minDist ({minDist}) >= spacing ({spacing}). " +
+                "Generation aborted — fix the LessonProfile or Inspector values.", this);
+            return;
+        }
+
         Clear();
 
         float buffer = spacing - minDist;
-        float maxJitter = buffer * 0.5f;
+        float maxJitter = buffer * 0.5f;   // always > 0 after the guard above
         float outerRSqr = outerR * outerR;
         float innerRSqr = innerR * innerR;
 
-        // ── Random rotation for dynamic lanes ──
+        // ── Random rotation for dynamic lanes ────────────────────────────
         float randomAngle = Random.Range(0f, Mathf.PI * 2f);
         float cosA = Mathf.Cos(randomAngle);
         float sinA = Mathf.Sin(randomAngle);
 
-        // ── Phase 1: Build the hexagonal grid ──
+        // ── Phase 1: Build the hexagonal grid ────────────────────────────
         // Row height for a hex grid = spacing * sqrt(3) / 2
         float rowHeight = spacing * 0.8660254f;
         float halfSpacing = spacing * 0.5f;
@@ -154,7 +174,7 @@ public class HexSwissCheeseObstacleGenerator : MonoBehaviour
                 float x = -outerR + col * spacing;
                 if (oddRow) x += halfSpacing;
 
-                // ── Phase 2: Cookie-cut to ring ──
+                // ── Phase 2: Cookie-cut to ring ───────────────────────────
                 // Distance check (rotation doesn't change distance)
                 float distSqr = x * x + z * z;
                 if (distSqr < innerRSqr || distSqr > outerRSqr)
@@ -168,15 +188,16 @@ public class HexSwissCheeseObstacleGenerator : MonoBehaviour
             }
         }
 
-        // ── Phase 3: Exact-count shuffle — deterministic density, zero binomial variance ──
+        // ── Phase 3: Exact-count shuffle ──────────────────────────────────
         // Shuffle all candidates, then take exactly the target count instead of
         // coin-flipping each point (which causes binomial variance and empty episodes).
         ShuffleInPlace(candidates);
         int placed = Mathf.Min(Mathf.RoundToInt(candidates.Count * fillDensity), count);
 
         EnsurePoolCapacity(placed);
+        TrimPool(placed);
 
-        // ── Phase 4: Jitter & spawn ──
+        // ── Phase 4: Jitter & spawn ───────────────────────────────────────
         for (int i = 0; i < placed; i++)
         {
             Vector2 pt = candidates[i];
@@ -207,33 +228,68 @@ public class HexSwissCheeseObstacleGenerator : MonoBehaviour
         activeCount = placed;
     }
 
-    // ── Pool management ──────────────────────────────────────────────────
+    // ── Pool management ───────────────────────────────────────────────────
 
-    private void InitPool()
+    private void InitPool(int capacity)
     {
         if (obstaclePrefab == null) return;
 
-        for (int i = 0; i < maxObstacleCount; i++)
+        for (int i = 0; i < capacity; i++)
         {
-                GameObject obj = Instantiate(obstaclePrefab, Vector3.zero, Quaternion.identity, transform);
-                    obj.SetActive(false);
-                    pool.Add(obj);
-                }
-            }
-
-            private void EnsurePoolCapacity(int required)
-            {
-                if (obstaclePrefab == null) return;
-
-                while (pool.Count < required)
-                {
-                    GameObject obj = Instantiate(obstaclePrefab, Vector3.zero, Quaternion.identity, transform);
+            GameObject obj = Instantiate(obstaclePrefab, Vector3.zero, Quaternion.identity, transform);
             obj.SetActive(false);
             pool.Add(obj);
         }
     }
 
-    // ── Utility ──────────────────────────────────────────────────────────
+    /// <summary>Grows the pool if it has fewer than <paramref name="required"/> entries.</summary>
+    private void EnsurePoolCapacity(int required)
+    {
+        if (obstaclePrefab == null) return;
+
+        while (pool.Count < required)
+        {
+            GameObject obj = Instantiate(obstaclePrefab, Vector3.zero, Quaternion.identity, transform);
+            obj.SetActive(false);
+            pool.Add(obj);
+        }
+    }
+
+    /// <summary>
+    /// Destroys pool entries beyond <paramref name="maxRequired"/> to prevent unbounded growth
+    /// when <paramref name="maxRequired"/> decreases between curriculum lessons.
+    /// </summary>
+    private void TrimPool(int maxRequired)
+    {
+        for (int i = pool.Count - 1; i >= maxRequired; i--)
+        {
+            if (pool[i] != null)
+            {
+                if (Application.isPlaying)
+                    Destroy(pool[i]);
+                else
+                    DestroyImmediate(pool[i]);
+            }
+            pool.RemoveAt(i);
+        }
+    }
+
+    // ── Validation ────────────────────────────────────────────────────────
+
+    private void ValidateSpacingConstraint(float innerR, float outerR, float minDist, float spacing)
+    {
+        if (innerR >= outerR)
+            Debug.LogError(
+                $"[HexSwissCheese] minSpawnRadius ({innerR}) >= spawnRadius ({outerR}). " +
+                "No candidates will be generated.", this);
+
+        if (minDist >= spacing)
+            Debug.LogError(
+                $"[HexSwissCheese] minDistance ({minDist}) >= hexSpacing ({spacing}). " +
+                "Jitter would be zero or negative — fix Inspector or LessonProfile values.", this);
+    }
+
+    // ── Utility ───────────────────────────────────────────────────────────
 
     /// <summary>Fisher-Yates in-place shuffle — zero allocations.</summary>
     private static void ShuffleInPlace(List<Vector2> list)
@@ -247,20 +303,20 @@ public class HexSwissCheeseObstacleGenerator : MonoBehaviour
         }
     }
 
-    // ── Editor visualisation ─────────────────────────────────────────────
+    // ── Editor visualisation ──────────────────────────────────────────────
 
     private void OnDrawGizmosSelected()
     {
         if (!showGizmos) return;
 
-        float rowHeight  = hexSpacing * 0.8660254f;
+        float rowHeight = hexSpacing * 0.8660254f;
         float halfSpacing = hexSpacing * 0.5f;
-        float outerRSqr  = spawnRadius * spawnRadius;
-        float innerRSqr  = minSpawnRadius * minSpawnRadius;
+        float outerRSqr = spawnRadius * spawnRadius;
+        float innerRSqr = minSpawnRadius * minSpawnRadius;
 
-        // Note: Gizmos show non-rotated grid since rotation is randomized per episode
+        // Note: Gizmos show non-rotated grid since rotation is randomised per episode
         int cols = Mathf.CeilToInt(2f * spawnRadius / hexSpacing) + 1;
-        int rows = Mathf.CeilToInt(2f * spawnRadius / rowHeight)  + 1;
+        int rows = Mathf.CeilToInt(2f * spawnRadius / rowHeight) + 1;
 
         Vector3 center = transform.position;
         float midHeight = (minHeight + maxHeight) * 0.5f;

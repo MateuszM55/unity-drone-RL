@@ -57,34 +57,43 @@ public class CurriculumPlan : ScriptableObject
     }
 
     /// <summary>
-    /// Validates that all lesson entries are assigned.
-    /// Call from editor scripts or runtime initialization.
+    /// Returns <c>true</c> if every lesson entry is non-null; <c>false</c> otherwise.
+    /// Pure predicate — no side effects, safe to call from any context.
+    /// </summary>
+    public bool IsValid()
+    {
+        for (int i = 0; i < lessons.Count; i++)
+        {
+            if (lessons[i] == null)
+                return false;
+        }
+        return true;
+    }
+
+    /// <summary>
+    /// Logs a warning for every null lesson entry and returns <c>false</c> if any are found.
+    /// Use this during initialisation where user-visible feedback is appropriate.
+    /// For silent checks prefer <see cref="IsValid"/>.
     /// </summary>
     /// <returns>True if all lessons are valid; false if any are null.</returns>
-    public bool Validate()
+    public bool ValidateAndWarn()
     {
+        bool valid = true;
         for (int i = 0; i < lessons.Count; i++)
         {
             if (lessons[i] == null)
             {
                 Debug.LogWarning($"[CurriculumPlan] Lesson at index {i} is null.", this);
-                return false;
+                valid = false;
             }
         }
-        return true;
+        return valid;
     }
 
 #if UNITY_EDITOR
     private void OnValidate()
     {
-        // Warn about null entries in editor
-        for (int i = 0; i < lessons.Count; i++)
-        {
-            if (lessons[i] == null)
-            {
-                Debug.LogWarning($"[CurriculumPlan] Lesson at index {i} is not assigned.", this);
-            }
-        }
+        ValidateAndWarn();
     }
 #endif
 }

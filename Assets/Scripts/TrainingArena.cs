@@ -116,7 +116,7 @@ public class TrainingArena : MonoBehaviour
         }
         else
         {
-            curriculumPlan.Validate();
+            curriculumPlan.ValidateAndWarn();
         }
 
         // Initialize obstacle generator if present
@@ -223,15 +223,15 @@ public class TrainingArena : MonoBehaviour
         Vector3 targetPos = target != null ? target.localPosition : defaultPosition;
 
         // Position the drone relative to target
-        if (profile.spawnRadius > 0f)
+        if (profile.SpawnRadius > 0f)
         {
             float angle = Random.Range(0f, 2f * Mathf.PI);
-            Vector3 offset = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * profile.spawnRadius;
-            drone.localPosition = targetPos + offset + Vector3.up * profile.spawnHeight;
+            Vector3 offset = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * profile.SpawnRadius;
+            drone.localPosition = targetPos + offset + Vector3.up * profile.SpawnHeight;
         }
         else
         {
-            drone.localPosition = targetPos + Vector3.up * profile.spawnHeight;
+            drone.localPosition = targetPos + Vector3.up * profile.SpawnHeight;
         }
 
         // Rotate drone to face the target (yaw only, keep level)
@@ -247,20 +247,20 @@ public class TrainingArena : MonoBehaviour
         }
 
         // Spawn obstacles if configured
-        if (obstacleGenerator != null && profile.maxObstacleCount > 0)
+        if (obstacleGenerator != null && profile.MaxObstacleCount > 0)
         {
             obstacleGenerator.Generate(
-                profile.maxObstacleCount,
-                profile.obstacleSpawnRadius,
-                profile.minObstacleSpawnRadius,
-                profile.hexSpacing,
-                profile.hexMinDistance,
-                profile.hexObstacleDensity,
-                profile.obstacleMinHeight,
-                profile.obstacleMaxHeight);
+                profile.MaxObstacleCount,
+                profile.ObstacleSpawnRadius,
+                profile.MinObstacleSpawnRadius,
+                profile.HexSpacing,
+                profile.HexMinDistance,
+                profile.HexObstacleDensity,
+                profile.ObstacleMinHeight,
+                profile.ObstacleMaxHeight);
         }
 
-        return profile.maxEpisodeDistance;
+        return profile.MaxEpisodeDistance;
     }
 
     /// <summary>
