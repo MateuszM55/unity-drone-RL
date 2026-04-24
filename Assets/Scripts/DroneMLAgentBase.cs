@@ -47,7 +47,7 @@ public abstract class DroneMLAgentBase : Agent
     protected float maxEpisodeDistance;
     protected bool hasLanded;
     protected float touchdownTimer;
-    protected TrainingArena arena;
+    protected ITrainingArena arena;
     protected DroneObserver observer;
     protected DroneRewardManager rewardEvaluator;
     protected DroneTelemetry telemetry;
@@ -69,17 +69,19 @@ public abstract class DroneMLAgentBase : Agent
             ? Mathf.Cos(rewardProfile.maxTiltAngle * Mathf.Deg2Rad)
             : Mathf.Cos(60f * Mathf.Deg2Rad);
 
-        // Discover training arena in parent hierarchy (arena-centric architecture)
-        // This allows the drone to work in multi-arena setups where each arena has its own controller
-        arena = GetComponentInParent<TrainingArena>();
-        if (arena == null)
+        // Discover training arena in parent hierarchy (arena-centric architecture).
+        // GetComponentInParent does not support interfaces, so we retrieve the concrete
+        // TrainingArena and store it via the ITrainingArena interface for loose coupling.
+        TrainingArena concreteArena = GetComponentInParent<TrainingArena>();
+        if (concreteArena == null)
         {
             Debug.LogError($"[{name}] No TrainingArena found in parent hierarchy. " +
                 "Add TrainingArena to the Arena Root GameObject.", this);
         }
         else
         {
-            arena.Initialise();
+            concreteArena.Initialise();
+            arena = concreteArena;
         }
 
         observer = GetComponent<DroneObserver>();

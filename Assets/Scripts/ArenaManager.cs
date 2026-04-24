@@ -1,21 +1,28 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 /// <summary>
-/// Factory component that spawns multiple training arenas at runtime.
+/// Factory component that spawns multiple training arenas at runtime and
+/// arranges them in a 2-D grid on the XZ plane.
+///
 /// Attach to an empty "Environment Manager" GameObject in the scene.
 ///
 /// <b>Setup Instructions:</b>
-/// 1. Create an Arena Prefab containing:
-///    - Arena root with <see cref="TrainingArena"/> component
-///    - Drone agent (child)
-///    - Target/Landing pad (child)
-///    - Ground/Floor (child)
-///    - Obstacle Spawn Point with <see cref="HexSwissCheeseObstacleGenerator"/> (child)
-///    - Any walls or boundaries (children)
-/// 2. Ensure all positioning in agent scripts uses local coordinates.
-/// 3. Assign the prefab to <see cref="arenaPrefab"/>.
-/// 4. Set <see cref="numberOfArenas"/> to the desired count.
-/// 5. Arenas are spawned in a grid pattern on Awake().
+/// <list type="number">
+///   <item>Create an Arena Prefab containing:
+///     <list type="bullet">
+///       <item>Arena root with TrainingArena component.</item>
+///       <item>Drone agent (child).</item>
+///       <item>Target/Landing pad (child) -- tagged "Target".</item>
+///       <item>Ground/Floor (child).</item>
+///       <item>Obstacle Spawn Point with HexSwissCheeseObstacleGenerator (child, optional).</item>
+///       <item>Any walls or boundaries (children).</item>
+///     </list>
+///   </item>
+///   <item>Ensure all positioning in agent scripts uses local coordinates.</item>
+///   <item>Assign the prefab to arenaPrefab.</item>
+///   <item>Set numberOfArenas to the desired count.</item>
+///   <item>Arenas are spawned in a grid pattern on Awake.</item>
+/// </list>
 ///
 /// All agents in spawned arenas share the same Behavior Name (set in the prefab),
 /// enabling ML-Agents to collect experiences from all instances simultaneously.
@@ -23,6 +30,10 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public class ArenaManager : MonoBehaviour
 {
+    // ========================================================================
+    // SERIALIZED FIELDS
+    // ========================================================================
+
     [Header("Arena Template")]
     [Tooltip("Prefab containing the complete training arena (Drone, Target, Floor, Obstacles).")]
     [SerializeField] private GameObject arenaPrefab;
@@ -31,30 +42,61 @@ public class ArenaManager : MonoBehaviour
     [Tooltip("Number of arena instances to spawn.")]
     [SerializeField, Min(1)] private int numberOfArenas = 1;
 
-    [Tooltip("Distance between arena centers. Should be large enough to prevent inter-arena interference.")]
+    [Tooltip("Distance between arena centres. Should be large enough to prevent inter-arena interference.")]
     [SerializeField, Min(10f)] private float arenaSpacing = 50f;
 
-    [Tooltip("Maximum arenas per row before starting a new row.")]
+    [Tooltip("Maximum number of arenas per row before starting a new row.")]
     [SerializeField, Min(1)] private int arenasPerRow = 5;
 
     [Header("Runtime Spawned & Editor Placeholder Arenas")]
-    [Tooltip("Tracks spawned instances at runtime. In the Editor, you can assign a manually placed 'Template' arena here to have it automatically cleaned up and replaced when Play is pressed.")]
+    [Tooltip("Tracks spawned instances at runtime. In the Editor you can assign a manually-placed " +
+             "template arena here so it is automatically cleaned up and replaced when Play is pressed.")]
     [SerializeField] private TrainingArena[] spawnedArenas;
 
-    /// <summary>Number of active arena instances.</summary>
+    // ========================================================================
+    // PRIVATE STATE
+    // ========================================================================
+
+    /// <summary>
+    /// Prevents ClearArenas from being invoked re-entrantly (e.g. if SpawnArenas is
+    /// called a second time before the first batch of Destroy calls has flushed).
+    /// </summary>
+    private bool _isSpawning;
+
+    // ========================================================================
+    // PUBLIC API
+    // ========================================================================
+
+    /// <summary>Number of currently active arena instances.</summary>
     public int ArenaCount => spawnedArenas?.Length ?? 0;
 
-    /// <summary>Access to spawned arena instances for external systems.</summary>
+    /// <summary>Read-only access to the spawned arena instances for external systems.</summary>
     public TrainingArena[] SpawnedArenas => spawnedArenas;
+
+    /// <summary>Gets the arena at <paramref name="index"/>, or null when out of range.</summary>
+    public TrainingArena GetArena(int index)
+    {
+        if (spawnedArenas == null || index < 0 || index >= spawnedArenas.Length)
+            return null;
+        return spawnedArenas[index];
+    }
+
+    // ========================================================================
+    // UNITY LIFECYCLE
+    // ========================================================================
 
     private void Awake()
     {
         SpawnArenas();
     }
 
+    // ========================================================================
+    // ARENA SPAWNING
+    // ========================================================================
+
     /// <summary>
-    /// Spawns all arena instances in a 2D grid pattern on the XZ plane.
-    /// Called automatically on Awake, but can be called manually for testing.
+    /// Destroys all existing arena instances then spawns a fresh grid.
+    /// Safe to call from the Inspector context menu or from other scripts.
     /// </summary>
     [ContextMenu("Spawn Arenas")]
     public void SpawnArenas()
@@ -65,56 +107,72 @@ public class ArenaManager : MonoBehaviour
             return;
         }
 
-        // Clean up any existing arenas
-        ClearArenas();
-
-        spawnedArenas = new TrainingArena[numberOfArenas];
-
-        for (int i = 0; i < numberOfArenas; i++)
+        if (_isSpawning)
         {
-            Vector3 position = CalculateGridPosition(i);
-            GameObject arenaGO = Instantiate(arenaPrefab, position, Quaternion.identity, transform);
-            arenaGO.name = $"Arena_{i:D3}";
-
-            // Get or add TrainingArena component
-            TrainingArena arena = arenaGO.GetComponent<TrainingArena>();
-            if (arena == null)
-            {
-                arena = arenaGO.AddComponent<TrainingArena>();
-            }
-
-            arena.Initialise(i);
-            spawnedArenas[i] = arena;
+            Debug.LogWarning("[ArenaManager] SpawnArenas called while already spawning — ignored.", this);
+            return;
         }
 
-        Debug.Log($"[ArenaManager] Spawned {numberOfArenas} arena(s) with {arenaSpacing}m spacing.");
+        _isSpawning = true;
+
+        try
+        {
+            ClearArenas();
+
+            spawnedArenas = new TrainingArena[numberOfArenas];
+
+            for (int i = 0; i < numberOfArenas; i++)
+            {
+                Vector3 position = CalculateGridPosition(i);
+                GameObject arenaGO = Instantiate(arenaPrefab, position, Quaternion.identity, transform);
+                arenaGO.name = $"Arena_{i:D3}";
+
+                TrainingArena arena = arenaGO.GetComponent<TrainingArena>();
+                if (arena == null)
+                    arena = arenaGO.AddComponent<TrainingArena>();
+
+                arena.Initialise(i);
+                spawnedArenas[i] = arena;
+            }
+
+            Debug.Log($"[ArenaManager] Spawned {numberOfArenas} arena(s) with {arenaSpacing}m spacing.", this);
+        }
+        finally
+        {
+            _isSpawning = false;
+        }
     }
 
     /// <summary>
-    /// Destroys all spawned arena instances.
+    /// Destroys all spawned arena instances and clears the tracking array.
+    /// Safe to call when there are no arenas (no-op).
     /// </summary>
     [ContextMenu("Clear Arenas")]
     public void ClearArenas()
     {
         if (spawnedArenas == null) return;
 
-        foreach (var arena in spawnedArenas)
+        foreach (TrainingArena arena in spawnedArenas)
         {
-            if (arena != null && arena.gameObject != null)
-            {
-                if (Application.isPlaying)
-                    Destroy(arena.gameObject);
-                else
-                    DestroyImmediate(arena.gameObject);
-            }
+            if (arena == null || arena.gameObject == null) continue;
+
+            if (Application.isPlaying)
+                Destroy(arena.gameObject);
+            else
+                DestroyImmediate(arena.gameObject);
         }
 
         spawnedArenas = null;
     }
 
+    // ========================================================================
+    // GRID LAYOUT
+    // ========================================================================
+
     /// <summary>
-    /// Calculates the world position for an arena at the given index.
-    /// Arenas are arranged in a grid on the XZ plane.
+    /// Calculates the world position for the arena at <paramref name="index"/>.
+    /// Arenas are arranged in a grid on the XZ plane, centred around this
+    /// manager's transform position.
     /// </summary>
     /// <param name="index">Zero-based arena index.</param>
     /// <returns>World position for the arena's root transform.</returns>
@@ -123,33 +181,31 @@ public class ArenaManager : MonoBehaviour
         int row = index / arenasPerRow;
         int col = index % arenasPerRow;
 
-        // Center the grid around the manager's position
-        float totalWidth = (Mathf.Min(numberOfArenas, arenasPerRow) - 1) * arenaSpacing;
-        float totalDepth = ((numberOfArenas - 1) / arenasPerRow) * arenaSpacing;
+        // Number of columns in the last (possibly partial) row determines total width.
+        int columnsInGrid = Mathf.Min(numberOfArenas, arenasPerRow);
 
-        float x = col * arenaSpacing - totalWidth * 0.5f;
-        float z = row * arenaSpacing - totalDepth * 0.5f;
+        // Cast to float before dividing to preserve fractional row count.
+        int totalRows = Mathf.CeilToInt((float)numberOfArenas / arenasPerRow);
+
+        float totalWidth  = (columnsInGrid - 1) * arenaSpacing;
+        float totalDepth  = (totalRows - 1) * arenaSpacing;
+
+        float x = col * arenaSpacing - totalWidth  * 0.5f;
+        float z = row * arenaSpacing - totalDepth  * 0.5f;
 
         return transform.position + new Vector3(x, 0f, z);
     }
 
-    /// <summary>
-    /// Gets an arena instance by index.
-    /// </summary>
-    public TrainingArena GetArena(int index)
-    {
-        if (spawnedArenas == null || index < 0 || index >= spawnedArenas.Length)
-            return null;
-        return spawnedArenas[index];
-    }
+    // ========================================================================
+    // EDITOR
+    // ========================================================================
 
 #if UNITY_EDITOR
     private void OnValidate()
     {
-        // Clamp values to sensible ranges
         numberOfArenas = Mathf.Max(1, numberOfArenas);
-        arenaSpacing = Mathf.Max(10f, arenaSpacing);
-        arenasPerRow = Mathf.Max(1, arenasPerRow);
+        arenaSpacing   = Mathf.Max(10f, arenaSpacing);
+        arenasPerRow   = Mathf.Max(1, arenasPerRow);
     }
 
     private void OnDrawGizmosSelected()
@@ -162,11 +218,7 @@ public class ArenaManager : MonoBehaviour
         {
             Vector3 pos = CalculateGridPosition(i);
             Gizmos.DrawWireCube(pos, new Vector3(arenaSpacing * 0.8f, 5f, arenaSpacing * 0.8f));
-
-            // Draw arena index label
-#if UNITY_EDITOR
             UnityEditor.Handles.Label(pos + Vector3.up * 3f, $"Arena {i}");
-#endif
         }
     }
 #endif
