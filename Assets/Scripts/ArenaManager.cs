@@ -201,13 +201,6 @@ public class ArenaManager : MonoBehaviour
     // ========================================================================
 
 #if UNITY_EDITOR
-    private void OnValidate()
-    {
-        numberOfArenas = Mathf.Max(1, numberOfArenas);
-        arenaSpacing   = Mathf.Max(10f, arenaSpacing);
-        arenasPerRow   = Mathf.Max(1, arenasPerRow);
-    }
-
     private void OnDrawGizmosSelected()
     {
         if (arenaPrefab == null) return;

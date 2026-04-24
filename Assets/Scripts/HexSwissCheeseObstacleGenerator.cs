@@ -202,7 +202,6 @@ public class HexSwissCheeseObstacleGenerator : MonoBehaviour
         int placed = Mathf.Min(Mathf.RoundToInt(candidates.Count * fillDensity), count);
 
         EnsurePoolCapacity(placed);
-        TrimPool(placed);
 
         // ── Phase 4: Jitter & spawn ───────────────────────────────────────
         for (int i = 0; i < placed; i++)

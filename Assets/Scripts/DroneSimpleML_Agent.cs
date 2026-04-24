@@ -30,7 +30,7 @@ public class DroneSimpleML_Agent : DroneMLAgentBase
     /// </summary>
     public override void CollectObservations(VectorSensor sensor)
     {
-        base.CollectObservations(sensor);          // 16 floats from base
+        base.CollectObservations(sensor);          // 17 floats from base
         for (int i = 0; i < 4; i++)               // +4 previous actions
             sensor.AddObservation(_previousActions[i]);
     }

@@ -36,16 +36,8 @@ public class DroneRewardProfile : ScriptableObject
     [Header("Terminal Condition Rewards")]
     [Tooltip("If the drone tilts beyond this many degrees from vertical the episode ends with an excessive-tilt penalty. Lower values demand more stable flight. Typical value: 45 – 75 degrees.")]
     public float maxTiltAngle = 60f;
-    [Tooltip("The drone must come within this distance (metres) of the target centre to trigger a successful landing. Smaller values require more precision. Typical value: 0.3 – 1.5 m.")]
-    public float targetReachedThreshold = 0.5f;
-    [Tooltip("One-time reward added when the drone reaches the target (in addition to landingSuccess if both are used). Can be set to 0 if landingSuccess already covers this. Typical range: 0.5 – 5.")]
-    public float targetReachedReward = 1.0f;
     [Tooltip("One-time penalty applied when the drone wanders beyond the allowed area and the episode ends. Should discourage exploration in the wrong direction. Typical range: -0.5 to -3.")]
     public float tooFarPenalty = -1.0f;
-    [Tooltip("World-space Y coordinate below which the drone is considered to have fallen (e.g. dropped off the edge of the map). Set this just below your lowest valid flight altitude. Typical value: -0.5 to -2.")]
-    public float fallenMinY = -0.5f;
-    [Tooltip("One-time penalty when the drone falls below fallenMinY and the episode ends. Typical range: -0.5 to -3.")]
-    public float fallenPenalty = -1.0f;
     [Tooltip("One-time penalty when the drone tilts beyond maxTiltAngle and the episode ends. Typical range: -0.5 to -3.")]
     public float excessiveTiltPenalty = -1.0f;
 

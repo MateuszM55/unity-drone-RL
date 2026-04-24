@@ -60,7 +60,7 @@ public class DroneIncrementalML_Agent : DroneMLAgentBase
     {
         if (rotorTransforms == null || rotorTransforms.Length != 4) return;
 
-        // 1. INTEGRAL CONTROL — integrate delta commands into physical thrust
+        // Integrate delta commands into physical thrust, apply forces, and populate reward buffers
         for (int i = 0; i < 4; i++)
         {
             float requestedChange = actions.ContinuousActions[i] * _maxThrustChangePerStep;
@@ -70,16 +70,13 @@ public class DroneIncrementalML_Agent : DroneMLAgentBase
 
             // Apply force
             rb.AddForceAtPosition(transform.up * _currentThrusts[i], rotorTransforms[i].position);
-        }
 
-        // 2. BUILD BUFFERS — raw delta commands (smoothness) and actual thrusts (energy)
-        for (int i = 0; i < 4; i++)
-        {
+            // Populate reward buffers: raw delta commands (smoothness) and normalised thrusts (energy)
             _currentActionsBuffer[i] = actions.ContinuousActions[i];
             _normalizedThrusts[i]    = _currentThrusts[i] / maxThrustPerMotor;
         }
 
-        // 3. STANDARD REWARDS — terminal checks, shaping, TensorBoard, debug strings
+        // Terminal checks, shaping, TensorBoard, debug strings
         ApplyStandardRewards(_currentActionsBuffer, _previousActions, _normalizedThrusts);
     }
 

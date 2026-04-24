@@ -30,9 +30,6 @@ public interface ITrainingArena
     /// <summary>The target/landing pad transform for this arena.</summary>
     Transform Target { get; }
 
-    /// <summary>The obstacle generator for this arena (may be null).</summary>
-    HexSwissCheeseObstacleGenerator ObstacleGenerator { get; }
-
     // ── Curriculum ───────────────────────────────────────────────────────
 
     /// <summary>The shared curriculum plan asset.</summary>

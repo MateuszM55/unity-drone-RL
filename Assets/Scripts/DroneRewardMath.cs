@@ -41,13 +41,6 @@ public static class DroneRewardMath
         };
     }
 
-    /// <summary>Flat reward given when the drone lands on the target.</summary>
-    /// <param name="flatValue">Reward magnitude configured in the reward profile.</param>
-    public static float TouchdownReward(float flatValue = 1f)
-    {
-        return flatValue;
-    }
-
     // ───────────────────────── Continuous Shaping ──────────────────────────
 
     /// <summary>
