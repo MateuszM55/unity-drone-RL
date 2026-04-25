@@ -232,7 +232,8 @@ public abstract class DroneMLAgentBase : Agent
         var result = _rewardEvaluator.Evaluate(
             rewardProfile, targetPos, _episodeStartPosition,
             _maxEpisodeDistance,
-            currentActions, previousActions, energyValues);
+            currentActions, previousActions, energyValues,
+            _hasLanded);
 
         if (result.IsTerminal)
         {

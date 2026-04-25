@@ -50,4 +50,10 @@ public class DroneRewardProfile : ScriptableObject
     public float angularVelocityPenaltyScale = 0.001f;
     [Tooltip("Added every step proportional to how directly the drone is flying toward the target (dot product of velocity and target direction, clamped 0–1). Encourages efficient straight-line approach. Typical per-step range: 0 – 0.01. Recommended scale: 0.005 – 0.05.")]
     public float velocityAlignmentScale = 0.01f;
+
+    [Header("Post-Touchdown Penalties")]
+    [Tooltip("Applied every step after first pad contact. Penalty = -scale × linearSpeed². Punishes sliding, bouncing, or any translational movement after landing. Typical range: 0.01 – 0.2.")]
+    public float restlessnessLinearScale = 0.05f;
+    [Tooltip("Applied every step after first pad contact. Penalty = -scale × angularSpeed². Punishes spinning/tumbling after landing. Typical range: 0.01 – 0.2.")]
+    public float restlessnessAngularScale = 0.05f;
 }

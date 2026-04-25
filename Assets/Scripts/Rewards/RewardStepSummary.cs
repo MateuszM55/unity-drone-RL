@@ -15,14 +15,15 @@ public struct RewardStepSummary
     public readonly float VelocityAlignment;
     public readonly float Time;
     public readonly float FastApproach;
+    public readonly float Restlessness;
 
     public float Total => DeltaDistance + NormalizedDeltaDistance + Proximity + Energy + Smoothness
                         + Tilt + AngularVelocity + VelocityAlignment + Time
-                        + FastApproach;
+                        + FastApproach + Restlessness;
 
     public RewardStepSummary(float deltaDistance, float normalizedDeltaDistance, float proximity, float energy,
         float smoothness, float tilt, float angularVelocity,
-        float velocityAlignment, float time, float fastApproach)
+        float velocityAlignment, float time, float fastApproach, float restlessness = 0f)
     {
         DeltaDistance = deltaDistance;
         NormalizedDeltaDistance = normalizedDeltaDistance;
@@ -34,5 +35,6 @@ public struct RewardStepSummary
         VelocityAlignment = velocityAlignment;
         Time = time;
         FastApproach = fastApproach;
+        Restlessness = restlessness;
     }
 }

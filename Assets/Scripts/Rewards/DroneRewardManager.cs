@@ -84,6 +84,7 @@ public class DroneRewardManager : MonoBehaviour
     /// Values forwarded to <see cref="DroneRewardMath.EnergyPenalty"/>.
     /// Pass <c>null</c> to fall back to <paramref name="currentActions"/>.
     /// </param>
+    /// <param name="hasTouchedDown"><c>true</c> once the drone has made first contact with the landing pad this episode. Activates the restlessness penalty.</param>
     public EvalResult Evaluate(
         DroneRewardProfile profile,
         Vector3 targetPosition,
@@ -91,7 +92,8 @@ public class DroneRewardManager : MonoBehaviour
         float maxEpisodeDistance,
         float[] currentActions,
         float[] previousActions,
-        float[] energyValues = null)
+        float[] energyValues = null,
+        bool hasTouchedDown = false)
     {
         if (profile == null)
             throw new System.ArgumentNullException(nameof(profile),
@@ -139,7 +141,12 @@ public class DroneRewardManager : MonoBehaviour
                 targetPosition - transform.localPosition, profile.velocityAlignmentScale),
             DroneRewardMath.TimePenalty(profile.timeScale),
             DroneRewardMath.FastApproachPenalty(
-                rb.linearVelocity.magnitude, distanceToTarget, profile.landingRadius, profile.fastApproachScale)
+                rb.linearVelocity.magnitude, distanceToTarget, profile.landingRadius, profile.fastApproachScale),
+            hasTouchedDown
+                ? DroneRewardMath.RestlessnessPenalty(
+                    rb.linearVelocity.magnitude, rb.angularVelocity.magnitude,
+                    profile.restlessnessLinearScale, profile.restlessnessAngularScale)
+                : 0f
         );
 
         return new EvalResult { IsTerminal = false, StepRewards = summary };
