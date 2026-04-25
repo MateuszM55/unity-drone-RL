@@ -277,8 +277,8 @@ MonoBehaviour:
   hexSpacing: 10
   minDistance: 5
   density: 0.35
-  minHeight: 3
-  maxHeight: 3
+  minHeight: 1.6
+  maxHeight: 1.6
   showGizmos: 1
   gizmoRadius: 0.15
   gizmoColor: {r: 1, g: 0, b: 0, a: 1}

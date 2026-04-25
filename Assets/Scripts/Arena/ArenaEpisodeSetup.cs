@@ -152,6 +152,7 @@ public static class ArenaEpisodeSetup
     /// <see cref="HexSwissCheeseObstacleGenerator.Generate"/> as the upper-bound count.
     /// The generator is responsible for the actual placement; it may produce fewer
     /// obstacles if the available area cannot accommodate the full count.
+    /// Height is determined by the Inspector fields on the generator.
     /// </para>
     /// </summary>
     private static void SpawnObstacles(
@@ -167,9 +168,7 @@ public static class ArenaEpisodeSetup
             profile.MinObstacleSpawnRadius,
             profile.HexSpacing,
             profile.HexMinDistance,
-            profile.HexObstacleDensity,
-            profile.ObstacleMinHeight,
-            profile.ObstacleMaxHeight);
+            profile.HexObstacleDensity);
     }
 
     /// <summary>Resets the drone to the supplied default local pose.</summary>

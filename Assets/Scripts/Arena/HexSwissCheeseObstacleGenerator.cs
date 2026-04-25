@@ -20,22 +20,22 @@ using UnityEngine;
 /// each episode.
 ///
 /// <b>Note on Inspector fields:</b> During RL training, <see cref="TrainingArena"/> calls
-/// the full-parameter <see cref="Generate(int,float,float,float,float,float,float,float)"/>
+/// the full-parameter <see cref="Generate(int,float,float,float,float,float)"/>
 /// overload with per-lesson values from <see cref="LessonProfile"/>, bypassing the Inspector
-/// defaults entirely. The Inspector fields are only used by the no-argument
-/// <see cref="Generate()"/> overload, which is intended for manual in-Editor testing only.
+/// defaults for count, radii, spacing, and density. Obstacle height (<see cref="minHeight"/> /
+/// <see cref="maxHeight"/>) is always taken from the Inspector fields.
 /// </summary>
 [DisallowMultipleComponent]
 public class HexSwissCheeseObstacleGenerator : MonoBehaviour
 {
-    [Header("Obstacle Prefab & Counts")]
+    [Header("Obstacle Prefab & Counts (Inspector defaults — overridden by curriculum)")]
     [Tooltip("Prefab to spawn as an obstacle.")]
     [SerializeField] private GameObject obstaclePrefab;
 
-    [Tooltip("Maximum number of obstacles to place per episode (Inspector default — used by no-arg Generate() only).")]
+    [Tooltip("Maximum number of obstacles to place per episode.")]
     [SerializeField] private int maxObstacleCount = 20;
 
-    [Header("Spawn Ring (Inspector defaults — used by no-arg Generate() only)")]
+    [Header("Spawn Ring (Inspector defaults — overridden by curriculum)")]
     [Tooltip("Outer radius of the obstacle ring around the centre.")]
     [SerializeField] private float spawnRadius = 12f;
 
@@ -53,7 +53,7 @@ public class HexSwissCheeseObstacleGenerator : MonoBehaviour
     [Tooltip("Fraction of hex points to keep (0 = empty, 1 = all points).")]
     [SerializeField, Range(0f, 1f)] private float density = 0.35f;
 
-    [Header("Height")]
+    [Header("Height (Inspector fields — always used)")]
     [Tooltip("Minimum height for obstacle placement.")]
     [SerializeField] private float minHeight = 3f;
 
@@ -115,12 +115,12 @@ public class HexSwissCheeseObstacleGenerator : MonoBehaviour
     /// <summary>
     /// Generates obstacles using fully overridden parameters.
     /// Called by <see cref="TrainingArena"/> each episode to apply per-lesson curriculum settings.
+    /// Height is always taken from the Inspector fields (<see cref="minHeight"/> / <see cref="maxHeight"/>).
     /// </summary>
     public void Generate(int count, float outerR, float innerR,
-                         float spacing, float minDist, float fillDensity,
-                         float minH, float maxH)
+                         float spacing, float minDist, float fillDensity)
     {
-        GenerateInternal(count, outerR, innerR, spacing, minDist, fillDensity, minH, maxH);
+        GenerateInternal(count, outerR, innerR, spacing, minDist, fillDensity, minHeight, maxHeight);
     }
 
     /// <summary>Deactivates all obstacles spawned during the current episode.</summary>

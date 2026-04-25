@@ -44,13 +44,6 @@ public class LessonProfile : ScriptableObject
     [Tooltip("Fraction of hex grid points to keep (0 = empty, 1 = all points).")]
     [SerializeField, Range(0f, 1f)] private float hexObstacleDensity = 0.35f;
 
-    [Header("Obstacle Height")]
-    [Tooltip("Minimum height for obstacle placement.")]
-    [SerializeField, Min(0f)] private float obstacleMinHeight = 3f;
-
-    [Tooltip("Maximum height for obstacle placement. Must not be less than Obstacle Min Height.")]
-    [SerializeField, Min(0f)] private float obstacleMaxHeight = 3f;
-
     // -- Read-only properties ------------------------------------------
 
     /// <summary>Height above the target at which the drone spawns.</summary>
@@ -82,12 +75,6 @@ public class LessonProfile : ScriptableObject
 
     /// <summary>Fraction of hex grid points to keep (0-1).</summary>
     public float HexObstacleDensity => hexObstacleDensity;
-
-    /// <summary>Minimum height for obstacle placement.</summary>
-    public float ObstacleMinHeight => obstacleMinHeight;
-
-    /// <summary>Maximum height for obstacle placement.</summary>
-    public float ObstacleMaxHeight => obstacleMaxHeight;
 
     /// <summary>
     /// Validates all cross-field constraints and logs a warning for each violation.
@@ -130,14 +117,6 @@ public class LessonProfile : ScriptableObject
                 $"[LessonProfile '{name}'] hexMinDistance ({hexMinDistance}) " +
                 $"must be less than hexSpacing ({hexSpacing}). " +
                 "This would produce zero or negative jitter in the obstacle generator.", this);
-            valid = false;
-        }
-
-        if (obstacleMaxHeight < obstacleMinHeight)
-        {
-            Debug.LogWarning(
-                $"[LessonProfile '{name}'] obstacleMaxHeight ({obstacleMaxHeight}) " +
-                $"must not be less than obstacleMinHeight ({obstacleMinHeight}).", this);
             valid = false;
         }
 
