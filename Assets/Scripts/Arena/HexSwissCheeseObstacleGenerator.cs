@@ -28,39 +28,18 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public class HexSwissCheeseObstacleGenerator : MonoBehaviour
 {
-    [Header("Obstacle Prefab & Counts (Inspector defaults — overridden by curriculum)")]
+    // ── Static (set-and-forget) ──────────────────────────────────────────
+    [Header("Static — Prefab & Height")]
     [Tooltip("Prefab to spawn as an obstacle.")]
     [SerializeField] private GameObject obstaclePrefab;
 
-    [Tooltip("Maximum number of obstacles to place per episode.")]
-    [SerializeField] private int maxObstacleCount = 20;
-
-    [Header("Spawn Ring (Inspector defaults — overridden by curriculum)")]
-    [Tooltip("Outer radius of the obstacle ring around the centre.")]
-    [SerializeField] private float spawnRadius = 12f;
-
-    [Tooltip("Inner radius — obstacles won't spawn closer than this to the centre.")]
-    [SerializeField] private float minSpawnRadius = 5f;
-
-    [Header("Hex Grid")]
-    [Tooltip("Centre-to-centre distance between hex cells. Must be greater than Min Distance.")]
-    [SerializeField] private float hexSpacing = 6f;
-
-    [Tooltip("Absolute minimum distance between any two obstacles. Must be less than Hex Spacing.")]
-    [SerializeField] private float minDistance = 4f;
-
-    [Header("Swiss Cheese")]
-    [Tooltip("Fraction of hex points to keep (0 = empty, 1 = all points).")]
-    [SerializeField, Range(0f, 1f)] private float density = 0.35f;
-
-    [Header("Height (Inspector fields — always used)")]
     [Tooltip("Minimum height for obstacle placement.")]
     [SerializeField] private float minHeight = 3f;
 
     [Tooltip("Maximum height for obstacle placement.")]
     [SerializeField] private float maxHeight = 3f;
 
-    [Header("Gizmos")]
+    [Header("Static — Gizmos")]
     [Tooltip("Draw hex grid centre points in the Scene view.")]
     [SerializeField] private bool showGizmos = true;
 
@@ -69,6 +48,27 @@ public class HexSwissCheeseObstacleGenerator : MonoBehaviour
 
     [Tooltip("Colour used for the grid-centre spheres.")]
     [SerializeField] private Color gizmoColor = new Color(0f, 1f, 0.5f, 0.8f);
+
+    // ── Dynamic (curriculum-driven — updates live during training) ────────
+    [Space]
+    [Header("Curriculum Controlled")]
+    [Tooltip("Maximum number of obstacles to place per episode.")]
+    [SerializeField] private int maxObstacleCount = 20;
+
+    [Tooltip("Outer radius of the obstacle ring around the centre.")]
+    [SerializeField] private float spawnRadius = 12f;
+
+    [Tooltip("Inner radius — obstacles won't spawn closer than this to the centre.")]
+    [SerializeField] private float minSpawnRadius = 5f;
+
+    [Tooltip("Centre-to-centre distance between hex cells. Must be greater than Min Distance.")]
+    [SerializeField] private float hexSpacing = 6f;
+
+    [Tooltip("Absolute minimum distance between any two obstacles. Must be less than Hex Spacing.")]
+    [SerializeField] private float minDistance = 4f;
+
+    [Tooltip("Fraction of hex points to keep (0 = empty, 1 = all points).")]
+    [SerializeField, Range(0f, 1f)] private float density = 0.35f;
 
     // ── Object pool ───────────────────────────────────────────────────────
     private readonly List<GameObject> pool = new List<GameObject>();
@@ -115,11 +115,21 @@ public class HexSwissCheeseObstacleGenerator : MonoBehaviour
     /// <summary>
     /// Generates obstacles using fully overridden parameters.
     /// Called by <see cref="TrainingArena"/> each episode to apply per-lesson curriculum settings.
+    /// Writes back all curriculum values to the serialized fields so the Inspector
+    /// reflects the live lesson state during training.
     /// Height is always taken from the Inspector fields (<see cref="minHeight"/> / <see cref="maxHeight"/>).
     /// </summary>
     public void Generate(int count, float outerR, float innerR,
                          float spacing, float minDist, float fillDensity)
     {
+        // Overwrite serialized fields so the Inspector acts as a live dashboard.
+        maxObstacleCount = count;
+        spawnRadius      = outerR;
+        minSpawnRadius   = innerR;
+        hexSpacing       = spacing;
+        minDistance      = minDist;
+        density          = fillDensity;
+
         GenerateInternal(count, outerR, innerR, spacing, minDist, fillDensity, minHeight, maxHeight);
     }
 
