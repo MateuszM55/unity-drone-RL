@@ -12,14 +12,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 99f1dea5bd65394409f0bac7a6c09a08, type: 3}
   m_Name: Lesson1
   m_EditorClassIdentifier: Assembly-CSharp::LessonProfile
-  spawnHeight: 3
-  spawnRadius: 8
-  maxEpisodeDistance: 18
-  maxObstacleCount: 0
-  obstacleSpawnRadius: 0
-  minObstacleSpawnRadius: 0
-  hexSpacing: 0
-  hexMinDistance: 0
-  hexObstacleDensity: 0
+  spawnHeight: 4
+  spawnRadius: 35
+  maxEpisodeDistance: 45
+  maxObstacleCount: 99
+  obstacleSpawnRadius: 30
+  minObstacleSpawnRadius: 8
+  hexSpacing: 10
+  hexMinDistance: 5
+  hexObstacleDensity: 0.6
   obstacleMinHeight: 3
   obstacleMaxHeight: 3
