@@ -28,5 +28,4 @@ MonoBehaviour:
   tiltPenaltyScale: 0.001
   angularVelocityPenaltyScale: 0
   velocityAlignmentScale: 0
-  restlessnessLinearScale: 0.05
-  restlessnessAngularScale: 0.05
+  restlessnessScale: 0

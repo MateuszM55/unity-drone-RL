@@ -52,8 +52,6 @@ public class DroneRewardProfile : ScriptableObject
     public float velocityAlignmentScale = 0.01f;
 
     [Header("Post-Touchdown Penalties")]
-    [Tooltip("Applied every step after first pad contact. Penalty = -scale × linearSpeed². Punishes sliding, bouncing, or any translational movement after landing. Typical range: 0.01 – 0.2.")]
-    public float restlessnessLinearScale = 0.05f;
-    [Tooltip("Applied every step after first pad contact. Penalty = -scale × angularSpeed². Punishes spinning/tumbling after landing. Typical range: 0.01 – 0.2.")]
-    public float restlessnessAngularScale = 0.05f;
+    [Tooltip("Fixed penalty subtracted every step after first pad contact, regardless of movement speed. Encourages the agent to end the episode quickly once landed. Typical range: 0.01 – 0.2.")]
+    public float restlessnessScale = 0.05f;
 }
