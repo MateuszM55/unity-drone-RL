@@ -271,17 +271,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HexSwissCheeseObstacleGenerator
   obstaclePrefab: {fileID: 8336889861662960252, guid: 0631f324ba6d9d240b3f86aef763c70c, type: 3}
+  minHeight: 1.6
+  maxHeight: 1.6
+  showGizmos: 1
+  gizmoRadius: 0.15
+  gizmoColor: {r: 1, g: 0, b: 0, a: 1}
   maxObstacleCount: 20
   spawnRadius: 50
   minSpawnRadius: 5
   hexSpacing: 10
   minDistance: 5
   density: 0.35
-  minHeight: 1.6
-  maxHeight: 1.6
-  showGizmos: 1
-  gizmoRadius: 0.15
-  gizmoColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!1 &899460278114708894
 GameObject:
   m_ObjectHideFlags: 0
@@ -738,7 +738,7 @@ MonoBehaviour:
   hasUpgradedFromAgentParameters: 1
   MaxStep: 5000
   touchdownDelay: 1
-  rewardProfile: {fileID: 11400000, guid: 2c3921005b10af04382140d7641eceb7, type: 2}
+  rewardProfile: {fileID: 11400000, guid: 61236945302d7cd46a92d0043b482b28, type: 2}
   rotorTransforms:
   - {fileID: 2864374940726305181}
   - {fileID: 4747732565088654033}
@@ -804,7 +804,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Unity.ML-Agents::Unity.MLAgents.Policies.BehaviorParameters
   m_BrainParameters:
-    VectorObservationSize: 25
+    VectorObservationSize: 26
     NumStackedVectorObservations: 1
     m_ActionSpec:
       m_NumContinuousActions: 4

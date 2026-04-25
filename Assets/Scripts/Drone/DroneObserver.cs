@@ -7,7 +7,7 @@ using UnityEngine;
 ///
 /// Attach to the same GameObject as the drone agent.
 ///
-/// OBSERVATION VECTOR (17 floats):
+/// OBSERVATION VECTOR (18 floats):
 ///   [0-2]  Local unit direction to target (body frame)     always in [-1,1]
 ///   [3]    Horizontal progress meter                       1.0 at spawn, 0.0 at target
 ///                                                          (currentXZ / startXZ)
@@ -17,6 +17,7 @@ using UnityEngine;
 ///   [8-10] Drone angular velocity (body frame)
 ///   [11-13] Drone forward axis (world frame)               attitude / gravity awareness
 ///   [14-16] Drone up axis (world frame)                    attitude / gravity awareness
+///   [17]   Is landed (0 = in flight, 1 = touched down)
 ///
 /// Call StartEpisode once at the beginning of each episode so the progress
 /// meters are calibrated to that episode's spawn distances.
@@ -36,6 +37,13 @@ public class DroneObserver : MonoBehaviour
     private Rigidbody _rb;
     private float _startHorizontalDist;
     private float _startVerticalDist;
+    private bool _isLanded;
+
+    /// <summary>
+    /// Sets the landed state. Call with <c>true</c> on touchdown and <c>false</c>
+    /// at the start of each episode to reset.
+    /// </summary>
+    public void SetLanded(bool landed) => _isLanded = landed;
 
     /// <summary>
     /// Caches component references. Call once from the agent's Initialize.
@@ -56,6 +64,7 @@ public class DroneObserver : MonoBehaviour
     {
         Vector3 toTarget = targetPosition - dronePosition;
 
+        _isLanded = false;
         _startHorizontalDist = new Vector2(toTarget.x, toTarget.z).magnitude;
 
         if (_startHorizontalDist <= 0.001f)
@@ -113,5 +122,8 @@ public class DroneObserver : MonoBehaviour
         // Right axis omitted: linearly dependent (right = cross(forward, up)).
         sensor.AddObservation(transform.forward);
         sensor.AddObservation(transform.up);
+
+        // [17] Is landed (1): 0 = in flight, 1 = touched down.
+        sensor.AddObservation(_isLanded ? 1f : 0f);
     }
 }

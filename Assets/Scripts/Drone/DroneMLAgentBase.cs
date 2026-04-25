@@ -157,8 +157,18 @@ public abstract class DroneMLAgentBase : Agent
     {
         rb.linearVelocity  = Vector3.zero;
         rb.angularVelocity = Vector3.zero;
-        _hasLanded      = false;
+        SetLanded(false);
         _touchdownTimer = 0f;
+    }
+
+    /// <summary>
+    /// Single source of truth for the landed state.
+    /// Keeps the agent flag and the observer observation in sync.
+    /// </summary>
+    private void SetLanded(bool landed)
+    {
+        _hasLanded = landed;
+        _observer.SetLanded(landed);
     }
 
     public override void CollectObservations(VectorSensor sensor)
@@ -189,7 +199,7 @@ public abstract class DroneMLAgentBase : Agent
         switch (result.Kind)
         {
             case DroneRewardManager.CollisionKind.Landing:
-                _hasLanded      = true;
+                SetLanded(true);
                 _touchdownTimer = touchdownDelay;
                 AddReward(result.Reward);
                 break;
