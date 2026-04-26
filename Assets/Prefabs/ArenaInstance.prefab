@@ -276,12 +276,12 @@ MonoBehaviour:
   showGizmos: 1
   gizmoRadius: 0.15
   gizmoColor: {r: 1, g: 0, b: 0, a: 1}
-  maxObstacleCount: 20
-  spawnRadius: 50
+  maxObstacleCount: 300
+  spawnRadius: 70
   minSpawnRadius: 5
-  hexSpacing: 10
+  hexSpacing: 6
   minDistance: 5
-  density: 0.35
+  density: 0.8
 --- !u!1 &899460278114708894
 GameObject:
   m_ObjectHideFlags: 0
@@ -332,7 +332,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TrainingArena
   arenaId: -1
-  curriculumPlan: {fileID: 11400000, guid: 02cabde7a5d5679489d8d65b93eae980, type: 2}
+  curriculumPlan: {fileID: 11400000, guid: 0938d2231f8d6004ab9d3251ae7bbff1, type: 2}
   agent: {fileID: 5499850950520007278}
   target: {fileID: 999457839937370585}
   obstacleGenerator: {fileID: 4705270586151036291}
@@ -738,7 +738,7 @@ MonoBehaviour:
   hasUpgradedFromAgentParameters: 1
   MaxStep: 5000
   touchdownDelay: 1
-  rewardProfile: {fileID: 11400000, guid: 2c3921005b10af04382140d7641eceb7, type: 2}
+  rewardProfile: {fileID: 11400000, guid: a6076cccca7ff654798b7b6307a5dbe8, type: 2}
   rotorTransforms:
   - {fileID: 2864374940726305181}
   - {fileID: 4747732565088654033}
@@ -769,6 +769,7 @@ MonoBehaviour:
   debugTime: 
   debugFastApproach: 
   debugRestlessness: 
+  debugYawDeviation: 
   debugTotalStepReward: 
   debugCurrentLesson: 
   debugWindowEpisodes: 

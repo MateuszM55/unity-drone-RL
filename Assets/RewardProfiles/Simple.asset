@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f51384c82e81c4a4f9e7aedc2395a6a0, type: 3}
+  m_Name: Simple
+  m_EditorClassIdentifier: Assembly-CSharp::DroneRewardProfile
+  landingSuccess: 5
+  obstacleCollision: -10
+  deltaDistanceScale: 0
+  normalizedDeltaDistanceMaxProgressReward: 3
+  energyScale: 0
+  smoothnessScale: 0
+  timeScale: 0.001
+  fastApproachScale: 0
+  landingRadius: 0
+  maxTiltAngle: 60
+  tooFarPenalty: -1
+  excessiveTiltPenalty: -10
+  proximityRewardScale: 0
+  tiltPenaltyScale: 0
+  angularVelocityPenaltyScale: 0
+  velocityAlignmentScale: 0
+  restlessnessScale: 0
+  maxYawDeviationAngle: 0
+  yawDeviationScale: 0
