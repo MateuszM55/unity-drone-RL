@@ -109,7 +109,9 @@ public class DroneObserver : MonoBehaviour
         sensor.AddObservation(horizontalProgress);
 
         // [4] Vertical error meter (1): 0 = level with pad, positive = above pad.
-        float verticalError = toTarget.y / _startVerticalDist;
+        float verticalError = _startVerticalDist > 0.001f
+            ? toTarget.y / _startVerticalDist
+            : 0f;
         sensor.AddObservation(verticalError);
 
         // [5-7] Linear velocity in body frame (3) -- onboard accelerometer / velocity axes.
