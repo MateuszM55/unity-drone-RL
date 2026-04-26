@@ -143,7 +143,8 @@ public class DroneRewardManager : MonoBehaviour
             DroneRewardMath.FastApproachPenalty(
                 rb.linearVelocity.magnitude, distanceToTarget, profile.landingRadius, profile.fastApproachScale),
             hasTouchedDown
-                ? DroneRewardMath.RestlessnessPenalty(profile.restlessnessScale)
+                ? DroneRewardMath.RestlessnessPenalty(
+                    rb.linearVelocity.magnitude, rb.angularVelocity.magnitude, profile.restlessnessScale)
                 : 0f
         );
 

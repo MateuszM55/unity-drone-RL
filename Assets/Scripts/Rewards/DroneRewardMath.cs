@@ -201,14 +201,15 @@ public static class DroneRewardMath
     }
 
     /// <summary>
-    /// Flat penalty applied every step after the drone has first touched the landing pad,
-    /// regardless of movement speed. Encourages the agent to settle and end the episode
-    /// as quickly as possible once it has landed.
-    /// <c>penalty = -scale</c>
+    /// Penalty applied every step after the drone has first touched the landing pad.
+    /// Scales with total motion (linear + angular) to encourage the agent to settle quickly.
+    /// <c>penalty = -scale × (linearVelocityMagnitude + angularVelocityMagnitude)</c>
     /// </summary>
-    /// <param name="scale">Fixed penalty per step (default 0.05).</param>
-    public static float RestlessnessPenalty(float scale = 0.05f)
+    /// <param name="linearVelocityMagnitude">Magnitude of the drone's linear velocity.</param>
+    /// <param name="angularVelocityMagnitude">Magnitude of the drone's angular velocity.</param>
+    /// <param name="scale">Multiplier applied to the combined velocity magnitude (default 0.05).</param>
+    public static float RestlessnessPenalty(float linearVelocityMagnitude, float angularVelocityMagnitude, float scale = 0.05f)
     {
-        return -scale;
+        return -scale * (linearVelocityMagnitude + angularVelocityMagnitude);
     }
 }
