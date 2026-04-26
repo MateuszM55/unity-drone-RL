@@ -23,6 +23,7 @@ public class DroneTelemetry : MonoBehaviour
     [SerializeField] private string debugTime;
     [SerializeField] private string debugFastApproach;
     [SerializeField] private string debugRestlessness;
+    [SerializeField] private string debugYawDeviation;
     [SerializeField] private string debugTotalStepReward;
 
     [Header("Debug - Episode Outcomes (rolling 100-episode window)")]
@@ -46,6 +47,7 @@ public class DroneTelemetry : MonoBehaviour
     private float _totalTime;
     private float _totalFastApproach;
     private float _totalRestlessness;
+    private float _totalYawDeviation;
 
     // --- Rolling 100-episode outcome window ---
     private const int RollingWindowSize = 100;
@@ -77,6 +79,7 @@ public class DroneTelemetry : MonoBehaviour
         _totalTime                    += summary.Time;
         _totalFastApproach            += summary.FastApproach;
         _totalRestlessness            += summary.Restlessness;
+        _totalYawDeviation            += summary.YawDeviation;
 
         // --- Inspector debug (blank when zero) ---
         const string fmt = " 0.00000;-0.00000";
@@ -90,7 +93,8 @@ public class DroneTelemetry : MonoBehaviour
         debugVelAlignment        = summary.VelocityAlignment != 0f          ? summary.VelocityAlignment.ToString(fmt)          : "";
         debugTime                = summary.Time != 0f                       ? summary.Time.ToString(fmt)                       : "";
         debugFastApproach        = summary.FastApproach != 0f                  ? summary.FastApproach.ToString(fmt)                  : "";
-        debugRestlessness        = summary.Restlessness != 0f                  ? summary.Restlessness.ToString(fmt)                  : "";
+        debugRestlessness        = summary.Restlessness != 0f   ? summary.Restlessness.ToString(fmt)   : "";
+        debugYawDeviation        = summary.YawDeviation != 0f    ? summary.YawDeviation.ToString(fmt)    : "";
         debugTotalStepReward     = summary.Total.ToString(fmt);
     }
 
@@ -141,6 +145,7 @@ public class DroneTelemetry : MonoBehaviour
         if (_totalTime != 0f)                     stats.Add("Rewards/Time",                    _totalTime);
         if (_totalFastApproach != 0f)             stats.Add("Rewards/FastApproach",            _totalFastApproach);
         if (_totalRestlessness != 0f)             stats.Add("Rewards/Restlessness",           _totalRestlessness);
+        if (_totalYawDeviation != 0f)             stats.Add("Rewards/YawDeviation",            _totalYawDeviation);
 
         // --- TensorBoard: rolling-window outcome percentages ---
         stats.Add("Outcomes/Success",        successCount       / windowCount);
@@ -161,6 +166,7 @@ public class DroneTelemetry : MonoBehaviour
         _totalTime                    = 0f;
         _totalFastApproach            = 0f;
         _totalRestlessness            = 0f;
+        _totalYawDeviation            = 0f;
 
         // --- Inspector: rolling-window outcome rates ---
         const string pct = "P1";

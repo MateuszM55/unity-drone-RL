@@ -54,4 +54,10 @@ public class DroneRewardProfile : ScriptableObject
     [Header("Post-Touchdown Penalties")]
     [Tooltip("Fixed penalty subtracted every step after first pad contact, regardless of movement speed. Encourages the agent to end the episode quickly once landed. Typical range: 0.01 – 0.2.")]
     public float restlessnessScale = 0.05f;
+
+    [Header("Yaw Deviation Penalty")]
+    [Tooltip("Maximum yaw angle (degrees) the drone may deviate from facing the target before a penalty is applied. At this angle penalty is 0; at 180° penalty equals yawDeviationScale. Typical range: 30 – 90°.")]
+    public float maxYawDeviationAngle = 60f;
+    [Tooltip("Maximum per-step penalty applied when the drone faces directly away from the target. Scales linearly from 0 at maxYawDeviationAngle to this value at 180°. Typical range: 0.001 – 0.02.")]
+    public float yawDeviationScale = 0.005f;
 }

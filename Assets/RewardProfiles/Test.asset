@@ -25,8 +25,9 @@ MonoBehaviour:
   tooFarPenalty: -1
   excessiveTiltPenalty: -10
   proximityRewardScale: 0
-  tiltPenaltyScale: 0.001
+  tiltPenaltyScale: 0
   angularVelocityPenaltyScale: 0
   velocityAlignmentScale: 0
-  restlessnessLinearScale: 0.2
-  restlessnessAngularScale: 0.2
+  restlessnessScale: 0
+  maxYawDeviationAngle: 30
+  yawDeviationScale: 0.01

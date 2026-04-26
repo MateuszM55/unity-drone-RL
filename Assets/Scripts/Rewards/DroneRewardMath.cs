@@ -194,6 +194,37 @@ public static class DroneRewardMath
 
     // ────────────────────────── Utility ────────────────────────────────────
 
+    /// <summary>
+    /// Penalty that scales linearly from 0 when the drone's yaw is within
+    /// <paramref name="maxAllowedAngle"/> of the direction to the target, to
+    /// <paramref name="scale"/> when the drone is looking directly away (180°).
+    /// Only the horizontal (XZ) plane is considered.
+    /// </summary>
+    /// <param name="droneForward">The drone's forward vector (world space).</param>
+    /// <param name="toTarget">Vector from the drone to the target (world space).</param>
+    /// <param name="maxAllowedAngle">Angle in degrees within which no penalty is applied.</param>
+    /// <param name="scale">Maximum penalty magnitude (applied at 180° deviation).</param>
+    public static float YawDeviationPenalty(Vector3 droneForward, Vector3 toTarget, float maxAllowedAngle, float scale = 0.005f)
+    {
+        // Project both vectors onto the XZ plane
+        Vector3 fwd = new Vector3(droneForward.x, 0f, droneForward.z);
+        Vector3 dir = new Vector3(toTarget.x, 0f, toTarget.z);
+
+        if (fwd.sqrMagnitude < 0.0001f || dir.sqrMagnitude < 0.0001f)
+            return 0f;
+
+        float angle = Vector3.Angle(fwd, dir); // 0–180°
+        float excessAngle = angle - maxAllowedAngle;
+        if (excessAngle <= 0f)
+            return 0f;
+
+        // Normalize excess to [0,1]: 0 at maxAllowedAngle, 1 at 180°
+        float range = 180f - maxAllowedAngle;
+        if (range < 0.001f) return -scale;
+        float t = excessAngle / range;
+        return -scale * t;
+    }
+
     /// <summary>Resolves the effective target position, falling back to a default height.</summary>
     public static Vector3 ResolveTargetPosition(Transform target, Vector3 fallbackOrigin, float fallbackHeight = 3f)
     {

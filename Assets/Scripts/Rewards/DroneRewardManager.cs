@@ -145,7 +145,12 @@ public class DroneRewardManager : MonoBehaviour
             hasTouchedDown
                 ? DroneRewardMath.RestlessnessPenalty(
                     rb.linearVelocity.magnitude, rb.angularVelocity.magnitude, profile.restlessnessScale)
-                : 0f
+                : 0f,
+            DroneRewardMath.YawDeviationPenalty(
+                transform.forward,
+                targetPosition - transform.localPosition,
+                profile.maxYawDeviationAngle,
+                profile.yawDeviationScale)
         );
 
         return new EvalResult { IsTerminal = false, StepRewards = summary };
