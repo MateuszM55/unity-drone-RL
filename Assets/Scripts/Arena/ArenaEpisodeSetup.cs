@@ -112,7 +112,7 @@ public static class ArenaEpisodeSetup
     /// <summary>
     /// Positions the drone in local space relative to <paramref name="targetLocalPos"/>
     /// according to the spawn parameters in <paramref name="profile"/>.
-    /// Rotates the drone to face the target on the XZ plane (yaw only, stays level).
+    /// Applies a random yaw rotation (around Y axis) in the full 0–360 degree range.
     /// </summary>
     private static void PositionDrone(
         Transform drone,
@@ -135,13 +135,9 @@ public static class ArenaEpisodeSetup
 
         drone.localPosition = spawnPos;
 
-        // Yaw to face target; fall back to default rotation when already on top of it.
-        Vector3 toTarget = targetLocalPos - spawnPos;
-        toTarget.y = 0f;
-
-        drone.localRotation = toTarget.sqrMagnitude > 0.001f
-            ? Quaternion.LookRotation(toTarget, Vector3.up)
-            : defaultRotation;
+        // Randomise yaw (rotation around Y axis) across full 360 degrees.
+        float randomYaw = Random.Range(0f, 360f);
+        drone.localRotation = Quaternion.Euler(0f, randomYaw, 0f);
     }
 
     /// <summary>
