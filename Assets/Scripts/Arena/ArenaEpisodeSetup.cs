@@ -32,6 +32,7 @@ public static class ArenaEpisodeSetup
     /// <param name="obstacleGenerator">Obstacle generator component. May be null.</param>
     /// <param name="defaultPosition">Fallback drone local position when curriculum is unavailable.</param>
     /// <param name="defaultRotation">Fallback drone local rotation when curriculum is unavailable.</param>
+    /// <param name="randomSpawnAngle">When <c>true</c> the drone spawns with a random yaw; when <c>false</c> it faces the target.</param>
     /// <param name="currentLessonIndex">Out: the clamped lesson index that was actually used.</param>
     /// <returns>Max allowed distance from target before the episode should be terminated.</returns>
     public static float Execute(
@@ -43,6 +44,7 @@ public static class ArenaEpisodeSetup
         HexSwissCheeseObstacleGenerator obstacleGenerator,
         Vector3 defaultPosition,
         Quaternion defaultRotation,
+        bool randomSpawnAngle,
         out int currentLessonIndex)
     {
         ClearObstacles(obstacleGenerator);
@@ -53,15 +55,15 @@ public static class ArenaEpisodeSetup
                               out LessonProfile profile, out int clampedIndex))
         {
             currentLessonIndex = 0;
-            ApplyDefaultPose(drone, defaultPosition, defaultRotation);
-            return 10f;
-        }
+                ApplyDefaultPose(drone, defaultPosition, defaultRotation);
+                return 10f;
+            }
 
-        currentLessonIndex = clampedIndex;
+            currentLessonIndex = clampedIndex;
 
-        Vector3 targetLocalPos = target != null ? target.localPosition : defaultPosition;
+            Vector3 targetLocalPos = target != null ? target.localPosition : defaultPosition;
 
-        PositionDrone(drone, targetLocalPos, profile, defaultRotation);
+            PositionDrone(drone, targetLocalPos, profile, defaultRotation, randomSpawnAngle);
         SpawnObstacles(obstacleGenerator, profile);
 
         return profile.MaxEpisodeDistance;
@@ -112,13 +114,15 @@ public static class ArenaEpisodeSetup
     /// <summary>
     /// Positions the drone in local space relative to <paramref name="targetLocalPos"/>
     /// according to the spawn parameters in <paramref name="profile"/>.
-    /// Applies a random yaw rotation (around Y axis) in the full 0–360 degree range.
+    /// When <paramref name="randomSpawnAngle"/> is <c>true</c> a random yaw (0–360°) is applied;
+    /// otherwise the drone is rotated to face the target.
     /// </summary>
     private static void PositionDrone(
         Transform drone,
         Vector3 targetLocalPos,
         LessonProfile profile,
-        Quaternion defaultRotation)
+        Quaternion defaultRotation,
+        bool randomSpawnAngle)
     {
         Vector3 spawnPos;
 
@@ -135,9 +139,22 @@ public static class ArenaEpisodeSetup
 
         drone.localPosition = spawnPos;
 
-        // Randomise yaw (rotation around Y axis) across full 360 degrees.
-        float randomYaw = Random.Range(0f, 360f);
-        drone.localRotation = Quaternion.Euler(0f, randomYaw, 0f);
+        if (randomSpawnAngle)
+        {
+            // Randomise yaw (rotation around Y axis) across full 360 degrees.
+            float randomYaw = Random.Range(0f, 360f);
+            drone.localRotation = Quaternion.Euler(0f, randomYaw, 0f);
+        }
+        else
+        {
+            // Face the target (horizontal plane only).
+            Vector3 toTarget = targetLocalPos - spawnPos;
+            toTarget.y = 0f;
+            if (toTarget.sqrMagnitude > 0.0001f)
+                drone.localRotation = Quaternion.LookRotation(toTarget, Vector3.up);
+            else
+                drone.localRotation = defaultRotation;
+        }
     }
 
     /// <summary>

@@ -338,6 +338,7 @@ MonoBehaviour:
   obstacleGenerator: {fileID: 4705270586151036291}
   useManualLessonPreview: 0
   manualLessonIndex: 0
+  randomSpawnAngle: 0
 --- !u!1 &950471865616938281
 GameObject:
   m_ObjectHideFlags: 0

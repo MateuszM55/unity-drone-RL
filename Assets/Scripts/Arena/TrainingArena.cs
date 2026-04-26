@@ -72,6 +72,11 @@ public class TrainingArena : MonoBehaviour, ITrainingArena
     [Tooltip("Lesson index used when Use Manual Lesson Preview is enabled.")]
     [SerializeField, Min(0)] private int manualLessonIndex;
 
+    [Header("Spawn Orientation")]
+    [Tooltip("When enabled, the drone spawns facing a random direction. " +
+             "When disabled, it always faces the target.")]
+    [SerializeField] private bool randomSpawnAngle = true;
+
     // ========================================================================
     // PRIVATE STATE
     // ========================================================================
@@ -270,6 +275,7 @@ public class TrainingArena : MonoBehaviour, ITrainingArena
             obstacleGenerator,
             defaultPosition,
             defaultRotation,
+            randomSpawnAngle,
             out int lessonIndex);
 
         CurrentLessonIndex = lessonIndex;
