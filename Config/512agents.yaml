@@ -28,7 +28,7 @@ environment_parameters:
   reward_profile:
     sampler_type: constant
     sampler_parameters:
-      value: 0.0
+      value: 1.0
   curriculum:
     sampler_type: constant
     sampler_parameters:
