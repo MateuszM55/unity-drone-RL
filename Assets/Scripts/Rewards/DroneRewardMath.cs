@@ -232,15 +232,17 @@ public static class DroneRewardMath
     }
 
     /// <summary>
-    /// Penalty applied every step after the drone has first touched the landing pad.
-    /// Scales with total motion (linear + angular) to encourage the agent to settle quickly.
-    /// <c>penalty = -scale × (linearVelocityMagnitude + angularVelocityMagnitude)</c>
+    /// Per-step penalty proportional to total motion (linear + angular velocity).
+    /// Uses the soft-sign (algebraic sigmoid) to bound the penalty as speeds grow large:
+    /// <c>penalty = -scale × (x / (1 + x))</c> where <c>x = linearVelocityMagnitude + angularVelocityMagnitude</c>.
+    /// The soft-sign stays sensitive over a wider speed range than tanh and is cheaper to compute.
     /// </summary>
     /// <param name="linearVelocityMagnitude">Magnitude of the drone's linear velocity.</param>
     /// <param name="angularVelocityMagnitude">Magnitude of the drone's angular velocity.</param>
-    /// <param name="scale">Multiplier applied to the combined velocity magnitude (default 0.05).</param>
+    /// <param name="scale">Multiplier applied to the soft-sign output (default 0.05).</param>
     public static float RestlessnessPenalty(float linearVelocityMagnitude, float angularVelocityMagnitude, float scale = 0.05f)
     {
-        return -scale * (linearVelocityMagnitude + angularVelocityMagnitude);
+        float x = linearVelocityMagnitude + angularVelocityMagnitude;
+        return -scale * (x / (1f + x));
     }
 }

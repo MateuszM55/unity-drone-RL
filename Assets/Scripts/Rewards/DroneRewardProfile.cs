@@ -52,7 +52,7 @@ public class DroneRewardProfile : ScriptableObject
     public float velocityAlignmentScale = 0.01f;
 
     [Header("Post-Touchdown Penalties")]
-    [Tooltip("Fixed penalty subtracted every step after first pad contact, regardless of movement speed. Encourages the agent to end the episode quickly once landed. Typical range: 0.01 – 0.2.")]
+    [Tooltip("Subtracted every step after first pad contact, scaled by total motion via soft-sign: penalty = −scale × (x / (1 + x)) where x = linearSpeed + angularSpeed. Bounds the penalty as speeds grow large while staying sensitive over a wide speed range. Encourages the agent to settle quickly once landed. Typical range: 0.01 – 0.2.")]
     public float restlessnessScale = 0.05f;
 
     [Header("Yaw Deviation Penalty")]

@@ -19,8 +19,8 @@ MonoBehaviour:
   energyScale: 0
   smoothnessScale: 0
   timeScale: 0.001
-  fastApproachScale: 0.01
-  landingRadius: 5
+  fastApproachScale: 0
+  landingRadius: 0
   maxTiltAngle: 60
   tooFarPenalty: -1
   excessiveTiltPenalty: -10
