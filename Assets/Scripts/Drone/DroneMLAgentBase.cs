@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using Unity.MLAgents;
 using Unity.MLAgents.Sensors;
 using UnityEngine;
@@ -175,6 +176,38 @@ public abstract class DroneMLAgentBase : Agent
         int idx = AcademyParameterReader.GetInt(AcademyParameterReader.RewardProfileKey, 0);
         idx = Mathf.Clamp(idx, 0, rewardProfiles.Count - 1);
         rewardProfile = rewardProfiles[idx];
+
+        TryApplyStreamingAssetsOverride(rewardProfile);
+    }
+
+    /// <summary>
+    /// If a JSON file named <c>{profile.name}.json</c> exists in
+    /// <c>Application.streamingAssetsPath</c>, its values are overlaid onto
+    /// the ScriptableObject <em>instance</em> (not the asset on disk) using
+    /// <see cref="JsonUtility.FromJsonOverwrite"/>.
+    ///
+    /// This lets us open the JSON in a text editor, change a reward magnitude,
+    /// and restart training without touching Unity or rebuilding the .exe.
+    /// Export the initial JSON via the "Export to StreamingAssets" button on
+    /// the DroneRewardProfile Inspector.
+    /// </summary>
+    private static void TryApplyStreamingAssetsOverride(DroneRewardProfile profile)
+    {
+        if (profile == null) return;
+
+        string path = Path.Combine(Application.streamingAssetsPath, profile.name + ".json");
+        if (!File.Exists(path)) return;
+
+        try
+        {
+            string json = File.ReadAllText(path);
+            JsonUtility.FromJsonOverwrite(json, profile);
+            Debug.Log($"[DroneRewardProfile] Applied StreamingAssets override from: {path}");
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogWarning($"[DroneRewardProfile] Failed to apply StreamingAssets override '{path}': {ex.Message}");
+        }
     }
 
     /// <summary>

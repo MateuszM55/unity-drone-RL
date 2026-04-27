@@ -1,0 +1,21 @@
+{
+    "landingSuccess": 5.0,
+    "obstacleCollision": -10.0,
+    "deltaDistanceScale": 0.0,
+    "normalizedDeltaDistanceMaxProgressReward": 3.0,
+    "energyScale": 0.0,
+    "smoothnessScale": 0.0,
+    "timeScale": 0.0010000000474974514,
+    "fastApproachScale": 0.0,
+    "landingRadius": 0.0,
+    "maxTiltAngle": 60.0,
+    "tooFarPenalty": -1.0,
+    "excessiveTiltPenalty": -10.0,
+    "proximityRewardScale": 0.0,
+    "tiltPenaltyScale": 0.0,
+    "angularVelocityPenaltyScale": 0.0,
+    "velocityAlignmentScale": 0.0,
+    "restlessnessScale": 0.05000000074505806,
+    "maxYawDeviationAngle": 45.0,
+    "yawDeviationScale": 0.10000000149011612
+}
