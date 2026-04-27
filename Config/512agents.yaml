@@ -25,6 +25,15 @@ behaviors:
     summary_freq: 100000
 
 environment_parameters:
+  reward_profile:
+    sampler_type: constant
+    sampler_parameters:
+      value: 0.0
+  curriculum:
+    sampler_type: constant
+    sampler_parameters:
+      value: 0.0
+
   lesson:
     curriculum:
       - name: Lesson0_Obstacles_Difficulty5

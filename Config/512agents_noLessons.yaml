@@ -23,3 +23,13 @@ behaviors:
     max_steps: 100000000         
     time_horizon: 256           
     summary_freq: 100000
+    
+environment_parameters:
+  reward_profile:
+    sampler_type: constant
+    sampler_parameters:
+      value: 0.0
+  curriculum:
+    sampler_type: constant
+    sampler_parameters:
+      value: 1.0
