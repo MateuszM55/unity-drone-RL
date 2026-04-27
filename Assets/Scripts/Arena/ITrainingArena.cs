@@ -32,8 +32,11 @@ public interface ITrainingArena
 
     // ── Curriculum ───────────────────────────────────────────────────────
 
-    /// <summary>The shared curriculum plan asset.</summary>
+    /// <summary>The active curriculum plan, selected via the 'curriculum' environment parameter.</summary>
     CurriculumPlan CurriculumPlan { get; }
+
+    /// <summary>Index of the currently active curriculum plan within the curriculumPlans list.</summary>
+    int ActiveCurriculumIndex { get; }
 
     /// <summary>The lesson index resolved during the most recent <see cref="SetupEpisode"/> call.</summary>
     int CurrentLessonIndex { get; }

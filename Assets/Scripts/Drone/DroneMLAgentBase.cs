@@ -1,4 +1,5 @@
-﻿using Unity.MLAgents;
+﻿using System.Collections.Generic;
+using Unity.MLAgents;
 using Unity.MLAgents.Sensors;
 using UnityEngine;
 
@@ -35,9 +36,14 @@ public abstract class DroneMLAgentBase : Agent
     [Tooltip("Seconds to wait after landing on the target before ending the episode.")]
     [SerializeField] protected float touchdownDelay = 1f;
 
-    [Header("Reward Profile")]
-    [Tooltip("Scriptable object that controls all reward magnitudes and thresholds.")]
-    [SerializeField] protected DroneRewardProfile rewardProfile;
+    [Header("Reward Profiles")]
+    [Tooltip("List of reward profiles available to this drone. The active profile is selected by the " +
+             "'reward_profile' environment parameter in the YAML trainer config (0-indexed). " +
+             "Defaults to the first profile in the list when the parameter is absent.")]
+    [SerializeField] private List<DroneRewardProfile> rewardProfiles = new List<DroneRewardProfile>();
+
+    /// <summary>The reward profile currently active for this episode.</summary>
+    protected DroneRewardProfile rewardProfile { get; private set; }
 
     [Header("Motor Setup")]
     [Tooltip("Rotor transforms assigned automatically by DroneGenerator. Order: FL(0), FR(1), RL(2), RR(3).")]
@@ -112,6 +118,7 @@ public abstract class DroneMLAgentBase : Agent
         _observer.Initialise();
 
         _rewardEvaluator = GetComponent<DroneRewardManager>();
+        ResolveRewardProfile();
         _rewardEvaluator.Configure(rewardProfile);
 
         _telemetry = GetComponent<DroneTelemetry>();
@@ -119,6 +126,8 @@ public abstract class DroneMLAgentBase : Agent
 
     public override void OnEpisodeBegin()
     {
+        ResolveRewardProfile();
+        _rewardEvaluator.Configure(rewardProfile);
         ResetPhysics();
         _rewardEvaluator.ResetEpisode();
 
@@ -147,6 +156,25 @@ public abstract class DroneMLAgentBase : Agent
 
         // Calibrate the observer progress meters to this episode start distances.
         _observer.StartEpisode(transform.localPosition, target.localPosition);
+    }
+
+    /// <summary>
+    /// Resolves the active <see cref="rewardProfile"/> from <c>rewardProfiles</c> using the
+    /// <c>reward_profile</c> Academy environment parameter (defaults to index 0).
+    /// Logs a warning and leaves the current profile unchanged when the list is empty.
+    /// </summary>
+    private void ResolveRewardProfile()
+    {
+        if (rewardProfiles == null || rewardProfiles.Count == 0)
+        {
+            if (rewardProfile == null)
+                Debug.LogWarning($"[{name}] rewardProfiles list is empty and no fallback profile is set.", this);
+            return;
+        }
+
+        int idx = AcademyParameterReader.GetInt(AcademyParameterReader.RewardProfileKey, 0);
+        idx = Mathf.Clamp(idx, 0, rewardProfiles.Count - 1);
+        rewardProfile = rewardProfiles[idx];
     }
 
     /// <summary>

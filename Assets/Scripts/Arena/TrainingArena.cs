@@ -1,4 +1,5 @@
-﻿using Unity.MLAgents;
+﻿using System.Collections.Generic;
+using Unity.MLAgents;
 using UnityEngine;
 
 /// <summary>
@@ -49,9 +50,14 @@ public class TrainingArena : MonoBehaviour, ITrainingArena
     [Tooltip("Unique index assigned by ArenaManager at spawn time. -1 if not yet assigned.")]
     [SerializeField] private int arenaId = -1;
 
-    [Header("Shared Curriculum")]
-    [Tooltip("ScriptableObject containing the ordered list of lessons. Shared across all arena instances.")]
-    [SerializeField] private CurriculumPlan curriculumPlan;
+    [Header("Curriculum Plans")]
+    [Tooltip("List of curriculum plans available to this arena. The active plan is selected by the " +
+             "'curriculum' environment parameter in the YAML trainer config (0-indexed). " +
+             "Defaults to the first plan in the list when the parameter is absent.")]
+    [SerializeField] private List<CurriculumPlan> curriculumPlans = new List<CurriculumPlan>();
+
+    /// <summary>The curriculum plan currently active, resolved from the list via the 'curriculum' env param.</summary>
+    private CurriculumPlan _activeCurriculumPlan;
 
     [Header("Local References (Auto-discovered)")]
     [Tooltip("The ML-Agent operating in this arena.")]
@@ -108,7 +114,10 @@ public class TrainingArena : MonoBehaviour, ITrainingArena
     public HexSwissCheeseObstacleGenerator ObstacleGenerator => obstacleGenerator;
 
     /// <inheritdoc/>
-    public CurriculumPlan CurriculumPlan => curriculumPlan;
+    public CurriculumPlan CurriculumPlan => _activeCurriculumPlan;
+
+    /// <inheritdoc/>
+    public int ActiveCurriculumIndex { get; private set; }
 
     /// <inheritdoc/>
     public int CurrentLessonIndex { get; private set; }
@@ -163,18 +172,41 @@ public class TrainingArena : MonoBehaviour, ITrainingArena
 
         DiscoverComponents();
 
-        if (curriculumPlan == null)
+        ResolveActiveCurriculumPlan();
+
+        if (_activeCurriculumPlan == null)
         {
             Debug.LogWarning(
-                $"[TrainingArena {arenaId}] CurriculumPlan is not assigned. " +
-                "Create one via Assets > Create > Drone > Curriculum Plan.", this);
+                $"[TrainingArena {arenaId}] No active CurriculumPlan resolved. " +
+                "Add CurriculumPlan assets to the curriculumPlans list in the Inspector.", this);
         }
         else
         {
-            curriculumPlan.ValidateAndWarn();
+            _activeCurriculumPlan.ValidateAndWarn();
         }
 
         obstacleGenerator?.Initialise(MaxObstacleCapacityAcrossLessons());
+    }
+
+    // ========================================================================
+    // CURRICULUM RESOLUTION
+    // ========================================================================
+
+    /// <summary>
+    /// Resolves <see cref="_activeCurriculumPlan"/> from <c>curriculumPlans</c> using the
+    /// <c>curriculum</c> Academy environment parameter (defaults to index 0).
+    /// Should be called at initialisation and at the start of each episode to allow
+    /// the trainer to switch curriculum plans between runs.
+    /// </summary>
+    private void ResolveActiveCurriculumPlan()
+    {
+        if (curriculumPlans == null || curriculumPlans.Count == 0)
+            return;
+
+        int idx = AcademyParameterReader.GetInt(AcademyParameterReader.CurriculumKey, 0);
+        idx = Mathf.Clamp(idx, 0, curriculumPlans.Count - 1);
+        ActiveCurriculumIndex = idx;
+        _activeCurriculumPlan = curriculumPlans[idx];
     }
 
     // ========================================================================
@@ -215,15 +247,18 @@ public class TrainingArena : MonoBehaviour, ITrainingArena
     /// </summary>
     private int MaxObstacleCapacityAcrossLessons()
     {
-        if (curriculumPlan == null || curriculumPlan.LessonCount == 0)
-            return 0;
-
         int max = 0;
-        for (int i = 0; i < curriculumPlan.LessonCount; i++)
+        if (curriculumPlans == null) return 0;
+
+        foreach (var plan in curriculumPlans)
         {
-            LessonProfile profile = curriculumPlan.GetLesson(i);
-            if (profile != null && profile.MaxObstacleCount > max)
-                max = profile.MaxObstacleCount;
+            if (plan == null) continue;
+            for (int i = 0; i < plan.LessonCount; i++)
+            {
+                LessonProfile profile = plan.GetLesson(i);
+                if (profile != null && profile.MaxObstacleCount > max)
+                    max = profile.MaxObstacleCount;
+            }
         }
         return max;
     }
@@ -266,10 +301,12 @@ public class TrainingArena : MonoBehaviour, ITrainingArena
     /// <inheritdoc/>
     public float SetupEpisode(Transform drone, Vector3 defaultPosition, Quaternion defaultRotation)
     {
+        ResolveActiveCurriculumPlan();
+
         float result = ArenaEpisodeSetup.Execute(
             arenaId,
             _lessonIndexProvider,
-            curriculumPlan,
+            _activeCurriculumPlan,
             drone,
             target,
             obstacleGenerator,
@@ -326,12 +363,15 @@ public class TrainingArena : MonoBehaviour, ITrainingArena
 
         // Spawn-radius ring: manual index when preview is on,
         // current lesson during Play, lesson 0 in Edit mode.
-        if (target != null && curriculumPlan != null && curriculumPlan.LessonCount > 0)
+        CurriculumPlan gizmoPlan = _activeCurriculumPlan
+            ?? (curriculumPlans != null && curriculumPlans.Count > 0 ? curriculumPlans[0] : null);
+
+        if (target != null && gizmoPlan != null && gizmoPlan.LessonCount > 0)
         {
             int drawIndex = useManualLessonPreview
                 ? manualLessonIndex
                 : (Application.isPlaying ? CurrentLessonIndex : 0);
-            LessonProfile profile = curriculumPlan.GetLessonClamped(drawIndex, out _);
+            LessonProfile profile = gizmoPlan.GetLessonClamped(drawIndex, out _);
 
             if (profile != null && profile.SpawnRadius > 0f)
             {
