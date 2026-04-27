@@ -30,7 +30,7 @@ public class DroneRewardProfile : ScriptableObject
     public float timeScale = 0.001f;
     [Tooltip("Subtracted every step when the drone is inside landingRadius and moving fast (any direction). Encourages a gentle final descent. penalty = −scale × speed × (1 − distance/radius). Typical per-step penalty: -0.002 to -0.02. Recommended scale: 0.001 – 0.01.")]
     public float fastApproachScale = 0.002f;
-    [Tooltip("How close (metres) the drone must be before the fast-approach penalty kicks in. Should be larger than targetReachedThreshold. Typical value: 2 – 10 m.")]
+    [Tooltip("How close (metres) the drone must be before the fast-approach penalty kicks in. Typical value: 2 – 10 m.")]
     public float landingRadius = 5f;
 
     [Header("Terminal Condition Rewards")]

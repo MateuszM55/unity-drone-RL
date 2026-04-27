@@ -19,8 +19,8 @@ MonoBehaviour:
   energyScale: 0
   smoothnessScale: 0
   timeScale: 0.001
-  fastApproachScale: 0
-  landingRadius: 0
+  fastApproachScale: 0.01
+  landingRadius: 5
   maxTiltAngle: 60
   tooFarPenalty: -1
   excessiveTiltPenalty: -10
@@ -29,5 +29,5 @@ MonoBehaviour:
   angularVelocityPenaltyScale: 0
   velocityAlignmentScale: 0
   restlessnessScale: 0
-  maxYawDeviationAngle: 30
-  yawDeviationScale: 0.01
+  maxYawDeviationAngle: 45
+  yawDeviationScale: 0.1

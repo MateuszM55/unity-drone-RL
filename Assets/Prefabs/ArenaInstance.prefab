@@ -338,7 +338,7 @@ MonoBehaviour:
   obstacleGenerator: {fileID: 4705270586151036291}
   useManualLessonPreview: 0
   manualLessonIndex: 0
-  randomSpawnAngle: 0
+  randomSpawnAngle: 1
 --- !u!1 &950471865616938281
 GameObject:
   m_ObjectHideFlags: 0
@@ -739,7 +739,7 @@ MonoBehaviour:
   hasUpgradedFromAgentParameters: 1
   MaxStep: 5000
   touchdownDelay: 1
-  rewardProfile: {fileID: 11400000, guid: a6076cccca7ff654798b7b6307a5dbe8, type: 2}
+  rewardProfile: {fileID: 11400000, guid: 2c3921005b10af04382140d7641eceb7, type: 2}
   rotorTransforms:
   - {fileID: 2864374940726305181}
   - {fileID: 4747732565088654033}
