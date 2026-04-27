@@ -332,7 +332,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TrainingArena
   arenaId: -1
-  curriculumPlan: {fileID: 11400000, guid: 0938d2231f8d6004ab9d3251ae7bbff1, type: 2}
+  curriculumPlans:
+  - {fileID: 11400000, guid: 02cabde7a5d5679489d8d65b93eae980, type: 2}
+  - {fileID: 11400000, guid: 0938d2231f8d6004ab9d3251ae7bbff1, type: 2}
   agent: {fileID: 5499850950520007278}
   target: {fileID: 999457839937370585}
   obstacleGenerator: {fileID: 4705270586151036291}
@@ -739,7 +741,10 @@ MonoBehaviour:
   hasUpgradedFromAgentParameters: 1
   MaxStep: 5000
   touchdownDelay: 1
-  rewardProfile: {fileID: 11400000, guid: 2c3921005b10af04382140d7641eceb7, type: 2}
+  rewardProfiles:
+  - {fileID: 11400000, guid: 2c3921005b10af04382140d7641eceb7, type: 2}
+  - {fileID: 11400000, guid: a6076cccca7ff654798b7b6307a5dbe8, type: 2}
+  - {fileID: 11400000, guid: 61236945302d7cd46a92d0043b482b28, type: 2}
   rotorTransforms:
   - {fileID: 2864374940726305181}
   - {fileID: 4747732565088654033}
