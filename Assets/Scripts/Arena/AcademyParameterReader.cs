@@ -52,7 +52,7 @@ public static class AcademyParameterReader
     /// Returns <paramref name="defaultValue"/> when the Academy is unavailable
     /// or the parameter has not been set.
     /// </summary>
-    public static int GetInt(string key, int defaultValue = 0)
+    public static int GetInt(string key, int defaultValue = 256)
     {
         return (int)Academy.Instance.EnvironmentParameters.GetWithDefault(key, defaultValue);
     }
