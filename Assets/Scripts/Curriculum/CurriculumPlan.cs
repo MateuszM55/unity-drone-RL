@@ -12,7 +12,7 @@ using UnityEngine;
 /// 3. Assign to the <see cref="TrainingArena"/> component on the arena prefab
 ///
 /// <b>Benefits of Shared Data:</b>
-/// - 100 arenas share one curriculum definition (no memory duplication)
+/// - Multiple arenas can share one curriculum definition (no memory duplication)
 /// - Changes in the Inspector propagate instantly to all arenas
 /// - Easy A/B testing by swapping curriculum assets
 /// </summary>
@@ -20,7 +20,7 @@ using UnityEngine;
 public class CurriculumPlan : ScriptableObject
 {
     [Header("Lessons")]
-    [Tooltip("Ordered list of lesson profiles. The ML-Agents curriculum parameter 'lesson' selects which profile to use (0-indexed).")]
+    [Tooltip("Ordered list of lesson profiles. The ML-Agents curriculum parameter 'lesson' maps to this list (0-indexed).")]
     [SerializeField] private List<LessonProfile> lessons = new List<LessonProfile>();
 
     /// <summary>Number of lessons in this curriculum.</summary>

@@ -5,8 +5,8 @@ using Unity.MLAgents.Sensors;
 using UnityEngine;
 
 /// <summary>
-/// ISensor that casts sphere-rays in a 3D concentric cone pattern (1-4-8 layout)
-/// aimed along the transform's local forward axis.
+/// ISensor that performs batched sphere casts in a 3D concentric cone pattern (1-4-8 layout),
+/// aligned with the transform's local forward axis.
 /// Uses batched <see cref="SpherecastCommand"/> for high-performance sensing.
 ///
 /// Each ray produces: 1 linear inverse distance + one-hot encoding for detectable layers.

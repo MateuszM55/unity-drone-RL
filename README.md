@@ -9,7 +9,7 @@ The goal of this project is to develop a virtual 3D environment and a quadcopter
 * **Physics-based Quadcopter:** A custom drone model with force-based movement.
 * **3D Training Environment:** A scalable environment designed for obstacle avoidance and pathfinding.
 * **Curriculum Learning Implementation:** Staged training difficulty levels configured via ML-Agents `config` files to improve convergence.
-* **Benchmarking:** Configurable training runs designed to compare standard PPO training versus Curriculum-based training (scenes and tooling in progress).
+* **Benchmarking:** Configurable training runs for comparing standard PPO training with curriculum-based training.
 
 ## Tech Stack
 * Unity 6000.3.1f1 LTS
