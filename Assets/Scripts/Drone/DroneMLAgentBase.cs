@@ -280,17 +280,8 @@ public abstract class DroneMLAgentBase : Agent
     /// then forwards results to DroneTelemetry.
     /// Call at the end of OnActionReceived after all forces have been applied.
     /// </summary>
-    /// <remarks>
-    /// Contract for subclasses: populate <see cref="_currentActionsBuffer"/> with
-    /// the raw action value for each motor before calling this method.  The base
-    /// class uses it to compute smoothness (difference from previous step) and,
-    /// as a fallback when <paramref name="energyValues"/> is null, energy penalty.
-    /// </remarks>
-    /// <param name="currentActions">Continuous actions issued this step.</param>
-    /// <param name="previousActions">Actions from the previous step; updated in-place.</param>
-    /// <param name="energyValues">Per-motor normalised thrust for energy penalty. Falls back to currentActions when null.</param>
     /// <returns><c>true</c> if the episode was terminated; caller must return immediately.</returns>
-    protected bool ApplyStandardRewards(float[] currentActions, float[] previousActions, float[] energyValues = null)
+    protected bool ApplyStandardRewards()
     {
         if (rewardProfile == null)
         {
@@ -301,9 +292,8 @@ public abstract class DroneMLAgentBase : Agent
         Vector3 targetPos = DroneRewardMath.ResolveTargetPosition(target, _episodeStartPosition);
 
         var result = _rewardEvaluator.Evaluate(
-            rewardProfile, targetPos, _episodeStartPosition,
+            rewardProfile, targetPos,
             _maxEpisodeDistance,
-            currentActions, previousActions, energyValues,
             _hasLanded);
 
         if (result.IsTerminal)
@@ -313,9 +303,6 @@ public abstract class DroneMLAgentBase : Agent
             EndEpisode();
             return true;
         }
-
-        System.Array.Copy(currentActions, previousActions,
-            Mathf.Min(currentActions.Length, previousActions.Length));
 
         AddReward(result.StepRewards.Total);
         _telemetry.Record(result.StepRewards);

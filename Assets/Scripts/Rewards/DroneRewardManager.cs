@@ -76,23 +76,12 @@ public class DroneRewardManager : MonoBehaviour
     /// </summary>
     /// <param name="profile">Reward magnitudes and thresholds.</param>
     /// <param name="targetPosition">Current target position (local space).</param>
-    /// <param name="startPosition">Drone start position (for proximity baseline).</param>
     /// <param name="maxEpisodeDistance">Max allowed distance before episode termination.</param>
-    /// <param name="currentActions">Continuous actions issued this step (used for smoothness + energy fallback).</param>
-    /// <param name="previousActions">Actions from the previous step.</param>
-    /// <param name="energyValues">
-    /// Values forwarded to <see cref="DroneRewardMath.EnergyPenalty"/>.
-    /// Pass <c>null</c> to fall back to <paramref name="currentActions"/>.
-    /// </param>
     /// <param name="hasTouchedDown"><c>true</c> once the drone has made first contact with the landing pad this episode. Activates the restlessness penalty.</param>
     public EvalResult Evaluate(
         DroneRewardProfile profile,
         Vector3 targetPosition,
-        Vector3 startPosition,
         float maxEpisodeDistance,
-        float[] currentActions,
-        float[] previousActions,
-        float[] energyValues = null,
         bool hasTouchedDown = false)
     {
         if (profile == null)
@@ -114,10 +103,6 @@ public class DroneRewardManager : MonoBehaviour
         if (_previousDistance < 0f)
             _startDistance = distanceToTarget;
 
-        float deltaReward = _previousDistance >= 0f
-            ? DroneRewardMath.DeltaDistanceReward(
-                  _previousDistance, distanceToTarget, profile.deltaDistanceScale)
-            : 0f;
         float normalizedDeltaReward = _previousDistance >= 0f
             ? DroneRewardMath.NormalizedDeltaDistanceReward(
                   _previousDistance, distanceToTarget, _startDistance,
@@ -126,22 +111,8 @@ public class DroneRewardManager : MonoBehaviour
         _previousDistance = distanceToTarget;
 
         var summary = new RewardStepSummary(
-            deltaReward,
             normalizedDeltaReward,
-            DroneRewardMath.ProximityReward(
-                transform.localPosition, targetPosition, startPosition, profile.proximityRewardScale),
-            DroneRewardMath.EnergyPenalty(energyValues ?? currentActions, profile.energyScale),
-            DroneRewardMath.ActionSmoothnessPenalty(currentActions, previousActions, profile.smoothnessScale),
-            DroneRewardMath.TiltPenalty(transform.up, profile.tiltPenaltyScale),
-            DroneRewardMath.AngularVelocityPenalty(
-                rb.angularVelocity.magnitude, profile.angularVelocityPenaltyScale),
-            DroneRewardMath.VelocityAlignmentReward(
-                // Convert world-space velocity to local space so both vectors share the same frame as targetPosition.
-                transform.InverseTransformDirection(rb.linearVelocity),
-                targetPosition - transform.localPosition, profile.velocityAlignmentScale),
             DroneRewardMath.TimePenalty(profile.timeScale),
-            DroneRewardMath.FastApproachPenalty(
-                rb.linearVelocity.magnitude, distanceToTarget, profile.landingRadius, profile.fastApproachScale),
             hasTouchedDown
                 ? DroneRewardMath.RestlessnessPenalty(
                     rb.linearVelocity.magnitude, rb.angularVelocity.magnitude, profile.restlessnessScale)

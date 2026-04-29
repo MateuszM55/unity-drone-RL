@@ -33,7 +33,6 @@ public class DroneIncrementalMLAgent : DroneMLAgentBase
     [SerializeField] private float timeToMaxThrust = 0.1f;
 
     private readonly float[] _currentThrusts    = new float[4];
-    private readonly float[] _normalizedThrusts = new float[4];
 
     private Keyboard _keyboard;
 
@@ -86,11 +85,10 @@ public class DroneIncrementalMLAgent : DroneMLAgentBase
 
             rb.AddForceAtPosition(transform.up * _currentThrusts[i], rotorTransforms[i].position);
 
-            _currentActionsBuffer[i] = actions.ContinuousActions[i];
-            _normalizedThrusts[i]    = _currentThrusts[i] / maxThrustPerMotor;
+            _previousActions[i] = actions.ContinuousActions[i];
         }
 
-        ApplyStandardRewards(_currentActionsBuffer, _previousActions, _normalizedThrusts);
+        ApplyStandardRewards();
     }
 
     public override void Heuristic(in ActionBuffers actionsOut)
