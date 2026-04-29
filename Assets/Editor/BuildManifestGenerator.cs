@@ -22,8 +22,8 @@ using UnityEngine;
 /// Index 1: Landing
 ///
 /// --- CURRICULUMS ---
-/// Index 0: Standard
-/// Index 1: Obstacle
+/// Index 0: Standard (5 lessons)
+/// Index 1: Obstacle (3 lessons)
 /// </code>
 ///
 /// <b>Strategy:</b>
@@ -60,10 +60,10 @@ public class BuildManifestGenerator : IPostprocessBuildWithReport
         }
 
         List<string> rewardNames    = ResolveRewardProfileNames();
-        List<string> curriculumNames = ResolveCurriculumNames();
+            List<(string name, int lessonCount)> curriculums = ResolveCurriculums();
 
-        string manifestPath = Path.Combine(buildDir, "mapping_legend.txt");
-        WriteLegend(manifestPath, rewardNames, curriculumNames);
+            string manifestPath = Path.Combine(buildDir, "mapping_legend.txt");
+            WriteLegend(manifestPath, rewardNames, curriculums);
 
         Debug.Log($"[BuildManifestGenerator] mapping_legend.txt written to: {manifestPath}");
     }
@@ -108,11 +108,11 @@ public class BuildManifestGenerator : IPostprocessBuildWithReport
     }
 
     /// <summary>
-    /// Returns curriculum-plan names in index order.
+    /// Returns curriculum-plan entries (name + lesson count) in index order.
     /// Tries to read the ordered list from the first TrainingArena prefab found
     /// in the project; falls back to an alphabetical AssetDatabase scan.
     /// </summary>
-    private static List<string> ResolveCurriculumNames()
+    private static List<(string name, int lessonCount)> ResolveCurriculums()
     {
         foreach (string guid in AssetDatabase.FindAssets("t:Prefab"))
         {
@@ -127,17 +127,34 @@ public class BuildManifestGenerator : IPostprocessBuildWithReport
             SerializedProperty listProp = so.FindProperty("curriculumPlans");
             if (listProp != null && listProp.isArray && listProp.arraySize > 0)
             {
-                List<string> names = new List<string>();
+                List<(string name, int lessonCount)> entries = new List<(string name, int lessonCount)>();
                 for (int i = 0; i < listProp.arraySize; i++)
                 {
                     Object element = listProp.GetArrayElementAtIndex(i).objectReferenceValue;
-                    names.Add(element != null ? element.name : $"<missing at index {i}>");
+                    CurriculumPlan plan = element as CurriculumPlan;
+                    string name = element != null ? element.name : $"<missing at index {i}>";
+                    int lessonCount = plan != null ? plan.LessonCount : 0;
+                    entries.Add((name, lessonCount));
                 }
-                return names;
+                return entries;
             }
         }
 
-        return FallbackAssetNames<CurriculumPlan>("t:CurriculumPlan");
+        return FallbackCurriculums();
+    }
+
+    private static List<(string name, int lessonCount)> FallbackCurriculums()
+    {
+        List<(string name, int lessonCount)> entries = new List<(string name, int lessonCount)>();
+        foreach (string guid in AssetDatabase.FindAssets("t:CurriculumPlan"))
+        {
+            string path = AssetDatabase.GUIDToAssetPath(guid);
+            CurriculumPlan plan = AssetDatabase.LoadAssetAtPath<CurriculumPlan>(path);
+            if (plan != null)
+                entries.Add((plan.name, plan.LessonCount));
+        }
+        entries.Sort((a, b) => System.StringComparer.OrdinalIgnoreCase.Compare(a.name, b.name));
+        return entries;
     }
 
     /// <summary>
@@ -162,7 +179,7 @@ public class BuildManifestGenerator : IPostprocessBuildWithReport
     // File writing
     // -------------------------------------------------------------------------
 
-    private static void WriteLegend(string path, List<string> rewardNames, List<string> curriculumNames)
+    private static void WriteLegend(string path, List<string> rewardNames, List<(string name, int lessonCount)> curriculums)
     {
         StringBuilder sb = new StringBuilder();
 
@@ -180,14 +197,14 @@ public class BuildManifestGenerator : IPostprocessBuildWithReport
         sb.AppendLine();
 
         sb.AppendLine("--- CURRICULUMS ---");
-        if (curriculumNames.Count == 0)
+        if (curriculums.Count == 0)
         {
             sb.AppendLine("  (none found)");
         }
         else
         {
-            for (int i = 0; i < curriculumNames.Count; i++)
-                sb.AppendLine($"Index {i}: {curriculumNames[i]}");
+            for (int i = 0; i < curriculums.Count; i++)
+                sb.AppendLine($"Index {i}: {curriculums[i].name} ({curriculums[i].lessonCount} lesson{(curriculums[i].lessonCount == 1 ? "" : "s")})");
         }
 
         File.WriteAllText(path, sb.ToString(), Encoding.UTF8);
