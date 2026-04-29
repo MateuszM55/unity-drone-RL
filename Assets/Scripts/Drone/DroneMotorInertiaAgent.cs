@@ -26,7 +26,7 @@ using UnityEngine.InputSystem;
 ///     [21] Motor 2 normalised thrust, [22] Motor 2 previous delta
 ///     [23] Motor 3 normalised thrust, [24] Motor 3 previous delta
 /// </summary>
-public class DroneIncrementalMLAgent : DroneMLAgentBase
+public class DroneMotorInertiaAgent : DroneMLAgentBase
 {
     [Header("Realistic Motor Physics")]
     [Tooltip("Time in seconds for a motor to spool up from 0 to 100% thrust.")]

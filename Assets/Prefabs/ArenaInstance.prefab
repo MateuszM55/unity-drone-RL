@@ -735,7 +735,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6c06d2ad5a0515a41ad4ec0deb434648, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DroneIncrementalML_Agent
+  m_EditorClassIdentifier: Assembly-CSharp::DroneMotorInertiaAgent
   agentParameters:
     maxStep: 0
   hasUpgradedFromAgentParameters: 1
