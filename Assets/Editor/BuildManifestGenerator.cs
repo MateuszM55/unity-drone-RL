@@ -60,10 +60,10 @@ public class BuildManifestGenerator : IPostprocessBuildWithReport
         }
 
         List<string> rewardNames    = ResolveRewardProfileNames();
-            List<(string name, int lessonCount)> curriculums = ResolveCurriculums();
+        List<(string name, int lessonCount)> curriculums = ResolveCurriculums();
 
-            string manifestPath = Path.Combine(buildDir, "mapping_legend.txt");
-            WriteLegend(manifestPath, rewardNames, curriculums);
+        string manifestPath = Path.Combine(buildDir, "mapping_legend.txt");
+        WriteLegend(manifestPath, rewardNames, curriculums);
 
         Debug.Log($"[BuildManifestGenerator] mapping_legend.txt written to: {manifestPath}");
     }

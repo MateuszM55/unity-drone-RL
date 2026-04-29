@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using Unity.MLAgents;
+using UnityEngine;
 
 /// <summary>
 /// Factory component that spawns multiple training arenas at runtime and
@@ -39,7 +40,8 @@ public class ArenaManager : MonoBehaviour
     [SerializeField] private GameObject arenaPrefab;
 
     [Header("Spawning Configuration")]
-    [Tooltip("Number of arena instances to spawn.")]
+    [Tooltip("Number of arena instances to spawn. Can be overridden at runtime via the 'num_arenas' " +
+             "environment parameter in the YAML trainer config (0 or absent = use this Inspector value).")]
     [SerializeField, Min(1)] private int numberOfArenas = 1;
 
     [Tooltip("Distance between arena centres. Should be large enough to prevent inter-arena interference.")]
@@ -62,6 +64,12 @@ public class ArenaManager : MonoBehaviour
     /// called a second time before the first batch of Destroy calls has flushed).
     /// </summary>
     private bool _isSpawning;
+
+    /// <summary>
+    /// The resolved arena count used for the most recent spawn (Inspector value or env-param override).
+    /// Stored so <see cref="CalculateGridPosition"/> and Gizmos stay consistent during a spawn pass.
+    /// </summary>
+    private int _effectiveArenaCount;
 
     // ========================================================================
     // PUBLIC API
@@ -119,9 +127,11 @@ public class ArenaManager : MonoBehaviour
         {
             ClearArenas();
 
-            var validArenas = new System.Collections.Generic.List<TrainingArena>(numberOfArenas);
+            int effectiveCount = ResolveArenaCount();
+            _effectiveArenaCount = effectiveCount;
+            var validArenas = new System.Collections.Generic.List<TrainingArena>(effectiveCount);
 
-            for (int i = 0; i < numberOfArenas; i++)
+            for (int i = 0; i < effectiveCount; i++)
             {
                 Vector3 position = CalculateGridPosition(i);
                 GameObject arenaGO = Instantiate(arenaPrefab, position, Quaternion.identity, transform);
@@ -177,6 +187,22 @@ public class ArenaManager : MonoBehaviour
     // ========================================================================
 
     /// <summary>
+    /// Returns the number of arenas to spawn, preferring the <c>num_arenas</c>
+    /// ML-Agents environment parameter when it is set to a positive value,
+    /// otherwise falling back to the Inspector <see cref="numberOfArenas"/> field.
+    /// </summary>
+    private int ResolveArenaCount()
+    {
+        int envParam = AcademyParameterReader.GetInt(AcademyParameterReader.NumberOfArenasKey, 0);
+        if (envParam > 0)
+        {
+            Debug.Log($"[ArenaManager] num_arenas env param = {envParam} (overrides Inspector value {numberOfArenas}).", this);
+            return envParam;
+        }
+        return numberOfArenas;
+    }
+
+    /// <summary>
     /// Calculates the world position for the arena at <paramref name="index"/>.
     /// Arenas are arranged in a grid on the XZ plane, centred around this
     /// manager's transform position.
@@ -188,11 +214,13 @@ public class ArenaManager : MonoBehaviour
         int row = index / arenasPerRow;
         int col = index % arenasPerRow;
 
+        int count = _effectiveArenaCount > 0 ? _effectiveArenaCount : numberOfArenas;
+
         // Number of columns in the last (possibly partial) row determines total width.
-        int columnsInGrid = Mathf.Min(numberOfArenas, arenasPerRow);
+        int columnsInGrid = Mathf.Min(count, arenasPerRow);
 
         // Prevent integer division truncation: cast numerator to float before dividing.
-        int totalRows = Mathf.CeilToInt((float)numberOfArenas / arenasPerRow);
+        int totalRows = Mathf.CeilToInt((float)count / arenasPerRow);
 
         float totalWidth  = (columnsInGrid - 1) * arenaSpacing;
         float totalDepth  = (totalRows - 1) * arenaSpacing;
@@ -214,7 +242,8 @@ public class ArenaManager : MonoBehaviour
 
         Gizmos.color = new Color(0f, 1f, 0.5f, 0.8f);
 
-        for (int i = 0; i < numberOfArenas; i++)
+        int count = _effectiveArenaCount > 0 ? _effectiveArenaCount : numberOfArenas;
+        for (int i = 0; i < count; i++)
         {
             Vector3 pos = CalculateGridPosition(i);
             Gizmos.DrawSphere(pos, 1f);

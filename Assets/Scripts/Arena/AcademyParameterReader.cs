@@ -38,6 +38,13 @@ public static class AcademyParameterReader
     /// </summary>
     public const string CurriculumKey = "curriculum";
 
+    /// <summary>
+    /// Overrides the number of arena instances spawned by <see cref="ArenaManager"/>.
+    /// When set, takes precedence over the Inspector value.
+    /// A value of 0 (or absent) means "use the Inspector value".
+    /// </summary>
+    public const string NumberOfArenasKey = "num_arenas";
+
     // ── Reader helpers ────────────────────────────────────────────────────
 
     /// <summary>
