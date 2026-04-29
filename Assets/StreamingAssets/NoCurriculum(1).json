@@ -1,0 +1,17 @@
+{
+    "planName": "NoCurriculum(1)",
+    "lessons": [
+        {
+            "lessonName": "Lesson3",
+            "spawnHeight": 4.0,
+            "spawnRadius": 55.0,
+            "maxEpisodeDistance": 65.0,
+            "maxObstacleCount": 99,
+            "obstacleSpawnRadius": 50.0,
+            "minObstacleSpawnRadius": 8.0,
+            "hexSpacing": 12.0,
+            "hexMinDistance": 5.0,
+            "hexObstacleDensity": 0.8999999761581421
+        }
+    ]
+}
