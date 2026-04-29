@@ -3,41 +3,8 @@ using Unity.MLAgents;
 using UnityEngine;
 
 /// <summary>
-/// Unified arena controller that handles arena identity, curriculum management,
+/// Arena controller responsible for component discovery, curriculum resolution,
 /// and per-episode setup.
-///
-/// Attach to the root GameObject of your Arena Prefab.
-///
-/// <b>Hierarchy Example:</b>
-/// <code>
-/// Arena_000 (TrainingArena)
-///   * Drone (DroneMLAgentBase, Rigidbody, ...)
-///   * Target (Landing Pad)  -- tagged "Target", or name contains "Target", "LandingPad", or "Pad"
-///   * Floor
-///   * Obstacle Spawn Point (HexSwissCheeseObstacleGenerator)
-/// </code>
-///
-/// <b>Key Responsibilities:</b>
-/// <list type="bullet">
-///   <item>Arena identification (assigned by ArenaManager).</item>
-///   <item>Shared curriculum data via CurriculumPlan ScriptableObject.</item>
-///   <item>Episode setup: positions the drone and spawns obstacles (delegated to ArenaEpisodeSetup).</item>
-///   <item>Local component references -- single source of truth.</item>
-/// </list>
-///
-/// <b>Discovery Pattern:</b>
-/// The drone finds this controller via GetComponentInParent, enabling multiple arena instances
-/// with isolated management.
-///
-/// <b>Shared Data Pattern:</b>
-/// All arena instances reference a single CurriculumPlan asset.
-/// With 100 arenas there is still only one copy of the lesson data in memory.
-///
-/// <b>Lesson-Index Strategy:</b>
-/// By default the arena reads the lesson parameter from the ML-Agents Academy (AcademyLessonIndexProvider).
-/// Enable <b>Use Manual Lesson Preview</b> in the Inspector to lock the arena to a specific lesson
-/// during Play mode — useful for testing obstacle layouts and reward shaping without a full training run.
-/// Call SetLessonIndexProvider to override programmatically from code or unit tests.
 /// </summary>
 [DisallowMultipleComponent]
 public class TrainingArena : MonoBehaviour, ITrainingArena
@@ -51,9 +18,7 @@ public class TrainingArena : MonoBehaviour, ITrainingArena
     [SerializeField] private int arenaId = -1;
 
     [Header("Curriculum Plans")]
-    [Tooltip("List of curriculum plans available to this arena. The active plan is selected by the " +
-             "'curriculum' environment parameter in the YAML trainer config (0-indexed). " +
-             "Defaults to the first plan in the list when the parameter is absent.")]
+    [Tooltip("Curriculum plans for this arena. Active plan is selected by 'curriculum' (0-indexed).")]
     [SerializeField] private List<CurriculumPlan> curriculumPlans = new List<CurriculumPlan>();
 
     /// <summary>The curriculum plan currently active, resolved from the list via the 'curriculum' env param.</summary>
@@ -70,17 +35,14 @@ public class TrainingArena : MonoBehaviour, ITrainingArena
     [SerializeField] private HexSwissCheeseObstacleGenerator obstacleGenerator;
 
     [Header("Play-Mode Lesson Preview")]
-    [Tooltip("When enabled, ignores the ML-Agents Academy curriculum parameter and locks this arena " +
-             "to Manual Lesson Index for the entire Play session. Useful for testing obstacle layouts " +
-             "and reward shaping. Has no effect during headless training.")]
+    [Tooltip("Use a fixed lesson index in Play Mode instead of reading it from Academy parameters.")]
     [SerializeField] private bool useManualLessonPreview;
 
     [Tooltip("Lesson index used when Use Manual Lesson Preview is enabled.")]
     [SerializeField, Min(0)] private int manualLessonIndex;
 
     [Header("Spawn Orientation")]
-    [Tooltip("When enabled, the drone spawns facing a random direction. " +
-             "When disabled, it always faces the target.")]
+    [Tooltip("If enabled, drone spawns with random yaw. Otherwise it faces the target.")]
     [SerializeField] private bool randomSpawnAngle = true;
 
     // ========================================================================
@@ -88,14 +50,6 @@ public class TrainingArena : MonoBehaviour, ITrainingArena
     // ========================================================================
 
     private bool _isInitialised;
-
-    /// <summary>
-    /// Determines how the current lesson index is resolved at the start of each episode.
-    /// Defaults to <see cref="AcademyLessonIndexProvider"/>.
-    /// Set to <see cref="ManualLessonIndexProvider"/> when <see cref="useManualLessonPreview"/> is enabled,
-    /// or override via <see cref="SetLessonIndexProvider"/> for programmatic control.
-    /// </summary>
-    private ILessonIndexProvider _lessonIndexProvider;
 
     // ========================================================================
     // ITrainingArena -- PUBLIC PROPERTIES
@@ -123,32 +77,13 @@ public class TrainingArena : MonoBehaviour, ITrainingArena
     public int CurrentLessonIndex { get; private set; }
 
     // ========================================================================
-    // CONFIGURATION
-    // ========================================================================
-
-    /// <summary>
-    /// Replaces the lesson-index resolution strategy.
-    /// Must be called before the first SetupEpisode to take effect.
-    /// Example: arena.SetLessonIndexProvider(new ManualLessonIndexProvider(2));
-    /// </summary>
-    /// <param name="provider">Non-null strategy instance.</param>
-    /// <exception cref="System.ArgumentNullException">Thrown when provider is null.</exception>
-    public void SetLessonIndexProvider(ILessonIndexProvider provider)
-    {
-        _lessonIndexProvider = provider ?? throw new System.ArgumentNullException(nameof(provider));
-    }
-
-    // ========================================================================
     // ITrainingArena -- INITIALISATION
     // ========================================================================
 
     /// <inheritdoc/>
     public void Initialise(int id)
     {
-        // Always update the arena ID, even if already initialized.
-        // This handles the case where the ML-Agents Agent.Initialize() (Unity callback,
-        // capital-I) runs first and triggers the no-arg arena Initialise(), and then
-        // ArenaManager.Awake() runs second and calls this int-overload to stamp the ID.
+        // Keep ID assignment idempotent in case initialization order varies.
         arenaId = id;
         Initialise();
     }
@@ -159,16 +94,8 @@ public class TrainingArena : MonoBehaviour, ITrainingArena
         if (_isInitialised) return;
         _isInitialised = true;
 
-        // Priority: externally-supplied provider > Inspector manual-preview toggle > live Academy.
-        if (_lessonIndexProvider == null)
-        {
-            _lessonIndexProvider = useManualLessonPreview
-                ? (ILessonIndexProvider)new ManualLessonIndexProvider(manualLessonIndex)
-                : new AcademyLessonIndexProvider();
-
-            if (useManualLessonPreview)
-                Debug.Log($"[TrainingArena {arenaId}] Manual lesson preview active — locked to lesson {manualLessonIndex}.", this);
-        }
+        if (useManualLessonPreview)
+            Debug.Log($"[TrainingArena {arenaId}] Manual lesson preview active — locked to lesson {manualLessonIndex}.", this);
 
         DiscoverComponents();
 
@@ -193,10 +120,7 @@ public class TrainingArena : MonoBehaviour, ITrainingArena
     // ========================================================================
 
     /// <summary>
-    /// Resolves <see cref="_activeCurriculumPlan"/> from <c>curriculumPlans</c> using the
-    /// <c>curriculum</c> Academy environment parameter (defaults to index 0).
-    /// Should be called at initialisation and at the start of each episode to allow
-    /// the trainer to switch curriculum plans between runs.
+    /// Resolves the active curriculum plan from the 'curriculum' Academy parameter.
     /// </summary>
     private void ResolveActiveCurriculumPlan()
     {
@@ -209,14 +133,20 @@ public class TrainingArena : MonoBehaviour, ITrainingArena
         _activeCurriculumPlan = curriculumPlans[idx];
     }
 
+    /// <summary>Resolves lesson index for the next episode.</summary>
+    private int ResolveLessonIndex()
+    {
+        if (useManualLessonPreview)
+            return manualLessonIndex;
+
+        return AcademyParameterReader.GetInt(AcademyParameterReader.LessonKey);
+    }
+
     // ========================================================================
     // COMPONENT DISCOVERY
     // ========================================================================
 
-    /// <summary>
-    /// Automatically discovers the agent, target, and obstacle generator
-    /// within this arena's child hierarchy when they are not already assigned.
-    /// </summary>
+    /// <summary>Auto-discovers missing local references in children.</summary>
     [ContextMenu("Discover Components")]
     public void DiscoverComponents()
     {
@@ -305,7 +235,7 @@ public class TrainingArena : MonoBehaviour, ITrainingArena
 
         float result = ArenaEpisodeSetup.Execute(
             arenaId,
-            _lessonIndexProvider,
+            ResolveLessonIndex(),
             _activeCurriculumPlan,
             drone,
             target,

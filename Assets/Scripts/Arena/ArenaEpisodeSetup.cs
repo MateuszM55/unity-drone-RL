@@ -1,31 +1,17 @@
 using UnityEngine;
 
 /// <summary>
-/// Pure static helper that contains all episode-setup math for a training arena.
-///
-/// <b>Responsibilities:</b>
-/// <list type="bullet">
-///   <item>Resolving the lesson profile from a <see cref="CurriculumPlan"/>.</item>
-///   <item>Positioning and orienting the drone relative to the target.</item>
-///   <item>Delegating obstacle generation to <see cref="HexSwissCheeseObstacleGenerator"/>.</item>
-/// </list>
-///
-/// Keeping this logic here instead of inside <see cref="TrainingArena"/> means:
-/// <list type="bullet">
-///   <item>The arena MonoBehaviour remains a thin orchestrator.</item>
-///   <item>This math is testable without a scene or MonoBehaviour.</item>
-///   <item>Alternative arena types can reuse the same logic.</item>
-/// </list>
+/// Static helper for episode setup: lesson resolution, drone placement, and obstacle spawning.
 /// </summary>
 public static class ArenaEpisodeSetup
 {
     // ── Public entry point ────────────────────────────────────────────────
 
     /// <summary>
-    /// Fully sets up one episode: resolves the lesson, positions the drone, spawns obstacles.
+    /// Sets up one episode: resolves lesson, positions drone, and spawns obstacles.
     /// </summary>
-    /// <param name="arenaId">Arena identifier — used only for log messages.</param>
-    /// <param name="lessonIndexProvider">Strategy that returns the current lesson index.</param>
+    /// <param name="arenaId">Arena identifier for logs.</param>
+    /// <param name="lessonIndex">Requested lesson index for this episode.</param>
     /// <param name="curriculumPlan">Shared curriculum asset. May be null.</param>
     /// <param name="drone">Drone transform to reposition (local-space coordinates).</param>
     /// <param name="target">Target/landing-pad transform (local-space coordinates). May be null.</param>
@@ -37,7 +23,7 @@ public static class ArenaEpisodeSetup
     /// <returns>Max allowed distance from target before the episode should be terminated.</returns>
     public static float Execute(
         int arenaId,
-        ILessonIndexProvider lessonIndexProvider,
+        int lessonIndex,
         CurriculumPlan curriculumPlan,
         Transform drone,
         Transform target,
@@ -49,21 +35,19 @@ public static class ArenaEpisodeSetup
     {
         ClearObstacles(obstacleGenerator);
 
-        int rawIndex = lessonIndexProvider.GetLessonIndex();
-
-        if (!TryResolveLesson(arenaId, curriculumPlan, rawIndex,
+        if (!TryResolveLesson(arenaId, curriculumPlan, lessonIndex,
                               out LessonProfile profile, out int clampedIndex))
         {
             currentLessonIndex = 0;
-                ApplyDefaultPose(drone, defaultPosition, defaultRotation);
-                return 10f;
-            }
+            ApplyDefaultPose(drone, defaultPosition, defaultRotation);
+            return 10f;
+        }
 
-            currentLessonIndex = clampedIndex;
+        currentLessonIndex = clampedIndex;
 
-            Vector3 targetLocalPos = target != null ? target.localPosition : defaultPosition;
+        Vector3 targetLocalPos = target != null ? target.localPosition : defaultPosition;
 
-            PositionDrone(drone, targetLocalPos, profile, defaultRotation, randomSpawnAngle);
+        PositionDrone(drone, targetLocalPos, profile, defaultRotation, randomSpawnAngle);
         SpawnObstacles(obstacleGenerator, profile);
 
         return profile.MaxEpisodeDistance;
@@ -77,8 +61,8 @@ public static class ArenaEpisodeSetup
     }
 
     /// <summary>
-    /// Resolves the <see cref="LessonProfile"/> from <paramref name="plan"/>.
-    /// Returns <c>false</c> (and logs a warning) when the plan is null, empty, or yields a null profile.
+    /// Resolves a lesson profile from <paramref name="plan"/>.
+    /// Returns false when plan/profile is missing.
     /// </summary>
     private static bool TryResolveLesson(
         int arenaId,
@@ -112,10 +96,7 @@ public static class ArenaEpisodeSetup
     }
 
     /// <summary>
-    /// Positions the drone in local space relative to <paramref name="targetLocalPos"/>
-    /// according to the spawn parameters in <paramref name="profile"/>.
-    /// When <paramref name="randomSpawnAngle"/> is <c>true</c> a random yaw (0–360°) is applied;
-    /// otherwise the drone is rotated to face the target.
+    /// Positions the drone in local space using the lesson spawn settings.
     /// </summary>
     private static void PositionDrone(
         Transform drone,
@@ -158,15 +139,7 @@ public static class ArenaEpisodeSetup
     }
 
     /// <summary>
-    /// Spawns obstacles via <paramref name="generator"/> when the profile requires them.
-    /// Does nothing if the generator is null or the profile requests zero obstacles.
-    /// <para>
-    /// <see cref="LessonProfile.MaxObstacleCount"/> is passed directly to
-    /// <see cref="HexSwissCheeseObstacleGenerator.Generate"/> as the upper-bound count.
-    /// The generator is responsible for the actual placement; it may produce fewer
-    /// obstacles if the available area cannot accommodate the full count.
-    /// Height is determined by the Inspector fields on the generator.
-    /// </para>
+    /// Spawns obstacles when a generator exists and lesson allows obstacles.
     /// </summary>
     private static void SpawnObstacles(
         HexSwissCheeseObstacleGenerator generator,
