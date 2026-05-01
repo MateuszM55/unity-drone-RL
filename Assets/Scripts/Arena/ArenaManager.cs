@@ -152,6 +152,7 @@ public class ArenaManager : MonoBehaviour
             }
 
             spawnedArenas = validArenas.ToArray();
+            Academy.Instance.StatsRecorder.Add("Config/NumArenas", spawnedArenas.Length);
             Debug.Log($"[ArenaManager] Spawned {spawnedArenas.Length} arena(s) with {arenaSpacing}m spacing.", this);
         }
         finally
