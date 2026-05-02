@@ -256,6 +256,9 @@ public abstract class DroneMLAgentBase : Agent
 
     protected virtual void OnCollisionEnter(Collision collision)
     {
+        // The start pad is underneath the drone at spawn — ignore it entirely.
+        if (collision.transform.CompareTag("StartPad")) return;
+
         var result = _rewardEvaluator.EvaluateCollision(rewardProfile, collision.transform, target, _hasLanded);
 
         switch (result.Kind)

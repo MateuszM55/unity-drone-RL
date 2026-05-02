@@ -342,6 +342,7 @@ MonoBehaviour:
   obstacleGenerator: {fileID: 4705270586151036291}
   useManualLessonPreview: 0
   manualLessonIndex: 0
+  spawnHeight: 0.7
   randomSpawnAngle: 1
 --- !u!1 &950471865616938281
 GameObject:
@@ -691,9 +692,9 @@ GameObject:
   - component: {fileID: 6000901181937758180}
   - component: {fileID: 6714884099578499750}
   - component: {fileID: 2286366538725470812}
-  m_Layer: 8
-  m_Name: startPad
-  m_TagString: Target
+  m_Layer: 9
+  m_Name: StartPad
+  m_TagString: StartPad
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -706,13 +707,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5254931589080253500}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.7071068, y: -0, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: -11.3, y: -0.35, z: 0}
-  m_LocalScale: {x: 4, y: 4, z: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -11.3, y: 0, z: 0}
+  m_LocalScale: {x: 4, y: 1, z: 4}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 8189895618508168766}
-  m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &6000901181937758180
 MeshFilter:
   m_ObjectHideFlags: 0
