@@ -27,6 +27,7 @@ public static class ArenaEpisodeSetup
         CurriculumPlan curriculumPlan,
         Transform drone,
         Transform target,
+        Transform startPad,
         HexSwissCheeseObstacleGenerator obstacleGenerator,
         Vector3 defaultPosition,
         Quaternion defaultRotation,
@@ -40,6 +41,7 @@ public static class ArenaEpisodeSetup
         {
             currentLessonIndex = 0;
             ApplyDefaultPose(drone, defaultPosition, defaultRotation);
+            PlaceStartPad(startPad, drone);
             return 10f;
         }
 
@@ -48,6 +50,7 @@ public static class ArenaEpisodeSetup
         Vector3 targetLocalPos = target != null ? target.localPosition : defaultPosition;
 
         PositionDrone(drone, targetLocalPos, profile, defaultRotation, randomSpawnAngle);
+        PlaceStartPad(startPad, drone);
         SpawnObstacles(obstacleGenerator, profile);
 
         return profile.MaxEpisodeDistance;
@@ -162,5 +165,19 @@ public static class ArenaEpisodeSetup
     {
         drone.localPosition = position;
         drone.localRotation = rotation;
+    }
+
+    /// <summary>
+    /// Moves the start pad to sit at ground level directly below the drone's spawn position.
+    /// Does nothing when <paramref name="startPad"/> is null.
+    /// </summary>
+    private static void PlaceStartPad(Transform startPad, Transform drone)
+    {
+        if (startPad == null || drone == null) return;
+
+        // Snap to the drone's XZ position; keep the pad's own Y (floor level).
+        Vector3 padPos = startPad.localPosition;
+        Vector3 droneLocal = drone.localPosition;
+        startPad.localPosition = new Vector3(droneLocal.x, padPos.y, droneLocal.z);
     }
 }

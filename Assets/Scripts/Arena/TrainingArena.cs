@@ -31,6 +31,9 @@ public class TrainingArena : MonoBehaviour, ITrainingArena
     [Tooltip("The target/landing pad for this arena.")]
     [SerializeField] private Transform target;
 
+    [Tooltip("The start pad that is repositioned to the drone's spawn point each episode (optional).")]
+    [SerializeField] private Transform startPad;
+
     [Tooltip("Obstacle generator for this arena (optional).")]
     [SerializeField] private HexSwissCheeseObstacleGenerator obstacleGenerator;
 
@@ -97,7 +100,6 @@ public class TrainingArena : MonoBehaviour, ITrainingArena
         if (useManualLessonPreview)
             Debug.Log($"[TrainingArena {arenaId}] Manual lesson preview active — locked to lesson {manualLessonIndex}.", this);
 
-        DiscoverComponents();
 
         ResolveActiveCurriculumPlan();
 
@@ -146,29 +148,7 @@ public class TrainingArena : MonoBehaviour, ITrainingArena
     // COMPONENT DISCOVERY
     // ========================================================================
 
-    /// <summary>Auto-discovers missing local references in children.</summary>
-    [ContextMenu("Discover Components")]
-    public void DiscoverComponents()
-    {
-        if (agent == null)
-        {
-            agent = GetComponentInChildren<Agent>(true);
-            if (agent == null)
-                Debug.LogWarning($"[TrainingArena {arenaId}] No Agent found in children.", this);
-        }
 
-        if (target == null)
-        {
-            target = FindTarget();
-            if (target == null)
-                Debug.LogWarning(
-                    $"[TrainingArena {arenaId}] No Target found. " +
-                    "Tag a child GameObject with the \"Target\" tag.", this);
-        }
-
-        if (obstacleGenerator == null)
-            obstacleGenerator = GetComponentInChildren<HexSwissCheeseObstacleGenerator>(true);
-    }
 
     /// <summary>
     /// Returns the highest <see cref="LessonProfile.MaxObstacleCount"/> across all lessons
@@ -193,36 +173,6 @@ public class TrainingArena : MonoBehaviour, ITrainingArena
         return max;
     }
 
-    /// <summary>
-    /// Finds the first child tagged "Target".
-    /// Falls back to a name-contains search only when no tagged object exists,
-    /// supporting legacy prefabs that have not been retagged yet.
-    /// </summary>
-    private Transform FindTarget()
-    {
-        // Primary pass: tag-based (avoids string allocations per child)
-        foreach (Transform child in GetComponentsInChildren<Transform>(true))
-        {
-            if (child != transform && child.CompareTag("Target"))
-                return child;
-        }
-
-        // Fallback pass: name-based (legacy prefab support — tag objects with "Target" to remove this scan)
-        foreach (Transform child in GetComponentsInChildren<Transform>(true))
-        {
-            if (child == transform) continue;
-            string n = child.name;
-            if (n.Contains("Target") || n.Contains("LandingPad") || n.Contains("Landing Pad"))
-            {
-                Debug.LogWarning(
-                    $"[TrainingArena {arenaId}] Found target by name (\"{child.name}\") instead of tag. " +
-                    "Tag the GameObject with \"Target\" to silence this warning.", this);
-                return child;
-            }
-        }
-
-        return null;
-    }
 
     // ========================================================================
     // ITrainingArena -- EPISODE MANAGEMENT
@@ -239,6 +189,7 @@ public class TrainingArena : MonoBehaviour, ITrainingArena
             _activeCurriculumPlan,
             drone,
             target,
+            startPad,
             obstacleGenerator,
             defaultPosition,
             defaultRotation,
@@ -264,16 +215,6 @@ public class TrainingArena : MonoBehaviour, ITrainingArena
     // ========================================================================
 
 #if UNITY_EDITOR
-    private void OnValidate()
-    {
-        // Only run discovery in Edit mode. During Play mode the initialisation pipeline
-        // owns component references; running DiscoverComponents() here would fight
-        // serialized assignments and cause flicker or null-ref errors.
-        if (Application.isPlaying) return;
-
-        if (agent == null || target == null || obstacleGenerator == null)
-            DiscoverComponents();
-    }
 
     private void OnDrawGizmosSelected()
     {
@@ -289,6 +230,13 @@ public class TrainingArena : MonoBehaviour, ITrainingArena
         {
             Gizmos.color = Color.cyan;
             Gizmos.DrawWireSphere(agent.transform.position, 0.5f);
+        }
+
+        // Start pad marker
+        if (startPad != null)
+        {
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawWireSphere(startPad.position, 0.6f);
         }
 
         // Spawn-radius ring: manual index when preview is on,
