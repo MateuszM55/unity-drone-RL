@@ -128,9 +128,9 @@ public abstract class DroneMLAgentBase : Agent
     public override void OnEpisodeBegin()
     {
         ResolveRewardProfile();
+        _rewardEvaluator.ResetEpisode();
         _rewardEvaluator.Configure(rewardProfile);
         ResetPhysics();
-        _rewardEvaluator.ResetEpisode();
 
         if (_arena != null)
         {
