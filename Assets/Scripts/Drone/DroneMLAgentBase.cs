@@ -194,6 +194,7 @@ public abstract class DroneMLAgentBase : Agent
     private static void TryApplyStreamingAssetsOverride(DroneRewardProfile profile)
     {
         if (profile == null) return;
+        if (Application.isEditor) return;
 
         string path = Path.Combine(Application.streamingAssetsPath, profile.name + ".json");
         if (!File.Exists(path)) return;
