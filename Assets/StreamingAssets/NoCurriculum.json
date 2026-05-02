@@ -3,7 +3,6 @@
     "lessons": [
         {
             "lessonName": "Lesson3",
-            "spawnHeight": 4.0,
             "spawnRadius": 55.0,
             "maxEpisodeDistance": 65.0,
             "maxObstacleCount": 99,

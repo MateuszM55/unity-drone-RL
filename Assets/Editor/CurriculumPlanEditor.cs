@@ -32,7 +32,6 @@ public class CurriculumPlanEditor : Editor
     private class LessonData
     {
         public string lessonName;
-        public float spawnHeight;
         public float spawnRadius;
         public float maxEpisodeDistance;
         public int maxObstacleCount;
@@ -117,7 +116,6 @@ public class CurriculumPlanEditor : Editor
             data.lessons.Add(new LessonData
             {
                 lessonName           = lp.name,
-                spawnHeight          = lp.SpawnHeight,
                 spawnRadius          = lp.SpawnRadius,
                 maxEpisodeDistance   = lp.MaxEpisodeDistance,
                 maxObstacleCount     = lp.MaxObstacleCount,

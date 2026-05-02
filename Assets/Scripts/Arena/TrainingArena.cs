@@ -44,7 +44,10 @@ public class TrainingArena : MonoBehaviour, ITrainingArena
     [Tooltip("Lesson index used when Use Manual Lesson Preview is enabled.")]
     [SerializeField, Min(0)] private int manualLessonIndex;
 
-    [Header("Spawn Orientation")]
+    [Header("Spawn params")]
+    [Tooltip("Fixed height above the target at which the drone spawns each episode.")]
+    [SerializeField, Min(0f)] private float spawnHeight = 3f;
+
     [Tooltip("If enabled, drone spawns with random yaw. Otherwise it faces the target.")]
     [SerializeField] private bool randomSpawnAngle = true;
 
@@ -193,6 +196,7 @@ public class TrainingArena : MonoBehaviour, ITrainingArena
             obstacleGenerator,
             defaultPosition,
             defaultRotation,
+            spawnHeight,
             randomSpawnAngle,
             out int lessonIndex);
 
@@ -255,7 +259,7 @@ public class TrainingArena : MonoBehaviour, ITrainingArena
             {
                 Gizmos.color = new Color(0f, 1f, 1f, 0.3f);
                 DrawWireCircle(
-                    target.position + Vector3.up * profile.SpawnHeight,
+                    target.position + Vector3.up * spawnHeight,
                     profile.SpawnRadius);
             }
         }

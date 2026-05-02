@@ -14,9 +14,6 @@
 public class LessonProfile : ScriptableObject
 {
     [Header("Spawn")]
-    [Tooltip("Height above the target at which the drone spawns. Must be > 0 when Spawn Radius is also 0 to avoid spawning inside the target.")]
-    [SerializeField, Min(0f)] private float spawnHeight = 3f;
-
     [Tooltip("Horizontal distance from the target. 0 = spawn directly above. Must be less than Max Episode Distance.")]
     [SerializeField, Min(0f)] private float spawnRadius = 0f;
 
@@ -45,9 +42,6 @@ public class LessonProfile : ScriptableObject
     [SerializeField, Range(0f, 1f)] private float hexObstacleDensity = 0.35f;
 
     // -- Read-only properties ------------------------------------------
-
-    /// <summary>Height above the target at which the drone spawns.</summary>
-    public float SpawnHeight => spawnHeight;
 
     /// <summary>Horizontal distance from the target. 0 = spawn directly above.</summary>
     public float SpawnRadius => spawnRadius;
@@ -86,14 +80,6 @@ public class LessonProfile : ScriptableObject
     public bool ValidateAndWarn()
     {
         bool valid = true;
-
-        if (spawnHeight <= 0f && spawnRadius <= 0f)
-        {
-            Debug.LogWarning(
-                $"[LessonProfile '{name}'] Both spawnHeight and spawnRadius are 0 -- " +
-                "the drone will spawn inside the target and may trigger an immediate false landing.", this);
-            valid = false;
-        }
 
         if (spawnRadius > 0f && spawnRadius >= maxEpisodeDistance)
         {

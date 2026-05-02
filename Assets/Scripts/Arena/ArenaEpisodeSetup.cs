@@ -15,9 +15,11 @@ public static class ArenaEpisodeSetup
     /// <param name="curriculumPlan">Shared curriculum asset. May be null.</param>
     /// <param name="drone">Drone transform to reposition (local-space coordinates).</param>
     /// <param name="target">Target/landing-pad transform (local-space coordinates). May be null.</param>
+    /// <param name="startPad">Start pad transform repositioned to the drone's spawn XZ each episode. May be null.</param>
     /// <param name="obstacleGenerator">Obstacle generator component. May be null.</param>
     /// <param name="defaultPosition">Fallback drone local position when curriculum is unavailable.</param>
     /// <param name="defaultRotation">Fallback drone local rotation when curriculum is unavailable.</param>
+    /// <param name="spawnHeight">Fixed height above the target at which the drone spawns.</param>
     /// <param name="randomSpawnAngle">When <c>true</c> the drone spawns with a random yaw; when <c>false</c> it faces the target.</param>
     /// <param name="currentLessonIndex">Out: the clamped lesson index that was actually used.</param>
     /// <returns>Max allowed distance from target before the episode should be terminated.</returns>
@@ -31,6 +33,7 @@ public static class ArenaEpisodeSetup
         HexSwissCheeseObstacleGenerator obstacleGenerator,
         Vector3 defaultPosition,
         Quaternion defaultRotation,
+        float spawnHeight,
         bool randomSpawnAngle,
         out int currentLessonIndex)
     {
@@ -49,7 +52,7 @@ public static class ArenaEpisodeSetup
 
         Vector3 targetLocalPos = target != null ? target.localPosition : defaultPosition;
 
-        PositionDrone(drone, targetLocalPos, profile, defaultRotation, randomSpawnAngle);
+        PositionDrone(drone, targetLocalPos, profile, defaultRotation, spawnHeight, randomSpawnAngle);
         PlaceStartPad(startPad, drone);
         SpawnObstacles(obstacleGenerator, profile);
 
@@ -106,6 +109,7 @@ public static class ArenaEpisodeSetup
         Vector3 targetLocalPos,
         LessonProfile profile,
         Quaternion defaultRotation,
+        float spawnHeight,
         bool randomSpawnAngle)
     {
         Vector3 spawnPos;
@@ -114,11 +118,11 @@ public static class ArenaEpisodeSetup
         {
             float angle = Random.Range(0f, 2f * Mathf.PI);
             Vector3 radialOffset = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * profile.SpawnRadius;
-            spawnPos = targetLocalPos + radialOffset + Vector3.up * profile.SpawnHeight;
+            spawnPos = targetLocalPos + radialOffset + Vector3.up * spawnHeight;
         }
         else
         {
-            spawnPos = targetLocalPos + Vector3.up * profile.SpawnHeight;
+            spawnPos = targetLocalPos + Vector3.up * spawnHeight;
         }
 
         drone.localPosition = spawnPos;
