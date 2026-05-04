@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CurriculumPlan
   lessons:
   - {fileID: 11400000, guid: 76da2acf62e39bf4da82f31e08ef4efb, type: 2}
+  - {fileID: 11400000, guid: d707380cbf48214439fb47806cf6e2c8, type: 2}
   - {fileID: 11400000, guid: c04ad385e0076ef488b7819244b9411f, type: 2}
   - {fileID: 11400000, guid: c1793bc1d5f8bee458e4653cf7316176, type: 2}
   - {fileID: 11400000, guid: ecdb0edce06502e41b9ac22e1640c52e, type: 2}

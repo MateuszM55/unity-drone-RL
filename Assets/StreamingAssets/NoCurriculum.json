@@ -2,7 +2,7 @@
     "planName": "NoCurriculum",
     "lessons": [
         {
-            "lessonName": "Lesson3",
+            "lessonName": "Lesson4",
             "spawnRadius": 55.0,
             "maxEpisodeDistance": 65.0,
             "maxObstacleCount": 99,

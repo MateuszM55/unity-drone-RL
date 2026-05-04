@@ -13,7 +13,7 @@
             "hexObstacleDensity": 0.44999998807907107
         },
         {
-            "lessonName": "Lesson1",
+            "lessonName": "Lesson2",
             "spawnRadius": 35.0,
             "maxEpisodeDistance": 45.0,
             "maxObstacleCount": 99,
@@ -24,7 +24,7 @@
             "hexObstacleDensity": 0.6000000238418579
         },
         {
-            "lessonName": "Lesson2",
+            "lessonName": "Lesson3",
             "spawnRadius": 45.0,
             "maxEpisodeDistance": 55.0,
             "maxObstacleCount": 99,
@@ -35,7 +35,7 @@
             "hexObstacleDensity": 0.75
         },
         {
-            "lessonName": "Lesson3",
+            "lessonName": "Lesson4",
             "spawnRadius": 55.0,
             "maxEpisodeDistance": 65.0,
             "maxObstacleCount": 99,

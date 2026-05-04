@@ -17,6 +17,15 @@ public class LessonProfile : ScriptableObject
     [Tooltip("Horizontal distance from the target. 0 = spawn directly above. Must be less than Max Episode Distance.")]
     [SerializeField, Min(0f)] private float spawnRadius = 0f;
 
+    [Tooltip("Minimum height above the target at which the drone spawns. When both min and max are 0 the arena-level spawnHeight is used as a fallback.")]
+    [SerializeField, Min(0f)] private float spawnHeightMin = 0f;
+
+    [Tooltip("Maximum height above the target at which the drone spawns. Must be >= Spawn Height Min. When both are 0 the arena-level spawnHeight is used as a fallback.")]
+    [SerializeField, Min(0f)] private float spawnHeightMax = 0f;
+
+    [Tooltip("Whether the start pad should be spawned/shown at the drone's spawn position for this lesson.")]
+    [SerializeField] private bool spawnStartPad = true;
+
     [Header("Episode")]
     [Tooltip("Max distance from the target before the episode is terminated.")]
     [SerializeField, Min(1f)] private float maxEpisodeDistance = 10f;
@@ -45,6 +54,15 @@ public class LessonProfile : ScriptableObject
 
     /// <summary>Horizontal distance from the target. 0 = spawn directly above.</summary>
     public float SpawnRadius => spawnRadius;
+
+    /// <summary>Minimum height above the target at which the drone spawns. 0 (with SpawnHeightMax also 0) means use the arena-level fallback.</summary>
+    public float SpawnHeightMin => spawnHeightMin;
+
+    /// <summary>Maximum height above the target at which the drone spawns. 0 (with SpawnHeightMin also 0) means use the arena-level fallback.</summary>
+    public float SpawnHeightMax => spawnHeightMax;
+
+    /// <summary>Whether the start pad should be spawned/visible for this lesson.</summary>
+    public bool SpawnStartPad => spawnStartPad;
 
     /// <summary>Max distance from the target before the episode is terminated.</summary>
     public float MaxEpisodeDistance => maxEpisodeDistance;
@@ -86,6 +104,13 @@ public class LessonProfile : ScriptableObject
             Debug.LogWarning(
                 $"[LessonProfile '{name}'] spawnRadius ({spawnRadius}) is >= maxEpisodeDistance ({maxEpisodeDistance}). " +
                 "The drone will spawn outside its own termination boundary and the episode will end immediately.", this);
+            valid = false;
+        }
+
+        if (spawnHeightMin > spawnHeightMax && !(spawnHeightMin == 0f && spawnHeightMax == 0f))
+        {
+            Debug.LogWarning(
+                $"[LessonProfile '{name}'] spawnHeightMin ({spawnHeightMin}) is greater than spawnHeightMax ({spawnHeightMax}).", this);
             valid = false;
         }
 

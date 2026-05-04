@@ -10,16 +10,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 99f1dea5bd65394409f0bac7a6c09a08, type: 3}
-  m_Name: Lesson4
+  m_Name: Lesson5
   m_EditorClassIdentifier: Assembly-CSharp::LessonProfile
-  spawnRadius: 55
+  spawnRadius: 75
   spawnHeightMin: 0.7
   spawnHeightMax: 0.7
   spawnStartPad: 1
-  maxEpisodeDistance: 65
-  maxObstacleCount: 99
-  obstacleSpawnRadius: 50
+  maxEpisodeDistance: 85
+  maxObstacleCount: 300
+  obstacleSpawnRadius: 70
   minObstacleSpawnRadius: 8
-  hexSpacing: 12
+  hexSpacing: 9
   hexMinDistance: 5
   hexObstacleDensity: 0.9

@@ -53,7 +53,10 @@ public static class ArenaEpisodeSetup
         Vector3 targetLocalPos = target != null ? target.localPosition : defaultPosition;
 
         PositionDrone(drone, targetLocalPos, profile, defaultRotation, spawnHeight, randomSpawnAngle);
-        PlaceStartPad(startPad, drone);
+        if (profile.SpawnStartPad)
+            PlaceStartPad(startPad, drone);
+        else
+            HideStartPad(startPad);
         SpawnObstacles(obstacleGenerator, profile);
 
         return profile.MaxEpisodeDistance;
@@ -109,20 +112,22 @@ public static class ArenaEpisodeSetup
         Vector3 targetLocalPos,
         LessonProfile profile,
         Quaternion defaultRotation,
-        float spawnHeight,
+        float fallbackSpawnHeight,
         bool randomSpawnAngle)
     {
+        float height = ResolveSpawnHeight(profile, fallbackSpawnHeight);
+
         Vector3 spawnPos;
 
         if (profile.SpawnRadius > 0f)
         {
             float angle = Random.Range(0f, 2f * Mathf.PI);
             Vector3 radialOffset = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * profile.SpawnRadius;
-            spawnPos = targetLocalPos + radialOffset + Vector3.up * spawnHeight;
+            spawnPos = targetLocalPos + radialOffset + Vector3.up * height;
         }
         else
         {
-            spawnPos = targetLocalPos + Vector3.up * spawnHeight;
+            spawnPos = targetLocalPos + Vector3.up * height;
         }
 
         drone.localPosition = spawnPos;
@@ -172,6 +177,20 @@ public static class ArenaEpisodeSetup
     }
 
     /// <summary>
+    /// Returns a spawn height sampled from the lesson's height range, or the arena-level
+    /// fallback when the lesson has no range defined (both min and max are 0).
+    /// </summary>
+    private static float ResolveSpawnHeight(LessonProfile profile, float fallback)
+    {
+        if (profile.SpawnHeightMin == 0f && profile.SpawnHeightMax == 0f)
+            return fallback;
+
+        float lo = profile.SpawnHeightMin;
+        float hi = Mathf.Max(profile.SpawnHeightMax, lo);
+        return Random.Range(lo, hi);
+    }
+
+    /// <summary>
     /// Moves the start pad to sit at ground level directly below the drone's spawn position.
     /// Does nothing when <paramref name="startPad"/> is null.
     /// </summary>
@@ -183,5 +202,16 @@ public static class ArenaEpisodeSetup
         Vector3 padPos = startPad.localPosition;
         Vector3 droneLocal = drone.localPosition;
         startPad.localPosition = new Vector3(droneLocal.x, padPos.y, droneLocal.z);
+        startPad.gameObject.SetActive(true);
+    }
+
+    /// <summary>
+    /// Hides the start pad for lessons where it should not appear.
+    /// Does nothing when <paramref name="startPad"/> is null.
+    /// </summary>
+    private static void HideStartPad(Transform startPad)
+    {
+        if (startPad == null) return;
+        startPad.gameObject.SetActive(false);
     }
 }
