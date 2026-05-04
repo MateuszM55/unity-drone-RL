@@ -7,8 +7,8 @@ using UnityEngine;
 
 /// <summary>
 /// Automatically exports all <see cref="CurriculumPlan"/> and
-/// <see cref="DroneRewardProfile"/> assets to
-/// <c>StreamingAssets/{assetName}.json</c> before every build.
+/// <see cref="DroneRewardProfile"/> assets to a <c>config/</c> folder
+/// placed next to the built executable before every build.
 /// </summary>
 public class BuildPreProcessor : IPreprocessBuildWithReport
 {
@@ -17,8 +17,11 @@ public class BuildPreProcessor : IPreprocessBuildWithReport
 
     public void OnPreprocessBuild(BuildReport report)
     {
-        ExportAllCurriculumPlans();
-        ExportAllRewardProfiles();
+        string configDir = Path.GetFullPath(
+            Path.Combine(Path.GetDirectoryName(report.summary.outputPath), "config"));
+
+        ExportAllCurriculumPlans(configDir);
+        ExportAllRewardProfiles(configDir);
     }
 
     // -----------------------------------------------------------------------
@@ -30,6 +33,9 @@ public class BuildPreProcessor : IPreprocessBuildWithReport
     {
         public string lessonName;
         public float spawnRadius;
+        public float spawnHeightMin;
+        public float spawnHeightMax;
+        public bool spawnStartPad;
         public float maxEpisodeDistance;
         public int maxObstacleCount;
         public float obstacleSpawnRadius;
@@ -46,7 +52,7 @@ public class BuildPreProcessor : IPreprocessBuildWithReport
         public List<LessonData> lessons = new List<LessonData>();
     }
 
-    private static void ExportAllCurriculumPlans()
+    private static void ExportAllCurriculumPlans(string configDir)
     {
         string[] guids = AssetDatabase.FindAssets("t:CurriculumPlan");
         foreach (string guid in guids)
@@ -69,6 +75,9 @@ public class BuildPreProcessor : IPreprocessBuildWithReport
                 {
                     lessonName             = lp.name,
                     spawnRadius            = lp.SpawnRadius,
+                    spawnHeightMin         = lp.SpawnHeightMin,
+                    spawnHeightMax         = lp.SpawnHeightMax,
+                    spawnStartPad          = lp.SpawnStartPad,
                     maxEpisodeDistance     = lp.MaxEpisodeDistance,
                     maxObstacleCount       = lp.MaxObstacleCount,
                     obstacleSpawnRadius    = lp.ObstacleSpawnRadius,
@@ -79,8 +88,8 @@ public class BuildPreProcessor : IPreprocessBuildWithReport
                 });
             }
 
-            WriteJson(plan.name, JsonUtility.ToJson(data, prettyPrint: true));
-            Debug.Log($"[BuildPreProcessor] Exported CurriculumPlan '{plan.name}' ({plan.LessonCount} lessons).");
+            WriteJson(configDir, plan.name, JsonUtility.ToJson(data, prettyPrint: true));
+            Debug.Log($"[BuildPreProcessor] Exported CurriculumPlan '{plan.name}' ({plan.LessonCount} lessons) → {configDir}");
         }
     }
 
@@ -88,7 +97,7 @@ public class BuildPreProcessor : IPreprocessBuildWithReport
     // DroneRewardProfile export
     // -----------------------------------------------------------------------
 
-    private static void ExportAllRewardProfiles()
+    private static void ExportAllRewardProfiles(string configDir)
     {
         string[] guids = AssetDatabase.FindAssets("t:DroneRewardProfile");
         foreach (string guid in guids)
@@ -97,8 +106,8 @@ public class BuildPreProcessor : IPreprocessBuildWithReport
             var profile = AssetDatabase.LoadAssetAtPath<DroneRewardProfile>(assetPath);
             if (profile == null) continue;
 
-            WriteJson(profile.name, JsonUtility.ToJson(profile, prettyPrint: true));
-            Debug.Log($"[BuildPreProcessor] Exported DroneRewardProfile '{profile.name}'.");
+            WriteJson(configDir, profile.name, JsonUtility.ToJson(profile, prettyPrint: true));
+            Debug.Log($"[BuildPreProcessor] Exported DroneRewardProfile '{profile.name}' → {configDir}");
         }
     }
 
@@ -106,13 +115,12 @@ public class BuildPreProcessor : IPreprocessBuildWithReport
     // Shared helper
     // -----------------------------------------------------------------------
 
-    private static void WriteJson(string assetName, string json)
+    private static void WriteJson(string configDir, string assetName, string json)
     {
-        if (!Directory.Exists(Application.streamingAssetsPath))
-            Directory.CreateDirectory(Application.streamingAssetsPath);
+        if (!Directory.Exists(configDir))
+            Directory.CreateDirectory(configDir);
 
-        string path = Path.Combine(Application.streamingAssetsPath, assetName + ".json");
+        string path = Path.Combine(configDir, assetName + ".json");
         File.WriteAllText(path, json);
-        AssetDatabase.Refresh();
     }
 }

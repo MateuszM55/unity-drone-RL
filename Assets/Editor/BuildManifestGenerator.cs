@@ -7,8 +7,9 @@ using UnityEditor.Build.Reporting;
 using UnityEngine;
 
 /// <summary>
-/// Automatically writes a <c>mapping_legend.txt</c> file into the build output
-/// folder immediately after every successful Player build.
+/// Automatically writes a <c>config/mapping_legend.txt</c> file into the build
+/// output's <c>config/</c> folder (alongside the exported JSON configs) immediately
+/// after every successful Player build.
 ///
 /// The file documents every <see cref="DroneRewardProfile"/> and
 /// <see cref="CurriculumPlan"/> asset that exists in the project, ordered the
@@ -52,17 +53,21 @@ public class BuildManifestGenerator : IPostprocessBuildWithReport
             return;
         }
 
-        string buildDir = Path.GetDirectoryName(report.summary.outputPath);
-        if (string.IsNullOrEmpty(buildDir))
+        string exeDir = Path.GetDirectoryName(report.summary.outputPath);
+        if (string.IsNullOrEmpty(exeDir))
         {
             Debug.LogWarning("[BuildManifestGenerator] Could not determine build output directory.");
             return;
         }
 
+        string configDir = Path.GetFullPath(Path.Combine(exeDir, "config"));
+        if (!Directory.Exists(configDir))
+            Directory.CreateDirectory(configDir);
+
         List<string> rewardNames    = ResolveRewardProfileNames();
         List<(string name, int lessonCount)> curriculums = ResolveCurriculums();
 
-        string manifestPath = Path.Combine(buildDir, "mapping_legend.txt");
+        string manifestPath = Path.Combine(configDir, "mapping_legend.txt");
         WriteLegend(manifestPath, rewardNames, curriculums);
 
         Debug.Log($"[BuildManifestGenerator] mapping_legend.txt written to: {manifestPath}");
