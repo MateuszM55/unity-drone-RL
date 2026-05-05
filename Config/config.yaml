@@ -20,7 +20,7 @@ behaviors:
         gamma: 0.99             
         strength: 1.0
     keep_checkpoints: 3
-    max_steps: 100000000         
+    max_steps: 500000000         
     time_horizon: 256           
     summary_freq: 100000
 
@@ -44,29 +44,29 @@ environment_parameters:
         completion_criteria:
           measure: reward
           behavior: FlyToTarget
-          threshold: 3.5  
+          threshold: 2.5  
           min_lesson_length: 10000
         value: 0.0
-      - name: Lesson0_Obstacles_Difficulty1
+      - name: Lesson1_Obstacles_Difficulty1
         completion_criteria:
           measure: reward
           behavior: FlyToTarget
-          threshold: 3.5  
+          threshold: 2.5  
           min_lesson_length: 10000
         value: 0.0
-      - name: Lesson1_Obstacles_Difficulty2
+      - name: Lesson2_Obstacles_Difficulty2
         completion_criteria:
           measure: reward
           behavior: FlyToTarget
-          threshold: 3
+          threshold: 2
           min_lesson_length: 10000
         value: 1.0
-      - name: Lesson2_Obstacles_Difficulty3
+      - name: Lesson3_Obstacles_Difficulty3
         completion_criteria:
           measure: reward
           behavior: FlyToTarget
-          threshold: 3
+          threshold: 2
           min_lesson_length: 10000
         value: 2.0
-      - name: Lesson3_Obstacles_Difficulty4
+      - name: Lesson4_Obstacles_Difficulty4
         value: 3.0
