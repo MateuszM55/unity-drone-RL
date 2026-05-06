@@ -13,7 +13,7 @@ behaviors:
       num_epoch: 1              
     network_settings:
       normalize: True           
-      hidden_units: 512         
+      hidden_units: 256         
       num_layers: 3            
     reward_signals:
       extrinsic:
@@ -58,14 +58,14 @@ environment_parameters:
         completion_criteria:
           measure: reward
           behavior: FlyToTarget
-          threshold: 2
+          threshold: 2.5
           min_lesson_length: 10000
         value: 1.0
       - name: Lesson3_Obstacles_Difficulty3
         completion_criteria:
           measure: reward
           behavior: FlyToTarget
-          threshold: 2
+          threshold: 2.5
           min_lesson_length: 10000
         value: 2.0
       - name: Lesson4_Obstacles_Difficulty4
