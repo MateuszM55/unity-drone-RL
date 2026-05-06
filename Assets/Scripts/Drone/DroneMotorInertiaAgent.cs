@@ -11,8 +11,8 @@ using UnityEngine.InputSystem;
 /// ACTION SPACE (4 Continuous Actions in [-1, 1]):
 ///   Action 0-3 -- delta thrust rate for motors FL, FR, RL, RR
 ///
-/// OBSERVATION SPACE (25 floats):
-///   From DroneObserver base (17 floats):
+/// OBSERVATION SPACE (26 floats):
+///   From DroneObserver base (18 floats):
 ///     [0-2]  Local unit direction to target (body frame)
 ///     [3]    Signed horizontal progress  (0 at spawn, ~+1 at target, negative when drifting away)
 ///     [4]    Vertical error meter
@@ -44,7 +44,7 @@ public class DroneMotorInertiaAgent : DroneMLAgentBase
 
     public override void CollectObservations(VectorSensor sensor)
     {
-        base.CollectObservations(sensor); // 17 floats from DroneObserver
+        base.CollectObservations(sensor); // 18 floats from DroneObserver
 
         // Proprioception: interleaved normalised thrust + previous delta per motor (8 floats).
         // Layout: [normalizedThrust_i, previousDelta_i] for i in 0..3
