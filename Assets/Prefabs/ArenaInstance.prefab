@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 1931852452337571008}
   - component: {fileID: 6614949388848050214}
   - component: {fileID: 1286398100029491438}
-  - component: {fileID: 3182743284718963972}
+  - component: {fileID: 7981449982342228398}
   m_Layer: 7
   m_Name: Floor
   m_TagString: Ground
@@ -91,8 +91,8 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!64 &3182743284718963972
-MeshCollider:
+--- !u!65 &7981449982342228398
+BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -109,10 +109,9 @@ MeshCollider:
   m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
+  serializedVersion: 3
+  m_Size: {x: 10.000009, y: 0.6394063, z: 10.000009}
+  m_Center: {x: 0, y: -0.31970316, z: 0}
 --- !u!1 &297962457116878707
 GameObject:
   m_ObjectHideFlags: 0
@@ -124,7 +123,7 @@ GameObject:
   - component: {fileID: 7455225944293976516}
   - component: {fileID: 2396816723045772920}
   - component: {fileID: 953462041827794374}
-  - component: {fileID: 6714293856764062531}
+  - component: {fileID: 3696717330277312236}
   m_Layer: 7
   m_Name: Roof
   m_TagString: Ground
@@ -204,8 +203,8 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!64 &6714293856764062531
-MeshCollider:
+--- !u!65 &3696717330277312236
+BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -222,10 +221,9 @@ MeshCollider:
   m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
+  serializedVersion: 3
+  m_Size: {x: 10.000009, y: 1.3755302, z: 10.000009}
+  m_Center: {x: 0, y: -0.6877651, z: -0}
 --- !u!1 &821071856408086792
 GameObject:
   m_ObjectHideFlags: 0
@@ -342,7 +340,6 @@ MonoBehaviour:
   obstacleGenerator: {fileID: 4705270586151036291}
   useManualLessonPreview: 0
   manualLessonIndex: 0
-  spawnHeight: 0.7
   randomSpawnAngle: 1
 --- !u!1 &950471865616938281
 GameObject:

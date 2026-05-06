@@ -19,7 +19,6 @@ public static class ArenaEpisodeSetup
     /// <param name="obstacleGenerator">Obstacle generator component. May be null.</param>
     /// <param name="defaultPosition">Fallback drone local position when curriculum is unavailable.</param>
     /// <param name="defaultRotation">Fallback drone local rotation when curriculum is unavailable.</param>
-    /// <param name="spawnHeight">Fixed height above the target at which the drone spawns.</param>
     /// <param name="randomSpawnAngle">When <c>true</c> the drone spawns with a random yaw; when <c>false</c> it faces the target.</param>
     /// <param name="currentLessonIndex">Out: the clamped lesson index that was actually used.</param>
     /// <returns>Max allowed distance from target before the episode should be terminated.</returns>
@@ -33,7 +32,6 @@ public static class ArenaEpisodeSetup
         HexSwissCheeseObstacleGenerator obstacleGenerator,
         Vector3 defaultPosition,
         Quaternion defaultRotation,
-        float spawnHeight,
         bool randomSpawnAngle,
         out int currentLessonIndex)
     {
@@ -52,7 +50,7 @@ public static class ArenaEpisodeSetup
 
         Vector3 targetLocalPos = target != null ? target.localPosition : defaultPosition;
 
-        PositionDrone(drone, targetLocalPos, profile, defaultRotation, spawnHeight, randomSpawnAngle);
+        PositionDrone(drone, targetLocalPos, profile, defaultRotation, randomSpawnAngle);
         if (profile.SpawnStartPad)
             PlaceStartPad(startPad, drone);
         else
@@ -112,10 +110,9 @@ public static class ArenaEpisodeSetup
         Vector3 targetLocalPos,
         LessonProfile profile,
         Quaternion defaultRotation,
-        float fallbackSpawnHeight,
         bool randomSpawnAngle)
     {
-        float height = ResolveSpawnHeight(profile, fallbackSpawnHeight);
+        float height = Random.Range(profile.SpawnHeightMin, Mathf.Max(profile.SpawnHeightMax, profile.SpawnHeightMin));
 
         Vector3 spawnPos;
 
@@ -174,20 +171,6 @@ public static class ArenaEpisodeSetup
     {
         drone.localPosition = position;
         drone.localRotation = rotation;
-    }
-
-    /// <summary>
-    /// Returns a spawn height sampled from the lesson's height range, or the arena-level
-    /// fallback when the lesson has no range defined (both min and max are 0).
-    /// </summary>
-    private static float ResolveSpawnHeight(LessonProfile profile, float fallback)
-    {
-        if (profile.SpawnHeightMin == 0f && profile.SpawnHeightMax == 0f)
-            return fallback;
-
-        float lo = profile.SpawnHeightMin;
-        float hi = Mathf.Max(profile.SpawnHeightMax, lo);
-        return Random.Range(lo, hi);
     }
 
     /// <summary>
