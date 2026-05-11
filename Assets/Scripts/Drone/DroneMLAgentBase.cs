@@ -181,33 +181,36 @@ public abstract class DroneMLAgentBase : Agent
     }
 
     /// <summary>
-    /// If a JSON file named <c>{profile.name}.json</c> exists in
-    /// <c>Application.streamingAssetsPath</c>, its values are overlaid onto
-    /// the ScriptableObject <em>instance</em> (not the asset on disk) using
+    /// If a JSON file named <c>{profile.name}.json</c> exists in the
+    /// <c>config/</c> folder next to the built executable (written there by
+    /// <see cref="BuildPreProcessor"/>), its values are overlaid onto the
+    /// ScriptableObject <em>instance</em> (not the asset on disk) using
     /// <see cref="JsonUtility.FromJsonOverwrite"/>.
     ///
     /// This lets us open the JSON in a text editor, change a reward magnitude,
     /// and restart training without touching Unity or rebuilding the .exe.
-    /// Export the initial JSON via the "Export to StreamingAssets" button on
-    /// the DroneRewardProfile Inspector.
+    /// No-op inside the Editor so ScriptableObject values are always used there.
     /// </summary>
     private static void TryApplyStreamingAssetsOverride(DroneRewardProfile profile)
     {
         if (profile == null) return;
         if (Application.isEditor) return;
 
-        string path = Path.Combine(Application.streamingAssetsPath, profile.name + ".json");
+        // Application.dataPath in a build points to <exe_dir>/<GameName>_Data.
+        // BuildPreProcessor writes JSON one level up, into config/ next to the .exe.
+        string path = Path.GetFullPath(
+            Path.Combine(Application.dataPath, "..", "config", profile.name + ".json"));
         if (!File.Exists(path)) return;
 
         try
         {
             string json = File.ReadAllText(path);
             JsonUtility.FromJsonOverwrite(json, profile);
-            Debug.Log($"[DroneRewardProfile] Applied StreamingAssets override from: {path}");
+            Debug.Log($"[DroneRewardProfile] Applied config override from: {path}");
         }
         catch (System.Exception ex)
         {
-            Debug.LogWarning($"[DroneRewardProfile] Failed to apply StreamingAssets override '{path}': {ex.Message}");
+            Debug.LogWarning($"[DroneRewardProfile] Failed to apply config override '{path}': {ex.Message}");
         }
     }
 

@@ -39,5 +39,5 @@ public class DroneRewardProfile : ScriptableObject
     [Tooltip("Maximum yaw angle (degrees) the drone may deviate from facing the target before a penalty is applied. At this angle penalty is 0; at 180° penalty equals yawDeviationScale. Typical range: 30 – 90°.")]
     public float maxYawDeviationAngle = 45f;
     [Tooltip("Maximum per-step penalty applied when the drone faces directly away from the target. Scales linearly from 0 at maxYawDeviationAngle to this value at 180°. Typical range: 0.001 – 0.02.")]
-    public float yawDeviationScale = 0.1f;
+    public float yawDeviationScale = 0.001f;
 }
