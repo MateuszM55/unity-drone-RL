@@ -22,6 +22,9 @@ public class DroneGenerator : MonoBehaviour
     [SerializeField] private float   armLength   = 0.6f;
     [SerializeField] private float   rotorRadius = 0.3f;
     [SerializeField] private float   rotorHeight = 0.05f;
+    [Tooltip("Angle in degrees between adjacent rotor arms (e.g. 90 = perpendicular X shape, <90 = narrower, >90 = wider).")]
+    [Range(10f, 170f)]
+    [SerializeField] private float   armAngle    = 90f;
 
     [Header("Visuals")]
     [SerializeField] private Color bodyColor       = Color.gray;
@@ -52,8 +55,9 @@ public class DroneGenerator : MonoBehaviour
         }
 
         // Rotors
-        float xDist = armLength * Mathf.Sin(45f * Mathf.Deg2Rad);
-        float zDist = armLength * Mathf.Cos(45f * Mathf.Deg2Rad);
+        float halfAngle = armAngle * 0.5f * Mathf.Deg2Rad;
+        float xDist = armLength * Mathf.Sin(halfAngle);
+        float zDist = armLength * Mathf.Cos(halfAngle);
         float yPos  = bodySize.y / 2f;
 
         Transform[] newRotors = new Transform[4];
