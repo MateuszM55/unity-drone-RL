@@ -6,8 +6,7 @@ using UnityEngine;
 ///
 /// <b>Purpose:</b> Decouples <see cref="DroneMLAgentBase"/> (and other consumers)
 /// from the concrete <see cref="TrainingArena"/> MonoBehaviour, making it easy to
-/// substitute alternative arena implementations (e.g. test doubles, network arenas)
-/// without changing the agent code.
+/// substitute alternative arena implementations without changing the agent code.
 ///
 /// <b>Discovery:</b>
 /// Agents retrieve the concrete <see cref="TrainingArena"/> via
