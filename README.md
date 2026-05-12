@@ -6,10 +6,30 @@ This repository contains the simulation environment and agent configuration for 
 The goal of this project is to develop a virtual 3D environment and a quadcopter model to study **Reinforcement Learning (RL)** efficiency. Specifically, it focuses on evaluating how **Curriculum Learning** strategies impact the training speed and stability of an agent performing navigation tasks.
 
 ## Key Features
-* **Physics-based Quadcopter:** A custom drone model with force-based movement.
-* **3D Training Environment:** A scalable environment designed for obstacle avoidance and pathfinding.
-* **Curriculum Learning Implementation:** Staged training difficulty levels configured via ML-Agents `config` files to improve convergence.
-* **Benchmarking:** Configurable training runs for comparing standard PPO training with curriculum-based training.
+
+###  Advanced Quadcopter Simulation
+* **Realistic Physics-Based Flight:** Custom drone controller with 4-rotor force-based propulsion system
+* **Configurable Flight Parameters:** Adjustable thrust, damping, and aerodynamic properties
+
+###  Intelligent Training System
+* **Dynamic Obstacle Generation:** Procedurally configured environments with adjustable complexity
+* **Multi-Arena Management:** Parallel training across multiple independent arenas for accelerated data collection
+
+###  Custom Sensor Suite
+* **Six-Axis Proximity Sensor:** SphereCast-based distance detection (Up, Down, Left, Right, Forward, Back)
+* **Frontal Cone Proximity Sensor:** Fully custimizable set of 9 sensors with adjustable pointing angles and ray spread
+* **Layer-Aware Detection:** One-hot encoding of detectable object types for semantic environment understanding
+* **Volumetric Raycasting:** Sphere-radius collision detection prevents thin obstacles from being missed
+* **Configurable Ray Parameters:** Adjustable detection range, sphere radius, and layer masks per sensor
+
+###  Deep Reinforcement Learning
+* **PPO-Based Training:** Proximal Policy Optimization with continuous action space (4 motor thrust outputs)
+* **Rich Observation Space:** Combined positional, velocity, orientation, and sensor data streams
+* **Reward Engineering:** Fine-tuned reward structure balancing task completion and efficiency
+
+###  Development Features
+* **Visual Debugging:** Gizmo-based visualization of sensor rays, hit detection, and agent state
+* **Extensive Documentation:** Well-commented codebase with XML documentation
 
 ## Tech Stack
 * Unity 6000.3.1f1 LTS
