@@ -20,6 +20,6 @@ MonoBehaviour:
   maxObstacleCount: 99
   obstacleSpawnRadius: 50
   minObstacleSpawnRadius: 8
-  hexSpacing: 12
+  hexSpacing: 9
   hexMinDistance: 5
   hexObstacleDensity: 0.9
