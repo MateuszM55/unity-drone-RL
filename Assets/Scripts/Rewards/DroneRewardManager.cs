@@ -93,11 +93,11 @@ public class DroneRewardManager : MonoBehaviour
         // ── Terminal conditions ──────────────────────────────────────────
         var tilt = DroneRewardMath.CheckExcessiveTilt(
             transform.up, _maxTiltDot, profile.excessiveTiltPenalty);
-        if (tilt.IsTerminal) return MakeTerminal(tilt.TerminalReward, EpisodeOutcome.Safety_ExcessiveTilt);
+        if (tilt.IsTerminal) return MakeTerminal(tilt.TerminalReward, EpisodeOutcome.ExcessiveTilt);
 
         var tooFar = DroneRewardMath.CheckTooFar(
             distanceToTarget, maxEpisodeDistance, profile.tooFarPenalty);
-        if (tooFar.IsTerminal) return MakeTerminal(tooFar.TerminalReward, EpisodeOutcome.Safety_BoundaryLeft);
+        if (tooFar.IsTerminal) return MakeTerminal(tooFar.TerminalReward, EpisodeOutcome.BoundaryLeft);
 
         // ── Per-step rewards ─────────────────────────────────────────────
         if (_previousDistance < 0f)

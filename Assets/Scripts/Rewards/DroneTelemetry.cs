@@ -90,10 +90,10 @@ public class DroneTelemetry : MonoBehaviour
         {
             switch (o)
             {
-                case EpisodeOutcome.Success_TargetReached: successCount++;       break;
-                case EpisodeOutcome.Crash:                 crashCount++;         break;
-                case EpisodeOutcome.Safety_ExcessiveTilt:  excessiveTiltCount++; break;
-                case EpisodeOutcome.Safety_BoundaryLeft:   boundaryLeftCount++;  break;
+                case EpisodeOutcome.TargetReached:  successCount++;       break;
+                case EpisodeOutcome.Crash:         crashCount++;         break;
+                case EpisodeOutcome.ExcessiveTilt: excessiveTiltCount++; break;
+                case EpisodeOutcome.BoundaryLeft:  boundaryLeftCount++;  break;
                 case EpisodeOutcome.Timeout:               timeoutCount++;       break;
             }
         }

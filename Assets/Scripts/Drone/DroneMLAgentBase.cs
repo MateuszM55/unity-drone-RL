@@ -250,7 +250,7 @@ public abstract class DroneMLAgentBase : Agent
             _touchdownTimer -= Time.fixedDeltaTime;
             if (_touchdownTimer <= 0f)
             {
-                _telemetry.FlushEpisode(EpisodeOutcome.Success_TargetReached);
+                _telemetry.FlushEpisode(EpisodeOutcome.TargetReached);
                 EndEpisode();
                 return;
             }
