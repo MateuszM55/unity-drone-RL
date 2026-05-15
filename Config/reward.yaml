@@ -30,13 +30,13 @@ environment_parameters:
     sampler_parameters:
       value: 0.0
   curriculum:
-    sampler_type: constant
+    sampler_type: constant 
     sampler_parameters:
       value: 0.0
   num_arenas:
     sampler_type: constant
     sampler_parameters:
-      value: 256.0
+      value: 512.0
 
   lesson:
     curriculum:
@@ -44,28 +44,28 @@ environment_parameters:
         completion_criteria:
           measure: reward
           behavior: FlyToTarget
-          threshold: 2.5  
-          min_lesson_length: 10000
+          threshold: 2.75  
+          min_lesson_length: 10000  
         value: 0.0
       - name: Lesson1_Obstacles_Difficulty1
         completion_criteria:
           measure: reward
           behavior: FlyToTarget
-          threshold: 2.5  
+          threshold: 2.75  
           min_lesson_length: 10000
         value: 1.0
       - name: Lesson2_Obstacles_Difficulty2
         completion_criteria:
           measure: reward
           behavior: FlyToTarget
-          threshold: 2.5
+          threshold: 2.75
           min_lesson_length: 10000
         value: 2.0
       - name: Lesson3_Obstacles_Difficulty3
         completion_criteria:
           measure: reward
           behavior: FlyToTarget
-          threshold: 2.5
+          threshold: 2.75
           min_lesson_length: 10000
         value: 3.0
       - name: Lesson4_Obstacles_Difficulty4

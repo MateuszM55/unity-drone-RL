@@ -167,15 +167,18 @@ public abstract class DroneMLAgentBase : Agent
     private void ResolveRewardProfile()
     {
         if (rewardProfiles == null || rewardProfiles.Count == 0)
-        {
-            if (rewardProfile == null)
-                Debug.LogWarning($"[{name}] rewardProfiles list is empty and no fallback profile is set.", this);
-            return;
-        }
+            throw new System.InvalidOperationException(
+                $"[{name}] rewardProfiles list is empty. " +
+                "Assign at least one DroneRewardProfile asset in the Inspector before starting training.");
 
         int idx = AcademyParameterReader.GetInt(AcademyParameterReader.RewardProfileKey, 0);
         idx = Mathf.Clamp(idx, 0, rewardProfiles.Count - 1);
         rewardProfile = rewardProfiles[idx];
+
+        if (rewardProfile == null)
+            throw new System.InvalidOperationException(
+                $"[{name}] RewardProfile at index {idx} is null. " +
+                "Fix the rewardProfiles list in the Inspector before starting training.");
 
         TryApplyStreamingAssetsOverride(rewardProfile);
     }

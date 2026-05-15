@@ -104,15 +104,11 @@ public class TrainingArena : MonoBehaviour, ITrainingArena
         ResolveActiveCurriculumPlan();
 
         if (_activeCurriculumPlan == null)
-        {
-            Debug.LogWarning(
-                $"[TrainingArena {arenaId}] No active CurriculumPlan resolved. " +
-                "Add CurriculumPlan assets to the curriculumPlans list in the Inspector.", this);
-        }
-        else
-        {
-            _activeCurriculumPlan.ValidateAndWarn();
-        }
+            throw new System.InvalidOperationException(
+                $"[TrainingArena {arenaId}] No CurriculumPlan resolved. " +
+                "Assign at least one CurriculumPlan asset in the Inspector before starting training.");
+
+        _activeCurriculumPlan.ValidateAndWarn();
 
         obstacleGenerator?.Initialise(MaxObstacleCapacityAcrossLessons());
     }

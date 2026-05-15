@@ -82,22 +82,16 @@ public static class ArenaEpisodeSetup
         clampedIndex = 0;
 
         if (plan == null || plan.LessonCount == 0)
-        {
-            Debug.LogWarning(
-                $"[TrainingArena {arenaId}] No curriculum plan or empty lessons " +
-                "— using default drone position.");
-            return false;
-        }
+            throw new System.InvalidOperationException(
+                $"[TrainingArena {arenaId}] No curriculum plan or empty lessons. " +
+                "Fix the Inspector assignment before starting training.");
 
         profile = plan.GetLessonClamped(rawIndex, out clampedIndex);
 
         if (profile == null)
-        {
-            Debug.LogWarning(
-                $"[TrainingArena {arenaId}] Lesson {clampedIndex} is null " +
-                "— using default drone position.");
-            return false;
-        }
+            throw new System.InvalidOperationException(
+                $"[TrainingArena {arenaId}] Lesson {clampedIndex} is null. " +
+                "Fix the CurriculumPlan asset before starting training.");
 
         return true;
     }
