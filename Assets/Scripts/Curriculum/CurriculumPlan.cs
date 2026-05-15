@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 
 /// <summary>
@@ -109,6 +110,100 @@ public class CurriculumPlan : ScriptableObject
             }
         }
         return valid;
+    }
+
+    // ========================================================================
+    // JSON OVERRIDE -- runtime config/ folder support
+    // ========================================================================
+
+    /// <summary>
+    /// Flat serializable representation of a single lesson, used for JSON
+    /// import/export.  Field names mirror the private serialized fields of
+    /// <see cref="LessonProfile"/> so that <see cref="JsonUtility.FromJsonOverwrite"/>
+    /// can apply values directly onto the ScriptableObject instance.
+    /// </summary>
+    [System.Serializable]
+    public class LessonData
+    {
+        public string lessonName;
+        public float  spawnRadius;
+        public float  spawnHeightMin;
+        public float  spawnHeightMax;
+        public bool   spawnStartPad;
+        public float  maxEpisodeDistance;
+        public int    maxObstacleCount;
+        public float  obstacleSpawnRadius;
+        public float  minObstacleSpawnRadius;
+        public float  hexSpacing;
+        public float  hexMinDistance;
+        public float  hexObstacleDensity;
+    }
+
+    /// <summary>
+    /// Top-level JSON envelope written by <c>BuildPreProcessor</c> and read back
+    /// at runtime by <see cref="TryApplyStreamingAssetsOverride"/>.
+    /// </summary>
+    [System.Serializable]
+    public class CurriculumData
+    {
+        public string          planName;
+        public List<LessonData> lessons = new List<LessonData>();
+    }
+
+    /// <summary>
+    /// If a JSON file named <c>{plan.name}.json</c> exists in the <c>config/</c>
+    /// folder next to the built executable (written there by
+    /// <c>BuildPreProcessor</c>), its values are overlaid onto the in-memory
+    /// <see cref="LessonProfile"/> instances via
+    /// <see cref="JsonUtility.FromJsonOverwrite"/>.
+    ///
+    /// This mirrors the reward-profile override pattern: open the JSON in a text
+    /// editor, tweak lesson parameters (spawn radius, obstacle count, etc.), and
+    /// restart training without touching Unity or rebuilding the executable.
+    /// No-op inside the Editor so ScriptableObject values are always used there.
+    /// </summary>
+    public static void TryApplyStreamingAssetsOverride(CurriculumPlan plan)
+    {
+        if (plan == null) return;
+        if (Application.isEditor) return;
+
+        // Application.dataPath in a build points to <exe_dir>/<GameName>_Data.
+        // BuildPreProcessor writes JSON one level up, into config/ next to the .exe.
+        string path = Path.GetFullPath(
+            Path.Combine(Application.dataPath, "..", "config", plan.name + ".json"));
+        if (!File.Exists(path)) return;
+
+        try
+        {
+            string         json = File.ReadAllText(path);
+            CurriculumData data = JsonUtility.FromJson<CurriculumData>(json);
+            if (data?.lessons == null) return;
+
+            foreach (LessonData lessonData in data.lessons)
+            {
+                // Find the matching LessonProfile by asset name.
+                LessonProfile match = null;
+                for (int i = 0; i < plan.lessons.Count; i++)
+                {
+                    if (plan.lessons[i] != null && plan.lessons[i].name == lessonData.lessonName)
+                    {
+                        match = plan.lessons[i];
+                        break;
+                    }
+                }
+                if (match == null) continue;
+
+                // Re-serialize this lesson entry alone so FromJsonOverwrite can
+                // map its fields onto the ScriptableObject instance by name.
+                JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(lessonData), match);
+            }
+
+            Debug.Log($"[CurriculumPlan] Applied config override from: {path}");
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogWarning($"[CurriculumPlan] Failed to apply config override '{path}': {ex.Message}");
+        }
     }
 
 #if UNITY_EDITOR

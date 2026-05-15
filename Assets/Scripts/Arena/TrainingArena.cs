@@ -108,6 +108,7 @@ public class TrainingArena : MonoBehaviour, ITrainingArena
                 $"[TrainingArena {arenaId}] No CurriculumPlan resolved. " +
                 "Assign at least one CurriculumPlan asset in the Inspector before starting training.");
 
+        CurriculumPlan.TryApplyStreamingAssetsOverride(_activeCurriculumPlan);
         _activeCurriculumPlan.ValidateAndWarn();
 
         obstacleGenerator?.Initialise(MaxObstacleCapacityAcrossLessons());

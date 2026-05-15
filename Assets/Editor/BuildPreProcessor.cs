@@ -25,32 +25,8 @@ public class BuildPreProcessor : IPreprocessBuildWithReport
     }
 
     // -----------------------------------------------------------------------
-    // CurriculumPlan export
+    // CurriculumPlan export  (data classes are defined in CurriculumPlan.cs)
     // -----------------------------------------------------------------------
-
-    [System.Serializable]
-    private class LessonData
-    {
-        public string lessonName;
-        public float spawnRadius;
-        public float spawnHeightMin;
-        public float spawnHeightMax;
-        public bool spawnStartPad;
-        public float maxEpisodeDistance;
-        public int maxObstacleCount;
-        public float obstacleSpawnRadius;
-        public float minObstacleSpawnRadius;
-        public float hexSpacing;
-        public float hexMinDistance;
-        public float hexObstacleDensity;
-    }
-
-    [System.Serializable]
-    private class CurriculumData
-    {
-        public string planName;
-        public List<LessonData> lessons = new List<LessonData>();
-    }
 
     private static void ExportAllCurriculumPlans(string configDir)
     {
@@ -67,11 +43,11 @@ public class BuildPreProcessor : IPreprocessBuildWithReport
                 continue;
             }
 
-            var data = new CurriculumData { planName = plan.name };
+            var data = new CurriculumPlan.CurriculumData { planName = plan.name };
             for (int i = 0; i < plan.LessonCount; i++)
             {
                 LessonProfile lp = plan.GetLesson(i);
-                data.lessons.Add(new LessonData
+                data.lessons.Add(new CurriculumPlan.LessonData
                 {
                     lessonName             = lp.name,
                     spawnRadius            = lp.SpawnRadius,
