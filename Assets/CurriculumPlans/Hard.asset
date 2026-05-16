@@ -10,11 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 10f63d6ff8d04e342b63a1e79abc1312, type: 3}
-  m_Name: Trees
+  m_Name: Hard
   m_EditorClassIdentifier: Assembly-CSharp::CurriculumPlan
   lessons:
-  - {fileID: 11400000, guid: 76da2acf62e39bf4da82f31e08ef4efb, type: 2}
-  - {fileID: 11400000, guid: d707380cbf48214439fb47806cf6e2c8, type: 2}
-  - {fileID: 11400000, guid: c1793bc1d5f8bee458e4653cf7316176, type: 2}
-  - {fileID: 11400000, guid: 8bac82422595e5446b620b733826daa4, type: 2}
   - {fileID: 11400000, guid: ecdb0edce06502e41b9ac22e1640c52e, type: 2}
