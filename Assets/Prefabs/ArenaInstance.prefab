@@ -333,7 +333,6 @@ MonoBehaviour:
   arenaId: -1
   curriculumPlans:
   - {fileID: 11400000, guid: d2e93bbff26508b4c8d096ac8c073c2f, type: 2}
-  - {fileID: 11400000, guid: 63a9eb6e4525b084dbe9ed67986c90b0, type: 2}
   - {fileID: 11400000, guid: aebcc441bfaf5d04d84541dd0190bc86, type: 2}
   agent: {fileID: 5499850950520007278}
   target: {fileID: 999457839937370585}
