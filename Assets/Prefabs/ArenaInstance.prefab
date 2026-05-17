@@ -341,6 +341,7 @@ MonoBehaviour:
   useManualLessonPreview: 0
   manualLessonIndex: 0
   randomSpawnAngle: 1
+  startAreaRadius: 10
 --- !u!1 &4557724687926650857
 GameObject:
   m_ObjectHideFlags: 0

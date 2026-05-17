@@ -48,11 +48,22 @@ public class TrainingArena : MonoBehaviour, ITrainingArena
     [Tooltip("If enabled, drone spawns with random yaw. Otherwise it faces the target.")]
     [SerializeField] private bool randomSpawnAngle = true;
 
+    [Header("Obstacle Regeneration")]
+    [Tooltip("Obstacles are only regenerated when the drone travelled beyond this local-space radius from its spawn point during the previous episode. " +
+             "Set to 0 to always regenerate (original behaviour).")]
+    [SerializeField, Min(0f)] private float startAreaRadius = 5f;
+
     // ========================================================================
     // PRIVATE STATE
     // ========================================================================
 
     private bool _isInitialised;
+
+    /// <summary>True on the very first episode or when a lesson/curriculum change forces a full reset.</summary>
+    private bool _obstaclesDirty = true;
+
+    /// <summary>The drone's local spawn position recorded at the start of the last episode.</summary>
+    private Vector3 _lastSpawnLocalPos;
 
     // ========================================================================
     // ITrainingArena -- PUBLIC PROPERTIES
@@ -180,18 +191,34 @@ public class TrainingArena : MonoBehaviour, ITrainingArena
     {
         ResolveActiveCurriculumPlan();
 
+        int nextLessonIndex = ResolveLessonIndex();
+
+        // Force a full obstacle regeneration when the lesson changes.
+        if (nextLessonIndex != CurrentLessonIndex)
+            _obstaclesDirty = true;
+
+        // Regenerate obstacles only when the drone actually explored beyond the starting area
+        // during the previous episode (or when a forced refresh is pending).
+        bool droneExplored = _obstaclesDirty
+            || startAreaRadius <= 0f
+            || Vector3.Distance(drone.localPosition, _lastSpawnLocalPos) > startAreaRadius;
+
         float result = ArenaEpisodeSetup.Execute(
             arenaId,
-            ResolveLessonIndex(),
+            nextLessonIndex,
             _activeCurriculumPlan,
             drone,
             target,
             startPad,
-            obstacleGenerator,
+            droneExplored ? obstacleGenerator : null,
             defaultPosition,
             defaultRotation,
             randomSpawnAngle,
             out int lessonIndex);
+
+        // Record spawn position for the upcoming episode so we can evaluate it next time.
+        _lastSpawnLocalPos = drone.localPosition;
+        _obstaclesDirty = false;
 
         CurrentLessonIndex = lessonIndex;
         return result;
