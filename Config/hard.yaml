@@ -32,7 +32,7 @@ environment_parameters:
   curriculum:
     sampler_type: constant 
     sampler_parameters:
-      value: 2.0
+      value: 1.0
   num_arenas:
     sampler_type: constant
     sampler_parameters:
