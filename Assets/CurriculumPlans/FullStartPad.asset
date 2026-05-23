@@ -10,7 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 10f63d6ff8d04e342b63a1e79abc1312, type: 3}
-  m_Name: Hard
+  m_Name: FullStartPad
   m_EditorClassIdentifier: Assembly-CSharp::CurriculumPlan
   lessons:
-  - {fileID: 11400000, guid: ecdb0edce06502e41b9ac22e1640c52e, type: 2}
+  - {fileID: 11400000, guid: d707380cbf48214439fb47806cf6e2c8, type: 2}
+  - {fileID: 11400000, guid: 48da9d64c795a2c4eba2b53aff3eef18, type: 2}
+  - {fileID: 11400000, guid: cf724d9e40c63f54eb2e87821b75fd3b, type: 2}
+  - {fileID: 11400000, guid: 82e5227972f02fd45986befa7a7af344, type: 2}

@@ -334,6 +334,8 @@ MonoBehaviour:
   curriculumPlans:
   - {fileID: 11400000, guid: d2e93bbff26508b4c8d096ac8c073c2f, type: 2}
   - {fileID: 11400000, guid: aebcc441bfaf5d04d84541dd0190bc86, type: 2}
+  - {fileID: 11400000, guid: 6986bc83f66be214e86b963ee0046f67, type: 2}
+  - {fileID: 11400000, guid: ca84353a8077a8a47a02d190749bc1f7, type: 2}
   agent: {fileID: 5499850950520007278}
   target: {fileID: 999457839937370585}
   startPad: {fileID: 1976787355912863573}
