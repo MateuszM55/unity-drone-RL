@@ -1,0 +1,142 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="DroneRewardMath" Collapsed="true">
+    <Position X="8.5" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AEAAAAAAAAAAAABAAAAAAAAAAAAAABBAAAQEAQBAAAA=</HashCode>
+      <FileName>Assets\Scripts\Rewards\DroneRewardMath.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DroneRewardProfile" Collapsed="true">
+    <Position X="10.25" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAASAAEAAAAACAAAAAAIEAAQAAAAgAAAAAYAAAAAAAA=</HashCode>
+      <FileName>Assets\Scripts\Rewards\DroneRewardProfile.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DroneTelemetry" Collapsed="true">
+    <Position X="3.25" Y="2.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>IAAgAIAAAhAAAAAIIAABAABARAAAAgAQGkADAAAANCA=</HashCode>
+      <FileName>Assets\Scripts\Rewards\DroneTelemetry.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FrontalConeSensor" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="5" Y="2.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>lAUAAIAMCDAABAIgYIgQCgAAAGgQAAAIBCQGgAkAhIA=</HashCode>
+      <FileName>Assets\Scripts\Sensors\FrontalConeSensor.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="SixAxisSensor" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="5" Y="3.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>lAUAAIAMADAABAIAIIgQCAAAAGgQAAAIBCQGgIEIJIA=</HashCode>
+      <FileName>Assets\Scripts\Sensors\SixAxisSensor.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="ArenaEpisodeSetup" Collapsed="true">
+    <Position X="5" Y="0.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>iAAAAAAAAIAAAAQAAAAAAAAAAAAAAAAEgAAAAAIAIAA=</HashCode>
+      <FileName>Assets\Scripts\Arena\ArenaEpisodeSetup.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="ArenaManager" Collapsed="true">
+    <Position X="6.75" Y="0.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>CACAAAAYBQIBABAAAAAIAAQAAAAAAAAAAAAMAAAAgEI=</HashCode>
+      <FileName>Assets\Scripts\Arena\ArenaManager.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="HexSwissCheeseObstacleGenerator" Collapsed="true">
+    <Position X="8.5" Y="2.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAIQAAAEACIBgQIQAgoBAAACICAABQAAACgAAEBAAAA=</HashCode>
+      <FileName>Assets\Scripts\Arena\HexSwissCheeseObstacleGenerator.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="TrainingArena" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="8.5" Y="3.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AgAAAAEYiAIAAUAQIAEAGCAAABABCIAAUQBAEBAEAgA=</HashCode>
+      <FileName>Assets\Scripts\Arena\TrainingArena.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="DroneAerodynamics" Collapsed="true">
+    <Position X="10.25" Y="0.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AIAAAAAAAgAABAAAAIAAAAAAEAAAAAAAAGBAAAAAAEA=</HashCode>
+      <FileName>Assets\Scripts\Drone\DroneAerodynamics.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DroneGenerator" Collapsed="true">
+    <Position X="3.25" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>EAIBAAgAAAAAAAAAAEAAAAAAAAAAKAEAAAAAAAAAASA=</HashCode>
+      <FileName>Assets\Scripts\Drone\DroneGenerator.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DroneMLAgentBase" Collapsed="true">
+    <Position X="0.75" Y="0.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>FYAEAAAAAoAAAQwGMQAEAAAFBAAAAAJKMAiACBAACAA=</HashCode>
+      <FileName>Assets\Scripts\Drone\DroneMLAgentBase.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DroneMotorInertiaAgent" Collapsed="true">
+    <Position X="0.75" Y="2.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAIIAAAQAIBAEAAAABAAAAAAAAAAAAAAAAAEA=</HashCode>
+      <FileName>Assets\Scripts\Drone\DroneMotorInertiaAgent.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DroneObserver" Collapsed="true">
+    <Position X="5" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAEAAAAAAAAEwAAAAAAAAAAAAQAAAAAACAAIBAAEAA=</HashCode>
+      <FileName>Assets\Scripts\Drone\DroneObserver.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="CurriculumPlan" Collapsed="true">
+    <Position X="8.5" Y="0.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AQACCCAAAAAAAAgAAAkAAAAAAAAAABAAAAAAAAAAAAA=</HashCode>
+      <FileName>Assets\Scripts\Curriculum\CurriculumPlan.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="LessonProfile" Collapsed="true">
+    <Position X="10.25" Y="2.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>hQMAIYAAAiAAQgIAQAMAAEAABEAAAAAAAACIAAAAiAA=</HashCode>
+      <FileName>Assets\Scripts\Curriculum\LessonProfile.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FrontalConeSensorComponent" Collapsed="true">
+    <Position X="5" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>ggABAAAACCIQAA4gUQEACgAAAEBAACAABAAQgAAAAAA=</HashCode>
+      <FileName>Assets\Scripts\Sensors\FrontalConeSensorComponent.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="SixAxisSensorComponent" Collapsed="true">
+    <Position X="6.75" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>ggABAAAADCIQAA4AEQEECAAAAEBAACAABAASgAAAAAA=</HashCode>
+      <FileName>Assets\Scripts\Sensors\SixAxisSensorComponent.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Enum Name="EpisodeOutcome" Collapsed="true">
+    <Position X="1.5" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAQAAAAAAAAAIAAIAAIAAAAIAAAAAAAAAAAA=</HashCode>
+      <FileName>Assets\Scripts\Rewards\EpisodeOutcome.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>
