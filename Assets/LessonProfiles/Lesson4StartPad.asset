@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: Lesson4StartPad
   m_EditorClassIdentifier: Assembly-CSharp::LessonProfile
   spawnRadius: 55
-  spawnHeightMin: 2
-  spawnHeightMax: 3
+  spawnHeightMin: 0.7
+  spawnHeightMax: 0.7
   spawnStartPad: 1
   maxEpisodeDistance: 65
   maxObstacleCount: 99
